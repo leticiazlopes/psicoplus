@@ -4,6 +4,7 @@ from rest_framework import status
 from .serializers import CadastroPsicologoSerializer, LoginSerializer
 from rest_framework_simplejwt.views import TokenObtainPairView
 from rest_framework.permissions import IsAuthenticated
+from rest_framework_simplejwt.tokens import RefreshToken
 
 class CadastroPsicologoView(APIView):
     permission_classes = []
@@ -44,3 +45,30 @@ class MeView(APIView):
             "email": user.email,
             "perfil": user.perfil,
         })
+    
+class LogoutView(APIView):
+    permission_classes = [IsAuthenticated]
+
+    def post(self, request):
+        refresh_token = request.data.get("refresh")
+
+        if not refresh_token:
+            return Response(
+                {"detail": "Refresh token não enviado."},
+                status=status.HTTP_400_BAD_REQUEST
+            )
+
+        try:
+            token = RefreshToken(refresh_token)
+            token.blacklist()
+
+            return Response(
+                {"message": "Logout realizado com sucesso."},
+                status=status.HTTP_200_OK
+            )
+
+        except Exception:
+            return Response(
+                {"detail": "Token inválido ou já expirado."},
+                status=status.HTTP_400_BAD_REQUEST
+            )
