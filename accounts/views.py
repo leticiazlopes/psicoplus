@@ -3,6 +3,7 @@ from rest_framework.response import Response
 from rest_framework import status
 from .serializers import CadastroPsicologoSerializer, LoginSerializer
 from rest_framework_simplejwt.views import TokenObtainPairView
+from rest_framework.permissions import IsAuthenticated
 
 class CadastroPsicologoView(APIView):
     permission_classes = []
@@ -29,3 +30,17 @@ class CadastroPsicologoView(APIView):
     
 class LoginView(TokenObtainPairView):
     serializer_class = LoginSerializer
+
+
+class MeView(APIView):
+    permission_classes = [IsAuthenticated]
+
+    def get(self, request):
+        user = request.user
+
+        return Response({
+            "id": str(user.id),
+            "nome": user.nome,
+            "email": user.email,
+            "perfil": user.perfil,
+        })
