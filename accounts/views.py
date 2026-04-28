@@ -1,33 +1,55 @@
-from django.views.generic import CreateView
+from django.views.generic import CreateView, ListView
 from django.contrib.auth.views import LoginView, LogoutView
 from django.urls import reverse_lazy
 from django.contrib import messages
+from django.contrib.auth.mixins import LoginRequiredMixin
+from .forms import CadastroPsicologoForm, LoginUsuarioForm
+from .models import Psicologo
 
-from .forms import CadastroPsicologoForm
 
+class PsicologoListView(LoginRequiredMixin, ListView):
+    template_name = "accounts/psicologos_lista.html"
+    model = Psicologo
+    context_object_name = "psicologos"
+    login_url = reverse_lazy("login")
 
-class CadastroPsicologoView(CreateView):
+    def get_queryset(self):
+        return (
+            Psicologo.objects.select_related("usuario")
+            .order_by("usuario__nome")
+        )
+
+    def get_context_data(self, **kwargs):
+        context = super().get_context_data(**kwargs)
+        psicologos = context["psicologos"]
+
+        context["psicologos_ativos"] = sum(1 for psicologo in psicologos if psicologo.ativo)
+        context["psicologos_inativos"] = sum(1 for psicologo in psicologos if not psicologo.ativo)
+        return context
+
+class CadastroPsicologoView(LoginRequiredMixin, CreateView):
     template_name = "accounts/cadastro_psicologo.html"
     form_class = CadastroPsicologoForm
-    success_url = reverse_lazy("login")
+    success_url = reverse_lazy("psicologos")
+    login_url = reverse_lazy("login")
 
     def form_valid(self, form):
-        messages.success(self.request, "Cadastro realizado com sucesso.")
+        messages.success(self.request, "Psicólogo cadastrado com sucesso.")
         return super().form_valid(form)
-    
 
 class LoginUsuarioView(LoginView):
     template_name = "accounts/login.html"
     redirect_authenticated_user = True
+    authentication_form = LoginUsuarioForm
 
     def get_success_url(self):
         user = self.request.user
 
         if user.perfil == "psicologo":
-            return reverse_lazy("cadastro_psicologo")
+            return reverse_lazy("psicologos")
 
         if user.perfil == "paciente":
-            return ...
+            return reverse_lazy("psicologos")
 
         return reverse_lazy("login")
 

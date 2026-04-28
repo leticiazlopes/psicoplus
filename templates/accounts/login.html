@@ -1,0 +1,91 @@
+{% extends "shared/base.html" %}
+
+{% block title %}Login | Psico+{% endblock %}
+
+{% block content %}
+<section class="flex flex-1 items-center py-4 lg:py-0">
+    <div class="grid w-full items-center gap-10 lg:grid-cols-[minmax(0,1fr)_500px]">
+        <div class="hidden max-w-[420px] lg:block">
+            <h1 class="text-[40px] font-black leading-[1.02] tracking-[-0.07em] text-slate-900">
+                Gestão que acolhe, cuida e organiza.
+            </h1>
+            <p class="mt-6 text-[17px] leading-9 text-slate-600">
+                Mais tempo para o que importa: cuidar das pessoas, acompanhar atendimentos e manter sua rotina clínica leve.
+            </p>
+        </div>
+
+        <div class="w-full max-w-[500px] rounded-[24px] border border-white/80 bg-white/92 p-7 shadow-[0_24px_60px_rgba(109,74,255,0.10)] backdrop-blur-xl sm:p-8 lg:ml-auto">
+            <div class="mb-7">
+                <div class="inline-flex h-12 w-12 items-center justify-center rounded-[14px] bg-primarySoft text-primary shadow-[0_10px_24px_rgba(109,74,255,0.10)]">
+                    <i class="fa-solid fa-user-lock text-[19px]"></i>
+                </div>
+
+                <h2 class="mt-5 text-[32px] font-black tracking-[-0.06em] text-slate-900">
+                    Bem-vindo(a)!
+                </h2>
+                <p class="mt-3 max-w-[360px] text-[15px] leading-7 text-slate-500">
+                    Entre para acessar o Psico+ e acompanhar sua rotina clínica com leveza.
+                </p>
+            </div>
+
+            <form method="post" novalidate class="space-y-5">
+                {% csrf_token %}
+
+                {% if form.non_field_errors %}
+                <div class="rounded-2xl border border-rose-200 bg-rose-50 px-4 py-3 text-[14px] text-rose-700">
+                    {% for error in form.non_field_errors %}
+                    <p>{{ error }}</p>
+                    {% endfor %}
+                </div>
+                {% endif %}
+
+                <div>
+                    <label for="{{ form.username.id_for_label }}" class="mb-2.5 block text-[13px] font-bold text-slate-600">E-mail</label>
+                    <div class="relative">
+                        <span class="pointer-events-none absolute inset-y-0 left-0 flex items-center pl-4 text-slate-400">
+                            <i class="fa-regular fa-envelope text-[15px]"></i>
+                        </span>
+                        {{ form.username }}
+                    </div>
+                    {% if form.username.errors %}
+                    <div class="mt-2 space-y-1 text-[13px] text-rose-600">
+                        {% for error in form.username.errors %}
+                        <p>{{ error }}</p>
+                        {% endfor %}
+                    </div>
+                    {% endif %}
+                </div>
+
+                <div>
+                    <div class="mb-2.5 flex items-center justify-between gap-3">
+                        <label for="{{ form.password.id_for_label }}" class="block text-[13px] font-bold text-slate-600">Senha</label>
+                        <span class="text-[12px] font-semibold text-primary">Esqueci minha senha</span>
+                    </div>
+                    <div class="relative">
+                        <span class="pointer-events-none absolute inset-y-0 left-0 flex items-center pl-4 text-slate-400">
+                            <i class="fa-solid fa-lock text-[15px]"></i>
+                        </span>
+                        {{ form.password }}
+                    </div>
+                    {% if form.password.errors %}
+                    <div class="mt-2 space-y-1 text-[13px] text-rose-600">
+                        {% for error in form.password.errors %}
+                        <p>{{ error }}</p>
+                        {% endfor %}
+                    </div>
+                    {% endif %}
+                </div>
+
+                <button type="submit" class="inline-flex w-full items-center justify-center gap-2 rounded-[14px] bg-gradient-to-r from-primary to-primaryDark px-5 py-3.5 text-[15px] font-semibold text-white shadow-[0_18px_34px_rgba(109,74,255,0.24)] transition hover:translate-y-[-1px]">
+                    <i class="fa-solid fa-right-to-bracket text-[14px]"></i>
+                    Entrar
+                </button>
+
+                <div class="pt-1 text-center text-[13px] text-slate-400">
+                    Ambiente seguro para acesso da equipe clínica.
+                </div>
+            </form>
+        </div>
+    </div>
+</section>
+{% endblock %}

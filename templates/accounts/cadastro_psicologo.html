@@ -1,0 +1,140 @@
+{% extends "shared/base.html" %}
+
+{% block title %}Cadastrar Psicólogo | Psico+{% endblock %}
+{% block page_title %}Cadastro de Psicólogo{% endblock %}
+
+{% block content %}
+<section class="space-y-6">
+    <div class="rounded-[20px] border border-white/70 bg-white/88 p-5 shadow-soft backdrop-blur-xl lg:p-6">
+        <div class="flex flex-col gap-4 border-b border-slate-100 pb-5 lg:flex-row lg:items-start lg:justify-between">
+            <div class="max-w-2xl">
+                <p class="text-[14px] leading-6 text-slate-500">
+                    Preencha os dados para cadastrar um novo psicólogo na plataforma.
+                </p>
+            </div>
+
+            <div class="flex flex-wrap gap-3">
+                <a href="{% url 'psicologos' %}" class="inline-flex items-center justify-center rounded-xl border border-slate-200 bg-white px-4 py-2.5 text-[14px] font-semibold text-slate-600 transition hover:border-primary/20 hover:text-primary">
+                    Cancelar
+                </a>
+                <button form="cadastro-psicologo-form" type="submit" class="inline-flex items-center justify-center gap-2 rounded-xl bg-gradient-to-r from-primary to-primaryDark px-4 py-2.5 text-[14px] font-semibold text-white shadow-[0_14px_28px_rgba(109,74,255,0.22)] transition hover:translate-y-[-1px]">
+                    <i class="fa-solid fa-floppy-disk text-[13px]"></i>
+                    Salvar
+                </button>
+            </div>
+        </div>
+
+        <form id="cadastro-psicologo-form" method="post" novalidate class="mt-5 space-y-5">
+            {% csrf_token %}
+
+            {% if form.non_field_errors %}
+            <div class="rounded-2xl border border-rose-200 bg-rose-50 px-4 py-3 text-[14px] text-rose-700">
+                {% for error in form.non_field_errors %}
+                <p>{{ error }}</p>
+                {% endfor %}
+            </div>
+            {% endif %}
+
+            <section class="rounded-[16px] border border-slate-200 bg-white p-4 lg:p-5">
+                <div class="mb-4 flex items-start gap-3">
+                    <div class="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-primarySoft text-primary">
+                        <i class="fa-solid fa-id-card text-[15px]"></i>
+                    </div>
+                    <div>
+                        <h3 class="text-[16px] font-bold text-slate-900">Dados profissionais</h3>
+                        <p class="mt-1 text-[13px] text-slate-500">Informações principais para identificar o profissional.</p>
+                    </div>
+                </div>
+
+                <div class="grid gap-4 md:grid-cols-2">
+                    <div class="md:col-span-2">
+                        <label for="{{ form.nome.id_for_label }}" class="mb-2 block text-[13px] font-bold text-slate-600">Nome completo</label>
+                        {{ form.nome }}
+                        {% if form.nome.errors %}
+                        <div class="mt-2 space-y-1 text-[13px] text-rose-600">
+                            {% for error in form.nome.errors %}
+                            <p>{{ error }}</p>
+                            {% endfor %}
+                        </div>
+                        {% endif %}
+                    </div>
+
+                    <div>
+                        <label for="{{ form.email.id_for_label }}" class="mb-2 block text-[13px] font-bold text-slate-600">E-mail</label>
+                        {{ form.email }}
+                        {% if form.email.errors %}
+                        <div class="mt-2 space-y-1 text-[13px] text-rose-600">
+                            {% for error in form.email.errors %}
+                            <p>{{ error }}</p>
+                            {% endfor %}
+                        </div>
+                        {% endif %}
+                    </div>
+
+                    <div>
+                        <label for="{{ form.crp.id_for_label }}" class="mb-2 block text-[13px] font-bold text-slate-600">CRP</label>
+                        {{ form.crp }}
+                        {% if form.crp.errors %}
+                        <div class="mt-2 space-y-1 text-[13px] text-rose-600">
+                            {% for error in form.crp.errors %}
+                            <p>{{ error }}</p>
+                            {% endfor %}
+                        </div>
+                        {% endif %}
+                    </div>
+
+                    <div class="md:col-span-2">
+                        <label for="{{ form.telefone.id_for_label }}" class="mb-2 block text-[13px] font-bold text-slate-600">Telefone</label>
+                        {{ form.telefone }}
+                        {% if form.telefone.errors %}
+                        <div class="mt-2 space-y-1 text-[13px] text-rose-600">
+                            {% for error in form.telefone.errors %}
+                            <p>{{ error }}</p>
+                            {% endfor %}
+                        </div>
+                        {% endif %}
+                    </div>
+                </div>
+            </section>
+
+            <section class="rounded-[16px] border border-slate-200 bg-white p-4 lg:p-5">
+                <div class="mb-4 flex items-start gap-3">
+                    <div class="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-primarySoft text-primary">
+                        <i class="fa-solid fa-shield-heart text-[15px]"></i>
+                    </div>
+                    <div>
+                        <h3 class="text-[16px] font-bold text-slate-900">Dados de acesso</h3>
+                        <p class="mt-1 text-[13px] text-slate-500">Credenciais iniciais para o primeiro acesso.</p>
+                    </div>
+                </div>
+
+                <div class="grid gap-4 md:grid-cols-2">
+                    <div>
+                        <label for="{{ form.password1.id_for_label }}" class="mb-2 block text-[13px] font-bold text-slate-600">Senha</label>
+                        {{ form.password1 }}
+                        {% if form.password1.errors %}
+                        <div class="mt-2 space-y-1 text-[13px] text-rose-600">
+                            {% for error in form.password1.errors %}
+                            <p>{{ error }}</p>
+                            {% endfor %}
+                        </div>
+                        {% endif %}
+                    </div>
+
+                    <div>
+                        <label for="{{ form.password2.id_for_label }}" class="mb-2 block text-[13px] font-bold text-slate-600">Confirmar senha</label>
+                        {{ form.password2 }}
+                        {% if form.password2.errors %}
+                        <div class="mt-2 space-y-1 text-[13px] text-rose-600">
+                            {% for error in form.password2.errors %}
+                            <p>{{ error }}</p>
+                            {% endfor %}
+                        </div>
+                        {% endif %}
+                    </div>
+                </div>
+            </section>
+        </form>
+    </div>
+</section>
+{% endblock %}

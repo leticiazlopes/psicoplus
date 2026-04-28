@@ -1,0 +1,134 @@
+{% extends "shared/base.html" %}
+
+{% block title %}Psicólogos | Psico+{% endblock %}
+{% block page_title %}Psicólogos{% endblock %}
+
+{% block content %}
+<section class="space-y-6">
+    <div class="grid gap-4 md:grid-cols-3">
+        <div class="rounded-[18px] border border-white/70 bg-white/88 p-4 shadow-soft backdrop-blur-xl">
+            <div class="flex items-center justify-between">
+                <div class="flex h-10 w-10 items-center justify-center rounded-xl bg-primarySoft text-primary">
+                    <i class="fa-solid fa-user-doctor text-[15px]"></i>
+                </div>
+                <span class="rounded-full bg-primarySoft px-2.5 py-1 text-[10px] font-bold uppercase tracking-[0.16em] text-primary">
+                    Total
+                </span>
+            </div>
+            <p class="mt-4 text-[28px] font-black tracking-[-0.05em] text-slate-900">{{ psicologos|length }}</p>
+            <p class="mt-1 text-[13px] text-slate-500">Profissionais cadastrados.</p>
+        </div>
+
+        <div class="rounded-[18px] border border-white/70 bg-white/88 p-4 shadow-soft backdrop-blur-xl">
+            <div class="flex items-center justify-between">
+                <div class="flex h-10 w-10 items-center justify-center rounded-xl bg-emerald-100 text-emerald-600">
+                    <i class="fa-solid fa-circle-check text-[15px]"></i>
+                </div>
+                <span class="rounded-full bg-emerald-50 px-2.5 py-1 text-[10px] font-bold uppercase tracking-[0.16em] text-emerald-700">
+                    Ativos
+                </span>
+            </div>
+            <p class="mt-4 text-[28px] font-black tracking-[-0.05em] text-slate-900">{{ psicologos_ativos }}</p>
+            <p class="mt-1 text-[13px] text-slate-500">Perfis liberados para acesso.</p>
+        </div>
+
+        <div class="rounded-[18px] border border-white/70 bg-white/88 p-4 shadow-soft backdrop-blur-xl">
+            <div class="flex items-center justify-between">
+                <div class="flex h-10 w-10 items-center justify-center rounded-xl bg-amber-100 text-amber-600">
+                    <i class="fa-solid fa-clock text-[15px]"></i>
+                </div>
+                <span class="rounded-full bg-amber-50 px-2.5 py-1 text-[10px] font-bold uppercase tracking-[0.16em] text-amber-700">
+                    Inativos
+                </span>
+            </div>
+            <p class="mt-4 text-[28px] font-black tracking-[-0.05em] text-slate-900">{{ psicologos_inativos }}</p>
+            <p class="mt-1 text-[13px] text-slate-500">Cadastros pausados.</p>
+        </div>
+    </div>
+
+    <div class="rounded-[20px] border border-white/70 bg-white/88 p-5 shadow-soft backdrop-blur-xl lg:p-6">
+        <div class="flex flex-col gap-4 border-b border-slate-100 pb-5 lg:flex-row lg:items-start lg:justify-between">
+            <div class="max-w-2xl">
+                <span class="inline-flex items-center gap-2 rounded-full bg-primarySoft px-2.5 py-1 text-[11px] font-bold uppercase tracking-[0.16em] text-primary">
+                    <i class="fa-solid fa-stethoscope text-[11px]"></i>
+                    Equipe clínica
+                </span>
+                <h2 class="mt-3 text-[22px] font-black tracking-[-0.04em] text-slate-900">Psicólogos</h2>
+                <p class="mt-1.5 text-[14px] leading-6 text-slate-500">
+                    Gerencie os profissionais cadastrados e mantenha a equipe organizada com acesso rápido aos dados principais.
+                </p>
+            </div>
+
+            <a href="{% url 'cadastro_psicologo' %}" class="inline-flex items-center justify-center gap-2 rounded-xl bg-gradient-to-r from-primary to-primaryDark px-4 py-2.5 text-[14px] font-semibold text-white shadow-[0_14px_28px_rgba(109,74,255,0.22)] transition hover:translate-y-[-1px]">
+                <i class="fa-solid fa-plus text-[12px]"></i>
+                Cadastrar psicólogo
+            </a>
+        </div>
+
+        <div class="mt-5 overflow-hidden rounded-[16px] border border-slate-200">
+            <div class="hidden grid-cols-[minmax(0,1.4fr)_minmax(0,1fr)_minmax(0,0.8fr)_minmax(0,0.8fr)] gap-4 bg-slate-50/80 px-6 py-4 text-[12px] font-bold uppercase tracking-[0.18em] text-slate-400 lg:grid">
+                <span>Psicólogo</span>
+                <span>Contato</span>
+                <span>CRP</span>
+                <span>Status</span>
+            </div>
+
+            <div class="divide-y divide-slate-100 bg-white">
+                {% for psicologo in psicologos %}
+                <div class="grid gap-4 px-5 py-4 lg:grid-cols-[minmax(0,1.4fr)_minmax(0,1fr)_minmax(0,0.8fr)_minmax(0,0.8fr)] lg:px-6">
+                    <div class="flex items-center gap-4">
+                        <div class="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-gradient-to-br from-primarySoft to-white text-primary">
+                            <span class="text-[14px] font-black">{{ psicologo.usuario.nome|slice:":1"|upper }}</span>
+                        </div>
+                        <div class="min-w-0">
+                            <p class="truncate text-[14px] font-bold text-slate-900">{{ psicologo.usuario.nome }}</p>
+                            <p class="mt-1 text-[13px] text-slate-500">Cadastro em {{ psicologo.criado_em|date:"d/m/Y" }}</p>
+                        </div>
+                    </div>
+
+                    <div class="space-y-1">
+                        <p class="text-[11px] font-bold uppercase tracking-[0.18em] text-slate-400 lg:hidden">Contato</p>
+                        <p class="truncate text-[14px] font-semibold text-slate-700">{{ psicologo.usuario.email }}</p>
+                        <p class="text-[13px] text-slate-500">{{ psicologo.telefone|default:"Telefone não informado" }}</p>
+                    </div>
+
+                    <div class="space-y-1">
+                        <p class="text-[11px] font-bold uppercase tracking-[0.18em] text-slate-400 lg:hidden">CRP</p>
+                        <p class="text-[14px] font-semibold text-slate-700">{{ psicologo.crp }}</p>
+                    </div>
+
+                    <div class="space-y-1">
+                        <p class="text-[11px] font-bold uppercase tracking-[0.18em] text-slate-400 lg:hidden">Status</p>
+                        {% if psicologo.ativo %}
+                        <span class="inline-flex items-center gap-2 rounded-full bg-emerald-50 px-3 py-1.5 text-[12px] font-semibold text-emerald-700">
+                            <span class="h-2 w-2 rounded-full bg-emerald-500"></span>
+                            Ativo
+                        </span>
+                        {% else %}
+                        <span class="inline-flex items-center gap-2 rounded-full bg-slate-100 px-3 py-1.5 text-[12px] font-semibold text-slate-600">
+                            <span class="h-2 w-2 rounded-full bg-slate-400"></span>
+                            Inativo
+                        </span>
+                        {% endif %}
+                    </div>
+                </div>
+                {% empty %}
+                <div class="px-6 py-12 text-center">
+                    <div class="mx-auto flex h-14 w-14 items-center justify-center rounded-2xl bg-primarySoft text-primary">
+                        <i class="fa-solid fa-user-doctor text-[22px]"></i>
+                    </div>
+                    <h3 class="mt-4 text-[20px] font-black tracking-[-0.04em] text-slate-900">Nenhum psicólogo cadastrado</h3>
+                    <p class="mx-auto mt-2 max-w-md text-[14px] leading-7 text-slate-500">
+                        Comece adicionando o primeiro profissional da plataforma para montar sua equipe clínica.
+                    </p>
+                    <a href="{% url 'cadastro_psicologo' %}" class="mt-5 inline-flex items-center justify-center gap-2 rounded-xl bg-gradient-to-r from-primary to-primaryDark px-4 py-2.5 text-[14px] font-semibold text-white shadow-[0_14px_28px_rgba(109,74,255,0.22)]">
+                        <i class="fa-solid fa-plus text-[12px]"></i>
+                        Cadastrar psicólogo
+                    </a>
+                </div>
+                {% endfor %}
+            </div>
+        </div>
+    </div>
+</section>
+{% endblock %}

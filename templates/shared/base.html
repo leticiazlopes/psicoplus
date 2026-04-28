@@ -1,0 +1,96 @@
+{% load static %}
+<!DOCTYPE html>
+<html lang="pt-br">
+<head>
+    <meta charset="UTF-8">
+    <title>{% block title %}Psico+{% endblock %}</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/7.0.1/css/all.min.css">
+
+    <script>
+        tailwind.config = {
+            theme: {
+                extend: {
+                    colors: {
+                        primary: "#6D4AFF",
+                        primaryDark: "#5737D8",
+                        primarySoft: "#EEE9FF",
+                        bgSoft: "#F7F5FF",
+                        sidebar: "#FFFFFF",
+                        borderSoft: "#E5E7EB",
+                        textMain: "#1F2937",
+                        textMuted: "#6B7280"
+                    },
+                    boxShadow: {
+                        soft: "0 18px 45px rgba(31,41,55,0.08)",
+                    },
+                    borderRadius: {
+                        xl2: "22px"
+                    }
+                }
+            }
+        }
+    </script>
+
+    {% block extra_css %}{% endblock %}
+</head>
+
+<body class="bg-bgSoft min-h-screen text-textMain">
+
+    <div class="flex min-h-screen bg-gradient-to-br from-[#FBFAFF] to-[#F6F4FF]">
+
+        {% include "shared/sidebar.html" %}
+
+        <main class="flex-1 {% if request.user.is_authenticated %}p-6 lg:p-7{% else %}px-6 py-6 lg:px-10 lg:py-8{% endif %}">
+
+            <div class="{% if request.user.is_authenticated %}mx-auto max-w-7xl{% else %}mx-auto flex h-full w-full max-w-[1200px] flex-col{% endif %}">
+
+                {% if request.user.is_authenticated %}
+                <div class="mb-5 flex items-center justify-between rounded-[18px] border border-borderSoft bg-white/82 px-5 py-4 shadow-soft backdrop-blur-xl">
+
+                    <div>
+                        <span class="text-[11px] font-bold uppercase tracking-[0.16em] text-primary">
+                            Painel
+                        </span>
+
+                        <h1 class="mt-1 text-[22px] font-extrabold tracking-[-0.03em] text-gray-900">
+                            {% block page_title %}Psico+{% endblock %}
+                        </h1>
+                    </div>
+
+                    <div class="flex items-center gap-3">
+
+                        {% if request.user.foto %}
+                        <img src="{{ request.user.foto.url }}" alt="{{ request.user.nome }}" class="h-10 w-10 rounded-xl object-cover shadow-lg">
+                        {% else %}
+                        <div class="flex h-10 w-10 items-center justify-center rounded-xl bg-gradient-to-br from-primary to-primaryDark text-sm font-extrabold text-white shadow-lg">
+                            {{ request.user.nome|slice:":1"|upper }}
+                        </div>
+                        {% endif %}
+
+                        <div class="leading-tight">
+                            <div class="text-[14px] font-bold">
+                                {{ request.user.nome }}
+                            </div>
+
+                            <div class="text-[12px] text-textMuted">
+                                {{ request.user.get_perfil_display }}
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                {% endif %}
+
+                {% include "shared/messages.html" %}
+
+                {% block content %}{% endblock %}
+
+            </div>
+        </main>
+    </div>
+
+    {% block extra_js %}{% endblock %}
+</body>
+</html>
