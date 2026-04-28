@@ -27,14 +27,12 @@ class PsicologoListView(LoginRequiredMixin, ListView):
         context["psicologos_inativos"] = sum(1 for psicologo in psicologos if not psicologo.ativo)
         return context
 
-class CadastroPsicologoView(LoginRequiredMixin, CreateView):
+class CadastroPsicologoView(CreateView):
     template_name = "accounts/cadastro_psicologo.html"
     form_class = CadastroPsicologoForm
-    success_url = reverse_lazy("psicologos")
-    login_url = reverse_lazy("login")
-
+    success_url = reverse_lazy("login")
     def form_valid(self, form):
-        messages.success(self.request, "Psicólogo cadastrado com sucesso.")
+        messages.success(self.request, "Sua conta foi criada com sucesso! Faça login para começar.")
         return super().form_valid(form)
 
 class LoginUsuarioView(LoginView):
@@ -43,16 +41,7 @@ class LoginUsuarioView(LoginView):
     authentication_form = LoginUsuarioForm
 
     def get_success_url(self):
-        user = self.request.user
-
-        if user.perfil == "psicologo":
-            return reverse_lazy("psicologos")
-
-        if user.perfil == "paciente":
-            return reverse_lazy("psicologos")
-
-        return reverse_lazy("login")
-
+        return reverse_lazy("psicologos")
 class LogoutUsuarioView(LogoutView):
     next_page = reverse_lazy("login")
 
