@@ -19,3 +19,9 @@ staticfiles/
 # IDEs
 .vscode/
 .idea/
+
+# virtual environments
+env/
+venv/
+ENV/
+.venv/

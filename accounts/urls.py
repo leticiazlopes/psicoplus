@@ -1,6 +1,6 @@
 from django.urls import path
-from .views import CadastroView
+from .views import CadastroPsicologoView
 
 urlpatterns = [
-    path('cadastro/', CadastroView.as_view(), name='cadastro_usuario'),
+    path("register/psicologo/", CadastroPsicologoView.as_view(), name="cadastro_psicologo"),
 ]
