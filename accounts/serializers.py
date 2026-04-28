@@ -1,6 +1,8 @@
 from rest_framework import serializers
 from django.db import transaction
 from .models import Usuario, Psicologo
+from rest_framework_simplejwt.serializers import TokenObtainPairSerializer
+
 
 
 class CadastroPsicologoSerializer(serializers.Serializer):
@@ -41,3 +43,27 @@ class CadastroPsicologoSerializer(serializers.Serializer):
         )
 
         return usuario
+
+class LoginSerializer(TokenObtainPairSerializer):
+    @classmethod
+    def get_token(cls, user):
+        token = super().get_token(user)
+
+        token["id"] = str(user.id)
+        token["nome"] = user.nome
+        token["email"] = user.email
+        token["perfil"] = user.perfil
+
+        return token
+
+    def validate(self, attrs):
+        data = super().validate(attrs)
+
+        data["usuario"] = {
+            "id": str(self.user.id),
+            "nome": self.user.nome,
+            "email": self.user.email,
+            "perfil": self.user.perfil,
+        }
+
+        return data

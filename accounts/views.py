@@ -1,8 +1,8 @@
 from rest_framework.views import APIView
 from rest_framework.response import Response
 from rest_framework import status
-from .serializers import CadastroPsicologoSerializer
-
+from .serializers import CadastroPsicologoSerializer, LoginSerializer
+from rest_framework_simplejwt.views import TokenObtainPairView
 
 class CadastroPsicologoView(APIView):
     permission_classes = []
@@ -26,3 +26,6 @@ class CadastroPsicologoView(APIView):
             )
 
         return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+    
+class LoginView(TokenObtainPairView):
+    serializer_class = LoginSerializer
