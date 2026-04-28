@@ -1,5 +1,5 @@
 from django.views.generic import CreateView
-from django.contrib.auth.views import LoginView
+from django.contrib.auth.views import LoginView, LogoutView
 from django.urls import reverse_lazy
 from django.contrib import messages
 
@@ -30,3 +30,10 @@ class LoginUsuarioView(LoginView):
             return ...
 
         return reverse_lazy("login")
+
+class LogoutUsuarioView(LogoutView):
+    next_page = reverse_lazy("login")
+
+    def dispatch(self, request, *args, **kwargs):
+        messages.success(request, "Logout realizado com sucesso.")
+        return super().dispatch(request, *args, **kwargs)
