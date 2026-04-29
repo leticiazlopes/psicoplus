@@ -1,0 +1,92 @@
+{% extends "shared/base.html" %}
+
+{% block title %}Pacientes | Psico+{% endblock %}
+{% block page_title %}Pacientes{% endblock %}
+
+{% block content %}
+<section class="space-y-6">
+    <div class="flex flex-col gap-4 lg:flex-row lg:items-center lg:justify-between">
+
+        <form method="GET" class="relative flex-1 max-w-md flex gap-2">
+            <span class="relative flex-1">
+                <i class="fa-solid fa-magnifying-glass absolute left-4 top-1/2 -translate-y-1/2 text-slate-400 text-[14px]"></i>
+                <input type="text" name="search" value="{{ request.GET.search }}" placeholder="Buscar paciente por nome..." 
+                    class="w-full rounded-2xl border border-white/70 bg-white/88 py-3 pl-11 pr-4 text-[14px] shadow-soft backdrop-blur-xl outline-none transition focus:border-primary/30 focus:ring-4 focus:ring-primary/5">
+            </span>
+            <button type="submit" class="inline-flex items-center gap-2 rounded-xl bg-gradient-to-r from-primary to-primaryDark px-4 py-2.5 text-[14px] font-semibold text-white shadow-[0_8px_16px_rgba(109,74,255,0.18)] transition hover:translate-y-[-1px]">
+                <i class="fa-solid fa-filter text-[14px]"></i>
+                Filtro
+            </button>
+        </form>
+
+        <a href="{% url 'cadastro_paciente' %}" class="inline-flex items-center justify-center gap-2 rounded-xl bg-gradient-to-r from-primary to-primaryDark px-5 py-3 text-[14px] font-semibold text-white shadow-[0_14px_28px_rgba(109,74,255,0.22)] transition hover:translate-y-[-1px]">
+            <i class="fa-solid fa-plus text-[12px]"></i>
+            Novo Paciente
+        </a>
+    </div>
+
+    <div class="rounded-[20px] border border-white/70 bg-white/88 p-5 shadow-soft backdrop-blur-xl lg:p-6">
+        <div class="overflow-hidden rounded-[16px] border border-slate-200">
+            <div class="hidden grid-cols-[minmax(0,1.5fr)_minmax(0,1fr)_minmax(0,1fr)_minmax(0,0.6fr)] gap-4 bg-slate-50/80 px-6 py-4 text-[12px] font-bold uppercase tracking-[0.18em] text-slate-400 lg:grid">
+                <span>Paciente</span>
+                <span>Contato / Emergência</span>
+                <span>Nascimento</span>
+                <span class="text-right">Ações</span>
+            </div>
+
+            <div class="divide-y divide-slate-100 bg-white">
+                {% for paciente in pacientes %}
+                <div class="grid gap-4 px-5 py-4 lg:grid-cols-[minmax(0,1.5fr)_minmax(0,1fr)_minmax(0,1fr)_minmax(0,0.6fr)] lg:px-6">
+                    <div class="flex items-center gap-4">
+                        <div class="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-gradient-to-br from-primarySoft to-white text-primary">
+                            <span class="text-[14px] font-black">{{ paciente.nome_completo|slice:":1"|upper }}</span>
+                        </div>
+                        <div class="min-w-0">
+                            <p class="truncate text-[14px] font-bold text-slate-900">{{ paciente.nome_completo }}</p>
+                            {% if paciente.ativo %}
+                                <span class="text-[11px] font-medium text-emerald-600">Ativo</span>
+                            {% else %}
+                                <span class="text-[11px] font-medium text-amber-600">Inativo</span>
+                            {% endif %}
+                        </div>
+                    </div>
+
+                    <div class="text-[13px] text-slate-600">
+                        <p class="font-semibold">{{ paciente.email }}</p>
+                        <p class="mt-1 text-slate-500">Emergência: {{ paciente.contato_emergencia_nome|default:"-" }}</p>
+                    </div>
+
+                    <div class="text-[13px] text-slate-600">
+                        <p>{{ paciente.data_nascimento|date:"d/m/Y"|default:"Não informada" }}</p>
+                    </div>
+
+                    <div class="flex items-center justify-end gap-2">
+                        <a href="{% url 'editar_paciente' paciente.pk %}" 
+                            class="flex h-9 w-9 items-center justify-center rounded-lg border border-slate-200 text-slate-400 transition hover:border-primary/30 hover:bg-primarySoft hover:text-primary" 
+                            title="Editar">
+                            <i class="fa-solid fa-pen-to-square text-[14px]"></i>
+                        </a>
+                        {% if paciente.ativo %}
+                        <a href="{% url 'inativar_paciente' paciente.pk %}"
+                            class="flex h-9 w-9 items-center justify-center rounded-lg border border-slate-200 text-slate-400 transition hover:border-rose-200 hover:bg-rose-50 hover:text-rose-600"
+                            onclick="return confirm('Deseja realmente inativar este paciente?')"
+                            title="Inativar">
+                            <i class="fa-solid fa-user-slash text-[14px]"></i>
+                        </a>
+                        {% else %}
+                        <span class="flex h-9 w-9 items-center justify-center rounded-lg border border-slate-200 bg-slate-100 text-slate-300 cursor-not-allowed" title="Paciente já inativado">
+                            <i class="fa-solid fa-user-slash text-[14px]"></i>
+                        </span>
+                        {% endif %}
+                    </div>
+                </div>
+                {% empty %}
+                <div class="px-6 py-12 text-center">
+                    <p class="text-slate-500">Nenhum paciente encontrado para essa busca.</p>
+                </div>
+                {% endfor %}
+            </div>
+        </div>
+    </div>
+</section>
+{% endblock %}
