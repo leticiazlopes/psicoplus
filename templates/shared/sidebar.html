@@ -29,7 +29,7 @@
                 Agenda
             </a>
 
-            <a href="#" class="group flex items-center gap-3 rounded-xl px-3 py-2.5 text-[14px] font-medium transition {% if active_page == 'pacientes' %}bg-primarySoft text-primary{% else %}text-slate-600 hover:bg-slate-50 hover:text-slate-900{% endif %}">
+            <a href="{% url 'pacientes_lista' %}" class="group flex items-center gap-3 rounded-xl px-3 py-2.5 text-[14px] font-medium transition {% if active_page == 'pacientes' %}bg-primarySoft text-primary{% else %}text-slate-600 hover:bg-slate-50 hover:text-slate-900{% endif %}">
                 <span class="flex h-8 w-8 items-center justify-center rounded-lg {% if active_page == 'pacientes' %}bg-white text-primary{% else %}text-slate-400{% endif %}">
                     <i class="fa-solid fa-user-group text-[14px]" aria-hidden="true"></i>
                 </span>
