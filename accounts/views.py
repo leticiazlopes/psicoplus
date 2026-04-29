@@ -1,10 +1,15 @@
-from django.views.generic import CreateView, ListView
+from django.views.generic import CreateView, ListView, UpdateView
 from django.contrib.auth.views import LoginView, LogoutView
 from django.urls import reverse_lazy
 from django.contrib import messages
 from django.contrib.auth.mixins import LoginRequiredMixin
-from .forms import CadastroPsicologoForm, LoginUsuarioForm
+from rest_framework import request
+from django.shortcuts import get_object_or_404, redirect
+from django.contrib import messages
+from .forms import CadastroPacienteForm, CadastroPsicologoForm, LoginUsuarioForm
 from .models import Psicologo
+from .models import Paciente
+
 
 
 class PsicologoListView(LoginRequiredMixin, ListView):
@@ -48,3 +53,43 @@ class LogoutUsuarioView(LogoutView):
     def dispatch(self, request, *args, **kwargs):
         messages.success(request, "Logout realizado com sucesso.")
         return super().dispatch(request, *args, **kwargs)
+
+class CadastroPacienteView(LoginRequiredMixin, CreateView):
+    model = Paciente
+    template_name = "accounts/cadastro_paciente.html"
+    form_class = CadastroPacienteForm 
+    success_url = reverse_lazy("pacientes_lista")
+    def form_valid(self, form):
+        form.instance.psicologo = self.request.user.psicologo
+        messages.success(self.request, "Paciente cadastrado com sucesso!")
+        return super().form_valid(form)
+
+class PacienteListView(LoginRequiredMixin, ListView):
+    model = Paciente
+    template_name = "accounts/pacientes_lista.html"
+    context_object_name = "pacientes"
+    def get_queryset(self):
+        queryset = Paciente.objects.filter(psicologo=self.request.user.psicologo)
+        search_query = self.request.GET.get('search')
+        if search_query:
+            queryset = queryset.filter(nome_completo__icontains=search_query)
+        return queryset.order_by('nome_completo')
+
+class PacienteUpdateView(LoginRequiredMixin, UpdateView):
+    model = Paciente
+    form_class = CadastroPacienteForm
+    template_name = "accounts/cadastro_paciente.html"
+    success_url = reverse_lazy("pacientes_lista")
+    def get_queryset(self):
+        return Paciente.objects.filter(psicologo=self.request.user.psicologo)
+
+    def form_valid(self, form):
+        messages.success(self.request, "Alterações salvas com sucesso!")
+        return super().form_valid(form)
+
+def inativar_paciente(request, pk):
+    paciente = get_object_or_404(Paciente, pk=pk, psicologo=request.user.psicologo)
+    paciente.ativo = False
+    paciente.save()
+    messages.success(request, "Paciente inativado com sucesso.")
+    return redirect("pacientes_lista")

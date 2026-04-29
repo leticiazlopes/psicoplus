@@ -3,6 +3,7 @@ from django.contrib.auth.forms import AuthenticationForm, UserCreationForm
 from django.db import transaction
 
 from .models import Usuario, Psicologo
+from .models import Paciente
 
 
 class LoginUsuarioForm(AuthenticationForm):
@@ -119,4 +120,43 @@ class CadastroPsicologoForm(UserCreationForm):
                 telefone=self.cleaned_data["telefone"]
             )
 
-        return usuario
+        return usuario  
+
+class CadastroPacienteForm(forms.ModelForm):
+    class Meta:
+        model = Paciente
+        fields = [
+            "nome_completo",
+            "email",
+            "telefone",
+            "data_nascimento",
+            "contato_emergencia_nome",
+            "contato_emergencia_telefone",
+        ]
+        widgets = {
+            "nome_completo": forms.TextInput(attrs={"placeholder": "Nome completo do paciente"}),
+            "email": forms.EmailInput(attrs={"placeholder": "email@paciente.com"}),
+            "telefone": forms.TextInput(attrs={"placeholder": "(83) 99999-9999"}),
+            "data_nascimento": forms.DateInput(attrs={"type": "date"}, format="%Y-%m-%d"),
+            "contato_emergencia_nome": forms.TextInput(attrs={"placeholder": "Nome do contato"}),
+            "contato_emergencia_telefone": forms.TextInput(attrs={"placeholder": "Telefone de emergência"}),
+        }
+
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        for field in self.fields.values():
+            field.widget.attrs.update({
+                "class": "w-full rounded-xl border border-slate-200 bg-white px-4 py-3 text-[14px] text-slate-900 outline-none transition placeholder:text-slate-400 focus:border-primary focus:ring-4 focus:ring-primary/10"
+            })
+
+    def clean_email(self):
+        email = self.cleaned_data.get("email")
+        pacientes_com_esse_email = Paciente.objects.filter(email=email)
+        
+        if self.instance.pk:
+            pacientes_com_esse_email = pacientes_com_esse_email.exclude(pk=self.instance.pk)
+            
+        if pacientes_com_esse_email.exists():
+            raise forms.ValidationError("Este e-mail já está em uso por outro paciente.")
+            
+        return email
