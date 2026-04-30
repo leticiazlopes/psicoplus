@@ -1,5 +1,5 @@
 from django.urls import path
-from .views import CadastroPsicologoView, LoginUsuarioView, LogoutUsuarioView, PsicologoListView, CadastroPacienteView, PacienteListView, inativar_paciente, PacienteUpdateView
+from .views import CadastroPsicologoView, LoginUsuarioView, LogoutUsuarioView, PsicologoListView, CadastroPacienteView, PacienteListView, inativar_paciente, ativar_paciente, PacienteUpdateView
 
 urlpatterns = [
     path("psicologos/", PsicologoListView.as_view(), name="psicologos"),
@@ -9,5 +9,6 @@ urlpatterns = [
     path("pacientes/", PacienteListView.as_view(), name="pacientes_lista"),
     path("pacientes/cadastrar/", CadastroPacienteView.as_view(), name="cadastro_paciente"),
     path("pacientes/<uuid:pk>/inativar/", inativar_paciente, name="inativar_paciente"),
+    path("pacientes/<uuid:pk>/ativar/", ativar_paciente, name="ativar_paciente"),
     path("pacientes/<uuid:pk>/editar/", PacienteUpdateView.as_view(), name="editar_paciente"),
 ]

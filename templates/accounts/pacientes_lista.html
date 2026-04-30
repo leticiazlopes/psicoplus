@@ -67,26 +67,64 @@
                             <i class="fa-solid fa-pen-to-square text-[14px]"></i>
                         </a>
                         {% if paciente.ativo %}
-                        <a href="{% url 'inativar_paciente' paciente.pk %}"
-                            class="flex h-9 w-9 items-center justify-center rounded-lg border border-slate-200 text-slate-400 transition hover:border-rose-200 hover:bg-rose-50 hover:text-rose-600"
-                            onclick="return confirm('Deseja realmente inativar este paciente?')"
-                            title="Inativar">
-                            <i class="fa-solid fa-user-slash text-[14px]"></i>
-                        </a>
+                            <button type="button"
+                                class="flex h-9 w-9 items-center justify-center rounded-lg border border-slate-200 text-slate-400 transition hover:border-rose-200 hover:bg-rose-50 hover:text-rose-600"
+                                onclick="openInativarModal('{% url 'inativar_paciente' paciente.pk %}')"
+                                title="Inativar">
+                                <i class="fa-solid fa-user-slash text-[14px]"></i>
+                            </button>
                         {% else %}
-                        <span class="flex h-9 w-9 items-center justify-center rounded-lg border border-slate-200 bg-slate-100 text-slate-300 cursor-not-allowed" title="Paciente já inativado">
-                            <i class="fa-solid fa-user-slash text-[14px]"></i>
-                        </span>
+                            <form action="{% url 'ativar_paciente' paciente.pk %}" method="POST" class="inline">
+                                {% csrf_token %}
+                                <button type="submit" 
+                                    class="flex items-center gap-2 rounded-lg border border-emerald-200 bg-emerald-50 px-3 py-1.5 text-[11px] font-bold text-emerald-700 transition hover:bg-emerald-100"
+                                    title="Reativar Paciente">
+                                    <i class="fa-solid fa-user-check"></i>
+                                    REATIVAR
+                                </button>
+                            </form>
                         {% endif %}
                     </div>
                 </div>
                 {% empty %}
-                <div class="px-6 py-12 text-center">
-                    <p class="text-slate-500">Nenhum paciente encontrado para essa busca.</p>
-                </div>
+                <p class="px-5 py-10 text-center text-[14px] text-slate-500">Nenhum paciente encontrado.</p>
                 {% endfor %}
             </div>
         </div>
     </div>
 </section>
+
+<div id="modal-inativar" class="fixed inset-0 z-50 flex items-center justify-center bg-black/30 hidden">
+    <div class="bg-white rounded-2xl shadow-xl p-8 max-w-sm w-full">
+        <div class="flex flex-col items-center text-center">
+            <div class="flex h-12 w-12 items-center justify-center rounded-xl bg-rose-100 text-rose-600 mb-4">
+                <i class="fa-solid fa-user-slash text-2xl"></i>
+            </div>
+            <h2 class="text-lg font-bold mb-2">Inativar paciente</h2>
+            <p class="text-slate-600 mb-6">Deseja realmente inativar este paciente?</p>
+            
+            <div class="flex gap-3 w-full">
+                <button onclick="closeInativarModal()" type="button" class="flex-1 rounded-xl border border-slate-200 bg-slate-100 px-4 py-2 font-semibold text-slate-600 transition hover:bg-slate-200">
+                    Cancelar
+                </button>
+                <form id="form-inativar" method="POST" class="flex-1">
+                    {% csrf_token %}
+                    <button type="submit" class="w-full rounded-xl bg-gradient-to-r from-rose-500 to-rose-600 px-4 py-2 font-semibold text-white transition hover:from-rose-600 hover:to-rose-700">
+                        Inativar
+                    </button>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+    function openInativarModal(url) {
+        document.getElementById('modal-inativar').classList.remove('hidden');
+        document.getElementById('form-inativar').setAttribute('action', url);
+    }
+    function closeInativarModal() {
+        document.getElementById('modal-inativar').classList.add('hidden');
+    }
+</script>
 {% endblock %}

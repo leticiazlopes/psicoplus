@@ -5,6 +5,7 @@ from django.contrib import messages
 from django.contrib.auth.mixins import LoginRequiredMixin
 from django.shortcuts import get_object_or_404, redirect
 from django.contrib import messages
+from rest_framework import request
 from .forms import CadastroPacienteForm, CadastroPsicologoForm, LoginUsuarioForm
 from .models import Psicologo
 from .models import Paciente
@@ -94,4 +95,11 @@ def inativar_paciente(request, pk):
     paciente.ativo = False
     paciente.save()
     messages.success(request, "Paciente inativado com sucesso.")
+    return redirect("pacientes_lista")
+
+def ativar_paciente(request, pk):
+    paciente = get_object_or_404(Paciente, pk=pk, psicologo=request.user.psicologo)
+    paciente.ativo = True
+    paciente.save()
+    messages.success(request, "Paciente ativado com sucesso.")  
     return redirect("pacientes_lista")
