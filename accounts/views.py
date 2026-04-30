@@ -3,12 +3,12 @@ from django.contrib.auth.views import LoginView, LogoutView
 from django.urls import reverse_lazy
 from django.contrib import messages
 from django.contrib.auth.mixins import LoginRequiredMixin
-from rest_framework import request
 from django.shortcuts import get_object_or_404, redirect
 from django.contrib import messages
 from .forms import CadastroPacienteForm, CadastroPsicologoForm, LoginUsuarioForm
 from .models import Psicologo
 from .models import Paciente
+from .models import Usuario
 
 
 
@@ -46,7 +46,9 @@ class LoginUsuarioView(LoginView):
     authentication_form = LoginUsuarioForm
 
     def get_success_url(self):
-        return reverse_lazy("psicologos")
+        user = self.request.user
+        if user.perfil == Usuario.Perfil.PSICOLOGO:
+            return reverse_lazy("pacientes_lista")
 class LogoutUsuarioView(LogoutView):
     next_page = reverse_lazy("login")
 
