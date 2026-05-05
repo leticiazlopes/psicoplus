@@ -1,6 +1,4 @@
-Aqui tens o conteúdo do ficheiro `README.md` estruturado de forma profissional, destacando a qualidade técnica e os resultados de cobertura que alcançaste.
 
-```markdown
 # Psico+ 🧠
 
 O Psico+ é um sistema de gestão clínica desenhado especificamente para psicólogos. O foco principal do projeto é a **segurança de dados**, a **privacidade dos pacientes** e a **rastreabilidade das informações**, utilizando as melhores práticas de desenvolvimento com o framework Django.
