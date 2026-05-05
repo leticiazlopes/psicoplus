@@ -110,8 +110,3 @@ def ativar_paciente(request, pk):
     paciente.save()
     messages.success(request, "Paciente ativado com sucesso.")  
     return redirect("pacientes_lista")
-
-from django.shortcuts import render
-
-def error_405_view(request, exception=None):
-    return render(request, '405.html', status=405)

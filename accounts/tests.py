@@ -58,13 +58,22 @@ class PacienteViewTests(TestCase):
 
     # --- TESTES DE CADASTRO E UPDATE ---
 
-    def test_cadastro_paciente_post(self):
+    def test_cadastro_paciente_post_completo(self):
         self.client.force_login(self.user)
-        dados = {'nome_completo': 'Novo Paciente', 'email': 'paciente_novo@teste.com'}
+        dados = {
+            'nome_completo': 'Novo Paciente',
+            'email': 'paciente_novo@teste.com',
+            'telefone': '11777777777',
+            'data_nascimento': '1995-05-20',
+            'contato_emergencia_nome': 'Maria Mãe',
+            'contato_emergencia_telefone': '11666666666'
+        }
         
         response = self.client.post(reverse('cadastro_paciente'), data=dados)
         self.assertEqual(response.status_code, 302)
-        self.assertTrue(Paciente.objects.filter(nome_completo='Novo Paciente').exists())
+        
+        novo_p = Paciente.objects.get(nome_completo='Novo Paciente')
+        self.assertEqual(novo_p.contato_emergencia_nome, 'Maria Mãe')
 
     def test_update_paciente(self):
         self.client.force_login(self.user)
@@ -74,6 +83,15 @@ class PacienteViewTests(TestCase):
         response = self.client.post(url, data=dados)
         self.paciente.refresh_from_db()
         self.assertEqual(self.paciente.nome_completo, 'Nome Alterado')
+        
+    def test_cadastro_paciente_email_invalido(self):
+        self.client.force_login(self.user)
+        dados = {'nome_completo': 'Teste', 'email': 'email-errado'}
+        response = self.client.post(reverse('cadastro_paciente'), data=dados)
+        
+        self.assertEqual(response.status_code, 200)
+        # Remova o hífen de "e-mail"
+        self.assertFormError(response.context['form'], 'email', 'Informe um endereço de email válido.')
 
     # --- TESTES DE STATUS (ATIVAR/INATIVAR) ---
 
@@ -129,7 +147,6 @@ class PacienteViewTests(TestCase):
         """Testa se o redirecionamento para o login ocorre ao tentar acessar sem estar logado"""
         self.client.logout()
         response = self.client.get(reverse('pacientes_lista'))
-        # O Django redireciona com o parâmetro ?next=
         self.assertEqual(response.status_code, 302)
         self.assertIn(reverse('login'), response.url)
         
