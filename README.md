@@ -89,4 +89,3 @@ coverage report
 | `accounts/views.py` | 91% |
 | `accounts/forms.py` | 84% |
 | **TOTAL** | **91%** |
-```
