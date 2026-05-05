@@ -5,11 +5,12 @@ from django.contrib import messages
 from django.contrib.auth.mixins import LoginRequiredMixin
 from django.shortcuts import get_object_or_404, redirect
 from django.contrib import messages
-from rest_framework import request
 from .forms import CadastroPacienteForm, CadastroPsicologoForm, LoginUsuarioForm
 from .models import Psicologo
 from .models import Paciente
 from .models import Usuario
+from django.views.decorators.http import require_POST
+from django.utils.decorators import method_decorator
 
 
 
@@ -50,12 +51,18 @@ class LoginUsuarioView(LoginView):
         user = self.request.user
         if user.perfil == Usuario.Perfil.PSICOLOGO:
             return reverse_lazy("pacientes_lista")
+        
+@method_decorator(require_POST, name='dispatch')
 class LogoutUsuarioView(LogoutView):
     next_page = reverse_lazy("login")
 
-    def dispatch(self, request, *args, **kwargs):
+    def post(self, request, *args, **kwargs):
+        """
+        Sobrescrevemos o post para adicionar a mensagem de sucesso 
+        antes de processar o encerramento da sessão.
+        """
         messages.success(request, "Logout realizado com sucesso.")
-        return super().dispatch(request, *args, **kwargs)
+        return super().post(request, *args, **kwargs)
 
 class CadastroPacienteView(LoginRequiredMixin, CreateView):
     model = Paciente
@@ -103,3 +110,8 @@ def ativar_paciente(request, pk):
     paciente.save()
     messages.success(request, "Paciente ativado com sucesso.")  
     return redirect("pacientes_lista")
+
+from django.shortcuts import render
+
+def error_405_view(request, exception=None):
+    return render(request, '405.html', status=405)
