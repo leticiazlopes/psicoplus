@@ -6,6 +6,8 @@ O Psico+ é um sistema de gestão clínica desenhado especificamente para psicó
 ![Django](https://img.shields.io/badge/Django-4.2-092e20?style=for-the-badge&logo=django)
 ![Python](https://img.shields.io/badge/Python-3.9-3776ab?style=for-the-badge&logo=python)
 ![Coverage](https://img.shields.io/badge/Coverage-91%25-brightgreen?style=for-the-badge)
+![Status](https://img.shields.io/badge/Sprint-1%20of%205-blue?style=for-the-badge)
+![Status](https://img.shields.io/badge/Ciclo-1%20(Entrega)-orange?style=for-the-badge)
 
 ---
 
@@ -17,21 +19,6 @@ O Psico+ é um sistema de gestão clínica desenhado especificamente para psicó
   - Listagem com filtros de busca dinâmica.
   - Edição via interface amigável.
   - Inativação de registos (Soft Delete).
-- **Segurança de Acesso:** Handlers customizados para erros 404 e 405, garantindo que o utilizador nunca veja páginas técnicas do servidor.
-
----
-
-## 🛡️ Decisões de Arquitetura
-
-### 1. Identificadores Únicos (UUID)
-Para evitar que IDs sequenciais sejam expostos nas URLs (o que facilitaria ataques de enumeração), todos os modelos utilizam **UUID v4** como chave primária.
-
-### 2. Autenticação Stateful
-O projeto utiliza o sistema de sessões nativo do Django com proteção **CSRF (Cross-Site Request Forgery)**, ideal para aplicações que utilizam Django Templates, garantindo segurança robusta sem a complexidade desnecessária de JWT para este cenário.
-
-### 3. Isolamento de Dados
-Implementada lógica de filtragem ao nível do QuerySet, garantindo que um psicólogo **apenas** consiga visualizar, editar ou remover os seus próprios pacientes.
-
 ---
 
 ## 🧪 Qualidade de Código e Testes
@@ -72,20 +59,12 @@ O projeto conta com uma suite de testes automatizados utilizando `pytest` e `uni
    python manage.py runserver
    ```
 
----
+## 📈 Histórico de Ciclos
 
-## 📊 Relatório de Cobertura (Coverage)
-
-Para gerar o relatório de cobertura atualizado:
-
-```bash
-coverage run -m pytest
-coverage report
-```
-
-| Módulo | Cobertura |
-| :--- | :--- |
-| `accounts/models.py` | 93% |
-| `accounts/views.py` | 91% |
-| `accounts/forms.py` | 84% |
-| **TOTAL** | **91%** |
+| Ciclo | Sprint | Status | Principais Entregas |
+| :--- | :--- | :--- | :--- |
+| **1** | **S1** | ✅ Concluído | Auth, Cadastro de Psicólogo e CRUD de Pacientes. |
+| 2 | S2 | ⏳ Planejado | Gestão de Agenda e Horários. |
+| 3 | S3 | ⏳ Planejado | Módulo de Prontuários Eletrônicos. |
+| 4 | S4 | ⏳ Planejado | Controle Financeiro. |
+| 5 | S5 | ⏳ Planejado | Dashboards e Deploy Final. |
