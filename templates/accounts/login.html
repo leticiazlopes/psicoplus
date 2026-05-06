@@ -1,130 +1,201 @@
-{% extends "shared/base.html" %} {% block title %}Login | Psico+{% endblock %}
-{% block content %}
-<section class="flex flex-1 items-center py-4 lg:py-0">
-  <div
-    class="grid w-full items-center gap-10 lg:grid-cols-[minmax(0,1fr)_500px]"
-  >
-    <div class="hidden max-w-[420px] lg:block">
-      <h1
-        class="text-[40px] font-black leading-[1.02] tracking-[-0.07em] text-slate-900"
-      >
-        Gestão que acolhe, cuida e organiza.
-      </h1>
-      <p class="mt-6 text-[17px] leading-9 text-slate-600">
-        Mais tempo para o que importa: cuidar das pessoas, acompanhar
-        atendimentos e manter sua rotina clínica leve.
-      </p>
+{% load static %}
+<!DOCTYPE html>
+<html lang="pt-br">
+<head>
+    <meta charset="UTF-8">
+    <title>Login | Psico+</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/7.0.1/css/all.min.css">
+
+    <script>
+        tailwind.config = {
+            theme: {
+                extend: {
+                    colors: {
+                        primary: "#6D4AFF",
+                        primaryDark: "#5737D8",
+                        primarySoft: "#EEE9FF",
+                        borderSoft: "#E7E9F2",
+                        textMuted: "#667085",
+                    },
+                    boxShadow: {
+                        soft: "0 18px 45px rgba(31,41,55,0.08)",
+                    }
+                }
+            }
+        }
+    </script>
+</head>
+<body class="h-screen overflow-hidden bg-[#f7f5ff] p-4 text-slate-900 lg:p-5">
+    <div class="mx-auto flex h-[calc(100vh-2rem)] max-w-[1400px] overflow-hidden rounded-[28px] border border-white/70 bg-white shadow-soft lg:h-[calc(100vh-2.5rem)]">
+        <section class="hidden h-full w-1/2 flex-col justify-between overflow-hidden bg-gradient-to-br from-[#f3efff] via-[#f6f3ff] to-[#f7f6ff] px-10 py-10 xl:px-12 xl:py-11 lg:flex">
+            <div>
+                <div class="flex items-center gap-4">
+                    <div class="flex h-16 w-16 items-center justify-center rounded-[20px] bg-white text-primary shadow-[0_16px_40px_rgba(109,74,255,0.12)]">
+                        <i class="fa-solid fa-brain text-[30px]"></i>
+                    </div>
+
+                    <h1 class="text-[42px] font-black tracking-[-0.06em] text-slate-900">
+                        Psico<span class="text-primary">+</span>
+                    </h1>
+                </div>
+
+                <div class="mt-10 max-w-[320px]">
+                    <p class="text-[18px] font-bold leading-8 text-slate-900">
+                        Gestão que acolhe.
+                    </p>
+                    <p class="mt-2 text-[17px] leading-8 text-slate-800">
+                        Mais tempo para o que importa:
+                        <span class="font-semibold text-primary">cuidar de pessoas.</span>
+                    </p>
+                </div>
+            </div>
+
+            <div class="flex flex-1 items-center justify-center py-4">
+                <img src="{% static 'img/accounts/login.png' %}" alt="Ilustração da tela de login Psico+" class="w-full max-w-[390px] xl:max-w-[430px]">
+            </div>
+
+            <div class="grid grid-cols-3 gap-5 border-t border-primary/10 pt-5 text-center">
+                <div class="flex flex-col items-center">
+                    <div class="flex h-11 w-11 items-center justify-center rounded-full bg-white text-primary shadow-sm">
+                        <i class="fa-regular fa-shield text-[17px]"></i>
+                    </div>
+                    <p class="mt-3 text-[13px] leading-5 text-slate-600">Seguro e confiável</p>
+                </div>
+
+                <div class="flex flex-col items-center">
+                    <div class="flex h-11 w-11 items-center justify-center rounded-full bg-white text-primary shadow-sm">
+                        <i class="fa-solid fa-lock text-[17px]"></i>
+                    </div>
+                    <p class="mt-3 text-[13px] leading-5 text-slate-600">Seus dados protegidos</p>
+                </div>
+
+                <div class="flex flex-col items-center">
+                    <div class="flex h-11 w-11 items-center justify-center rounded-full bg-white text-primary shadow-sm">
+                        <i class="fa-solid fa-cloud text-[17px]"></i>
+                    </div>
+                    <p class="mt-3 text-[13px] leading-5 text-slate-600">Acesse de onde estiver</p>
+                </div>
+            </div>
+        </section>
+
+        <section class="flex h-full w-full items-center justify-center overflow-hidden bg-white px-6 py-6 lg:w-1/2 lg:px-10">
+            <div class="w-full max-w-[430px]">
+                {% if messages %}
+                <div class="mb-4 space-y-3">
+                    {% for message in messages %}
+                    <div class="rounded-[16px] border px-4 py-3.5 shadow-[0_14px_28px_rgba(15,23,42,0.05)] {% if 'success' in message.tags %}border-emerald-200 bg-emerald-50/90{% elif 'error' in message.tags %}border-rose-200 bg-rose-50/90{% elif 'warning' in message.tags %}border-amber-200 bg-amber-50/90{% else %}border-sky-200 bg-sky-50/90{% endif %}">
+                        <div class="flex items-start gap-3">
+                            <div class="mt-0.5 flex h-10 w-10 shrink-0 items-center justify-center rounded-xl {% if 'success' in message.tags %}bg-emerald-100 text-emerald-600{% elif 'error' in message.tags %}bg-rose-100 text-rose-600{% elif 'warning' in message.tags %}bg-amber-100 text-amber-600{% else %}bg-sky-100 text-sky-600{% endif %}">
+                                {% if 'success' in message.tags %}
+                                <i class="fa-solid fa-circle-check text-[18px]"></i>
+                                {% elif 'error' in message.tags %}
+                                <i class="fa-solid fa-circle-xmark text-[18px]"></i>
+                                {% elif 'warning' in message.tags %}
+                                <i class="fa-solid fa-triangle-exclamation text-[18px]"></i>
+                                {% else %}
+                                <i class="fa-solid fa-circle-info text-[18px]"></i>
+                                {% endif %}
+                            </div>
+
+                            <div class="flex-1">
+                                <p class="text-[14px] font-bold {% if 'success' in message.tags %}text-emerald-900{% elif 'error' in message.tags %}text-rose-900{% elif 'warning' in message.tags %}text-amber-900{% else %}text-sky-900{% endif %}">
+                                    {% if 'success' in message.tags %}Tudo certo{% elif 'error' in message.tags %}Algo precisa de atenção{% elif 'warning' in message.tags %}Atenção{% else %}Aviso{% endif %}
+                                </p>
+                                <p class="mt-1 text-[14px] leading-6 {% if 'success' in message.tags %}text-emerald-800{% elif 'error' in message.tags %}text-rose-800{% elif 'warning' in message.tags %}text-amber-800{% else %}text-sky-800{% endif %}">
+                                    {{ message }}
+                                </p>
+                            </div>
+                        </div>
+                    </div>
+                    {% endfor %}
+                </div>
+                {% endif %}
+
+                <div class="rounded-[20px] border border-borderSoft bg-white px-7 py-7 shadow-[0_12px_30px_rgba(15,23,42,0.06)]">
+                    <div class="mb-6">
+                        <h2 class="text-[28px] font-black tracking-[-0.05em] text-slate-900">
+                            Bem-vindo(a)! <span class="text-primary">♡</span>
+                        </h2>
+                        <p class="mt-2 text-[14px] text-textMuted">
+                            Entre para acessar o <span class="font-semibold text-primary">Psico+</span>
+                        </p>
+                    </div>
+
+                    <form method="post" novalidate class="space-y-4">
+                        {% csrf_token %}
+
+                        {% if form.non_field_errors %}
+                        <div class="rounded-[14px] border border-rose-200 bg-rose-50 px-4 py-3 text-[14px] text-rose-700">
+                            {% for error in form.non_field_errors %}
+                            <p>{{ error }}</p>
+                            {% endfor %}
+                        </div>
+                        {% endif %}
+
+                        <div>
+                            <label for="{{ form.username.id_for_label }}" class="mb-2 block text-[13px] font-bold text-slate-700">E-mail</label>
+                            <div class="relative">
+                                <span class="pointer-events-none absolute inset-y-0 left-0 flex items-center pl-4 text-slate-400">
+                                    <i class="fa-regular fa-envelope text-[14px]"></i>
+                                </span>
+                                {{ form.username }}
+                            </div>
+                            {% if form.username.errors %}
+                            <div class="mt-2 space-y-1 text-[13px] text-rose-600">
+                                {% for error in form.username.errors %}
+                                <p>{{ error }}</p>
+                                {% endfor %}
+                            </div>
+                            {% endif %}
+                        </div>
+
+                        <div>
+                            <label for="{{ form.password.id_for_label }}" class="mb-2 block text-[13px] font-bold text-slate-700">Senha</label>
+                            <div class="relative">
+                                <span class="pointer-events-none absolute inset-y-0 left-0 flex items-center pl-4 text-slate-400">
+                                    <i class="fa-solid fa-lock text-[14px]"></i>
+                                </span>
+                                {{ form.password }}
+                                <button type="button" class="absolute inset-y-0 right-0 flex items-center pr-4 text-slate-400" aria-label="Visualizar senha">
+                                    <i class="fa-regular fa-eye text-[14px]"></i>
+                                </button>
+                            </div>
+                            <div class="mt-2 flex justify-end">
+                                <span class="text-[12px] font-semibold text-primary">Esqueci minha senha</span>
+                            </div>
+                            {% if form.password.errors %}
+                            <div class="mt-2 space-y-1 text-[13px] text-rose-600">
+                                {% for error in form.password.errors %}
+                                <p>{{ error }}</p>
+                                {% endfor %}
+                            </div>
+                            {% endif %}
+                        </div>
+
+                        <button type="submit" class="inline-flex w-full items-center justify-center gap-2 rounded-[12px] bg-gradient-to-r from-primary to-primaryDark px-5 py-3.5 text-[15px] font-semibold text-white shadow-[0_16px_30px_rgba(109,74,255,0.24)]">
+                            <i class="fa-regular fa-user text-[14px]"></i>
+                            Entrar
+                        </button>
+
+                        <div class="mt-6 flex flex-col items-center gap-3 border-t border-slate-100 pt-5">
+                            <p class="text-[14px] text-slate-500">
+                                Ainda não tem uma conta?
+                                <a href="{% url 'cadastro_psicologo' %}" class="font-bold text-primary hover:underline">
+                                    Cadastre-se como psicólogo
+                                </a>
+                            </p>
+                        </div>
+
+                        <div class="pt-1 text-center text-[13px] text-slate-400">
+                            Ambiente seguro para acesso da equipe clínica.
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </section>
     </div>
-
-    <div
-      class="w-full max-w-[500px] rounded-[24px] border border-white/80 bg-white/92 p-7 shadow-[0_24px_60px_rgba(109,74,255,0.10)] backdrop-blur-xl sm:p-8 lg:ml-auto"
-    >
-      <div class="mb-7">
-        <div
-          class="inline-flex h-12 w-12 items-center justify-center rounded-[14px] bg-primarySoft text-primary shadow-[0_10px_24px_rgba(109,74,255,0.10)]"
-        >
-          <i class="fa-solid fa-user-lock text-[19px]"></i>
-        </div>
-
-        <h2
-          class="mt-5 text-[32px] font-black tracking-[-0.06em] text-slate-900"
-        >
-          Bem-vindo(a)!
-        </h2>
-        <p class="mt-3 max-w-[360px] text-[15px] leading-7 text-slate-500">
-          Entre para acessar o Psico+ e acompanhar sua rotina clínica com
-          leveza.
-        </p>
-      </div>
-
-      <form method="post" novalidate class="space-y-5">
-        {% csrf_token %} {% if form.non_field_errors %}
-        <div
-          class="rounded-2xl border border-rose-200 bg-rose-50 px-4 py-3 text-[14px] text-rose-700"
-        >
-          {% for error in form.non_field_errors %}
-          <p>{{ error }}</p>
-          {% endfor %}
-        </div>
-        {% endif %}
-
-        <div>
-          <label
-            for="{{ form.username.id_for_label }}"
-            class="mb-2.5 block text-[13px] font-bold text-slate-600"
-            >E-mail</label
-          >
-          <div class="relative">
-            <span
-              class="pointer-events-none absolute inset-y-0 left-0 flex items-center pl-4 text-slate-400"
-            >
-              <i class="fa-regular fa-envelope text-[15px]"></i>
-            </span>
-            {{ form.username }}
-          </div>
-          {% if form.username.errors %}
-          <div class="mt-2 space-y-1 text-[13px] text-rose-600">
-            {% for error in form.username.errors %}
-            <p>{{ error }}</p>
-            {% endfor %}
-          </div>
-          {% endif %}
-        </div>
-
-        <div>
-          <div class="mb-2.5 flex items-center justify-between gap-3">
-            <label
-              for="{{ form.password.id_for_label }}"
-              class="block text-[13px] font-bold text-slate-600"
-              >Senha</label
-            >
-            <span class="text-[12px] font-semibold text-primary"
-              >Esqueci minha senha</span
-            >
-          </div>
-          <div class="relative">
-            <span
-              class="pointer-events-none absolute inset-y-0 left-0 flex items-center pl-4 text-slate-400"
-            >
-              <i class="fa-solid fa-lock text-[15px]"></i>
-            </span>
-            {{ form.password }}
-          </div>
-          {% if form.password.errors %}
-          <div class="mt-2 space-y-1 text-[13px] text-rose-600">
-            {% for error in form.password.errors %}
-            <p>{{ error }}</p>
-            {% endfor %}
-          </div>
-          {% endif %}
-        </div>
-
-        <button
-          type="submit"
-          class="inline-flex w-full items-center justify-center gap-2 rounded-[14px] bg-gradient-to-r from-primary to-primaryDark px-5 py-3.5 text-[15px] font-semibold text-white shadow-[0_18px_34px_rgba(109,74,255,0.24)] transition hover:translate-y-[-1px]"
-        >
-          <i class="fa-solid fa-right-to-bracket text-[14px]"></i>
-          Entrar
-        </button>
-
-        <div
-          class="mt-8 flex flex-col items-center gap-4 border-t border-slate-100 pt-7"
-        >
-          <p class="text-[14px] text-slate-500">
-            Ainda não tem uma conta?
-            <a
-              href="{% url 'cadastro_psicologo' %}"
-              class="font-bold text-primary hover:underline"
-            >
-              Cadastre-se como psicólogo
-            </a>
-          </p>
-        </div>
-
-        <div class="pt-1 text-center text-[13px] text-slate-400">
-          Ambiente seguro para acesso da equipe clínica.
-        </div>
-    </div>
-  </div>
-</section>
-{% endblock %}
+</body>
+</html>
