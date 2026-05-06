@@ -5,12 +5,14 @@ from django.contrib import messages
 from django.contrib.auth.mixins import LoginRequiredMixin
 from django.shortcuts import get_object_or_404, redirect
 from django.contrib import messages
-from .forms import CadastroPacienteForm, CadastroPsicologoForm, LoginUsuarioForm
+from .forms import CadastroPacienteForm, CadastroPsicologoForm, LoginUsuarioForm, MeuPerfilForm
 from .models import Psicologo
 from .models import Paciente
 from .models import Usuario
 from django.views.decorators.http import require_POST
 from django.utils.decorators import method_decorator
+from django.contrib.messages.views import SuccessMessageMixin
+
 
 
 
@@ -41,6 +43,22 @@ class CadastroPsicologoView(CreateView):
     def form_valid(self, form):
         messages.success(self.request, "Sua conta foi criada com sucesso! Faça login para começar.")
         return super().form_valid(form)
+    
+class MeuPerfilUpdateView(LoginRequiredMixin, SuccessMessageMixin, UpdateView):
+    model = Psicologo
+    form_class = MeuPerfilForm
+    template_name = "accounts/meu_perfil.html"
+    success_url = reverse_lazy("pacientes_lista")
+    success_message = "Seu perfil foi atualizado com sucesso!"
+
+    def get_object(self, queryset=None):
+        return get_object_or_404(Psicologo, usuario=self.request.user)
+
+    def get_form_kwargs(self):
+        # Garante que o formulário saiba quem é o usuário para validar e-mails duplicados, etc.
+        kwargs = super().get_form_kwargs()
+        kwargs['user'] = self.request.user
+        return kwargs
 
 class LoginUsuarioView(LoginView):
     template_name = "accounts/login.html"

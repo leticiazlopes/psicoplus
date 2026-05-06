@@ -1,6 +1,7 @@
 from django import forms
 from django.contrib.auth.forms import AuthenticationForm, UserCreationForm
 from django.db import transaction
+from django.contrib.auth.hashers import check_password
 
 from .models import Usuario, Psicologo
 from .models import Paciente
@@ -123,6 +124,8 @@ class CadastroPsicologoForm(UserCreationForm):
         return usuario  
 
 class CadastroPacienteForm(forms.ModelForm):
+    
+
     class Meta:
         model = Paciente
         fields = [
@@ -160,3 +163,47 @@ class CadastroPacienteForm(forms.ModelForm):
             raise forms.ValidationError("Este e-mail já está em uso por outro paciente.")
             
         return email
+
+class MeuPerfilForm(forms.ModelForm):
+    nome = forms.CharField(label="Nome Completo")
+    email = forms.EmailField(label="E-mail")
+    senha_atual = forms.CharField(
+        label="Senha Atual para Confirmar", 
+        widget=forms.PasswordInput(attrs={'placeholder': 'Digite sua senha atual'})
+    )
+    
+    # Adicione estes dois se quiser permitir a troca no mesmo form, 
+    # OU mantenha apenas a lógica de segurança se for usar a página separada.
+    # Se for usar a página separada, apenas garanta que o save() não altere senhas.
+
+    class Meta:
+        model = Psicologo
+        fields = ["crp", "telefone"]
+
+    def __init__(self, *args, **kwargs):
+        self.user = kwargs.pop('user', None)
+        super().__init__(*args, **kwargs)
+        # ... (sua estilização de classes aqui) ...
+        if self.instance and self.instance.usuario:
+            self.fields["nome"].initial = self.instance.usuario.nome
+            self.fields["email"].initial = self.instance.usuario.email
+
+    def clean_senha_atual(self):
+        senha = self.cleaned_data.get("senha_atual")
+        if not check_password(senha, self.user.password):
+            # ISSO AQUI impede que o form seja válido e salva o banco!
+            raise forms.ValidationError("A senha atual está incorreta. As alterações não foram salvas.")
+        return senha
+
+    @transaction.atomic
+    def save(self, commit=True):
+        p = super().save(commit=False)
+        user = p.usuario
+        user.nome = self.cleaned_data["nome"]
+        user.email = self.cleaned_data["email"]
+        user.username = self.cleaned_data["email"]
+        
+        if commit:
+            user.save()
+            p.save()
+        return p
