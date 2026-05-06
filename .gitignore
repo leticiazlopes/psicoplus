@@ -10,7 +10,6 @@ env/
 db.sqlite3
 .env
 media/
-static/
 staticfiles/
 
 # macOS
