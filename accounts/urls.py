@@ -32,4 +32,5 @@ urlpatterns = [
     path("esqueci-senha/", views.esqueci_senha_request, name="esqueci_senha"),
     path("validar-codigo/", views.validar_codigo_e_salvar, name="validar_codigo"),
     path("inicio/", views.dashboard_view, name="dashboard"),
+    path('atendimentos/', views.atendimentos_view, name='atendimentos_lista'),
 ]
