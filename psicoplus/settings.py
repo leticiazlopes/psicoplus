@@ -138,3 +138,8 @@ EMAIL_HOST_USER = os.getenv('EMAIL_USER')
 EMAIL_HOST_PASSWORD = os.getenv('EMAIL_PASSWORD')
 
 DEFAULT_FROM_EMAIL = f"Equipe Psico+ <{os.getenv('EMAIL_USER')}>"
+
+# Permite que o Django aceite envios de formulários vindos do seu link do Render
+CSRF_TRUSTED_ORIGINS = [
+    'https://psicoplus.onrender.com',
+]
