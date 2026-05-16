@@ -152,19 +152,31 @@ def esqueci_senha_request(request):
             user.save()
             
             # Corpo do e-mail estilizado com HTML, parecido com o do seu amigo
+            
             html_message = f"""
-            <div style="background-color: #ffffff; font-family: Arial, sans-serif; padding: 30px; border-radius: 8px; max-width: 500px; margin: 0 auto; border: 1px solid #e0e0e0; color: #333333;">
-                <h2 style="color: #4A90E2; margin-top: 0;">Recuperação de Acesso - Psico+</h2>
-                <p>Olá <b>{user.nome}</b>,</p>
-                <p>Recebemos uma solicitação de redefinição de senha para a sua conta de {user.get_perfil_display()}.</p>
-                <p>Utilize o código de autorização abaixo para cadastrar uma nova senha:</p>
-                
-                <div style="background-color: #f4f6f9; padding: 15px; text-align: center; font-size: 28px; font-weight: bold; letter-spacing: 6px; color: #4A90E2; border-radius: 6px; margin: 20px 0; border: 1px dashed #4A90E2;">
-                    {codigo}
+            <div style="background-color: #f8fafc; padding: 40px 10px; font-family: 'Segoe UI', Arial, sans-serif;">
+                <div style="background-color: #ffffff; padding: 35px; border-radius: 16px; max-width: 500px; margin: 0 auto; box-shadow: 0 4px 12px rgba(0,0,0,0.03); border: 1px solid #f1f5f9; color: #1e293b;">
+                    
+                    <h2 style="color: #6d4aff; font-size: 22px; font-weight: 700; margin-top: 0; margin-bottom: 20px; display: flex; align-items: center; gap: 8px;">
+                        Recuperação de Acesso — Psico+
+                    </h2>
+                    
+                    <p style="font-size: 15px; line-height: 1.6; color: #334155;">Olá, <b style="color: #0f172a;">{user.nome}</b>.</p>
+                    <p style="font-size: 15px; line-height: 1.6; color: #334155;">Recebemos uma solicitação de redefinição de senha para a sua conta de <b>{user.get_perfil_display()}</b>.</p>
+                    <p style="font-size: 15px; line-height: 1.6; color: #334155;">Utilize o código de autorização abaixo para cadastrar sua nova senha:</p>
+                    
+                    <div style="background-color: #f8fafc; padding: 18px; text-align: center; font-size: 32px; font-weight: 800; letter-spacing: 6px; color: #6d4aff; border-radius: 12px; margin: 25px 0; border: 2px dashed #e2e8f0;">
+                        {codigo}
+                    </div>
+                    
+                    <p style="color: #ef4444; font-size: 13px; font-weight: 600; margin-bottom: 25px; display: flex; align-items: center; gap: 5px;">
+                        ⚠️ Atenção: Este código é válido por 15 minutos.
+                    </p>
+                    
+                    <p style="color: #94a3b8; font-size: 12px; line-height: 1.5; margin-top: 30px; border-top: 1px solid #f1f5f9; padding-top: 20px;">
+                        Se você não solicitou essa redefinição, nenhuma ação é necessária. Sua senha atual continuará segura e seu acesso protegido.
+                    </p>
                 </div>
-                
-                <p style="color: #d9534f; font-size: 13px; font-weight: bold;">⚠️ Atenção: Este código é válido por 15 minutos.</p>
-                <p style="color: #777777; font-size: 12px; margin-top: 25px; border-top: 1px solid #eeeeee; padding-top: 15px;">Se você não solicitou essa redefinição, nenhuma ação é necessária. Sua senha continuará segura.</p>
             </div>
             """
             
