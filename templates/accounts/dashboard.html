@@ -90,40 +90,33 @@
         </div>
 
         <div class="overflow-x-auto">
-            <table class="w-full min-w-[500px] border-collapse text-left">
+           <table class="w-full min-w-[500px] border-collapse text-left">
                 <thead>
                     <tr class="border-b border-slate-100 text-[13px] font-bold text-slate-400">
                         <th class="pb-3 pr-4">Paciente</th>
-                        <th class="pb-3 px-4">Horário</th>
-                        <th class="pb-3 pl-4 text-right">Status</th>
+                        <th class="pb-3 px-4">Data e Horário</th>
+                        <th class="pb-3 pl-4 text-right">Valor da Sessão</th>
                     </tr>
                 </thead>
                 <tbody class="divide-y divide-slate-50 text-[14px] text-slate-600">
                     {% for sessao in proximas_sessoes %}
                     <tr class="group hover:bg-slate-50/50 transition duration-150">
                         <td class="py-4 pr-4 font-semibold text-slate-800 transition group-hover:text-primary">
-                            {{ sessao.paciente.nome }}
+                            {{ sessao.paciente.nome_completo }}
                         </td>
                         <td class="py-4 px-4 font-medium text-slate-500">
-                            <i class="fa-regular fa-clock text-[12px] mr-1.5 text-slate-400"></i>
-                            {{ sessao.horario|time:"H:i" }}
+                            <span class="inline-block text-slate-700 mr-2">
+                                <i class="fa-regular fa-calendar text-[12px] mr-1 text-slate-400"></i>
+                                {{ sessao.data|date:"d/m/Y" }}
+                            </span>
+                            <span class="text-slate-400">|</span>
+                            <span class="inline-block ml-2">
+                                <i class="fa-regular fa-clock text-[12px] mr-1 text-slate-400"></i>
+                                {{ sessao.horario_inicio|time:"H:i" }}
+                            </span>
                         </td>
-                        <td class="py-4 pl-4 text-right">
-                            {% if sessao.status == 'confirmado' %}
-                            <span class="inline-flex items-center gap-1.5 rounded-lg bg-emerald-50 px-2.5 py-1 text-xs font-bold text-emerald-600">
-                                <span class="h-1.5 w-1.5 rounded-full bg-emerald-500"></span>
-                                Confirmado
-                            </span>
-                            {% elif sessao.status == 'pendente' %}
-                            <span class="inline-flex items-center gap-1.5 rounded-lg bg-amber-50 px-2.5 py-1 text-xs font-bold text-amber-600">
-                                <span class="h-1.5 w-1.5 rounded-full bg-amber-500"></span>
-                                Pendente
-                            </span>
-                            {% else %}
-                            <span class="inline-flex items-center gap-1.5 rounded-lg bg-slate-50 px-2.5 py-1 text-xs font-bold text-slate-500">
-                                {{ sessao.status|title }}
-                            </span>
-                            {% endif %}
+                        <td class="py-4 pl-4 text-right font-bold text-slate-700">
+                            R$ {{ sessao.valor }}
                         </td>
                     </tr>
                     {% empty %}
@@ -131,7 +124,7 @@
                         <td colspan="3" class="py-10 text-center text-sm font-medium italic text-slate-400">
                             <div class="flex flex-col items-center justify-center gap-2">
                                 <i class="fa-regular fa-calendar text-[24px] text-slate-300"></i>
-                                Não há mais sessões agendadas para o dia de hoje.
+                                Não há sessões agendadas para os próximos dias.
                             </div>
                         </td>
                     </tr>
