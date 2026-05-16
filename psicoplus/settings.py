@@ -129,11 +129,8 @@ LOGIN_URL = 'login'
 STATIC_ROOT = BASE_DIR / 'staticfiles'
 
 # Configuração de E-mail via SMTP integrada com o Render
-EMAIL_BACKEND = 'danymail.backends.brevo.EmailBackend'
-EMAIL_HOST = 'smtp.gmail.com'
-EMAIL_PORT = 465
+EMAIL_BACKEND = 'anymail.backends.brevo.EmailBackend'
 EMAIL_USE_TLS = False
-EMAIL_USE_SSL = True
 
 # Puxa as credenciais seguras do painel do Render
 EMAIL_HOST_USER = os.getenv('EMAIL_USER')
