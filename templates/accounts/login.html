@@ -159,7 +159,7 @@
                                     <i class="fa-solid fa-lock text-[14px]"></i>
                                 </span>
                                 {{ form.password }}
-                                <button type="button" class="absolute inset-y-0 right-0 flex items-center pr-4 text-slate-400" aria-label="Visualizar senha">
+                                <button type="button" data-toggle-password class="absolute inset-y-0 right-0 flex items-center pr-4 text-slate-400" aria-label="Visualizar senha">
                                     <i class="fa-regular fa-eye text-[14px]"></i>
                                 </button>
                             </div>
@@ -199,5 +199,23 @@
             </div>
         </section>
     </div>
+
+    <script>
+        document.querySelectorAll('button[data-toggle-password]').forEach(button => {
+            const wrapper = button.closest('.relative');
+            const input = wrapper?.querySelector('input[type="password"], input[type="text"]');
+            const icon = button.querySelector('i');
+
+            if (!input || !icon) return;
+
+            button.addEventListener('click', () => {
+                const isPassword = input.getAttribute('type') === 'password';
+                input.setAttribute('type', isPassword ? 'text' : 'password');
+                icon.classList.toggle('fa-eye');
+                icon.classList.toggle('fa-eye-slash');
+                button.setAttribute('aria-label', isPassword ? 'Ocultar senha' : 'Visualizar senha');
+            });
+        });
+    </script>
 </body>
 </html>

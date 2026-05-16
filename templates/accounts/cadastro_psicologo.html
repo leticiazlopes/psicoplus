@@ -137,7 +137,12 @@
                         <div class="grid gap-4 md:grid-cols-2">
                             <div>
                                 <label for="{{ form.password1.id_for_label }}" class="mb-2 block text-[13px] font-bold text-slate-700">Senha</label>
-                                {{ form.password1 }}
+                                <div class="relative">
+                                    {{ form.password1 }}
+                                    <button type="button" data-toggle-password class="absolute inset-y-0 right-0 flex items-center pr-4 text-slate-400" aria-label="Visualizar senha">
+                                        <i class="fa-regular fa-eye text-[14px]"></i>
+                                    </button>
+                                </div>
                                 {% if form.password1.errors %}
                                 <div class="mt-2 space-y-1 text-[13px] text-rose-600">
                                     {% for error in form.password1.errors %}
@@ -149,7 +154,12 @@
 
                             <div>
                                 <label for="{{ form.password2.id_for_label }}" class="mb-2 block text-[13px] font-bold text-slate-700">Confirmar senha</label>
-                                {{ form.password2 }}
+                                <div class="relative">
+                                    {{ form.password2 }}
+                                    <button type="button" data-toggle-password class="absolute inset-y-0 right-0 flex items-center pr-4 text-slate-400" aria-label="Visualizar senha">
+                                        <i class="fa-regular fa-eye text-[14px]"></i>
+                                    </button>
+                                </div>
                                 {% if form.password2.errors %}
                                 <div class="mt-2 space-y-1 text-[13px] text-rose-600">
                                     {% for error in form.password2.errors %}
@@ -225,5 +235,23 @@
             </div>
         </section>
     </div>
+
+    <script>
+        document.querySelectorAll('button[data-toggle-password]').forEach(button => {
+            const wrapper = button.closest('.relative');
+            const input = wrapper?.querySelector('input[type="password"], input[type="text"]');
+            const icon = button.querySelector('i');
+
+            if (!input || !icon) return;
+
+            button.addEventListener('click', () => {
+                const isPassword = input.getAttribute('type') === 'password';
+                input.setAttribute('type', isPassword ? 'text' : 'password');
+                icon.classList.toggle('fa-eye');
+                icon.classList.toggle('fa-eye-slash');
+                button.setAttribute('aria-label', isPassword ? 'Ocultar senha' : 'Visualizar senha');
+            });
+        });
+    </script>
 </body>
 </html>

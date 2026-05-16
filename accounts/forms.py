@@ -39,6 +39,12 @@ class LoginUsuarioForm(AuthenticationForm):
                 }
             )
 
+        self.fields["password"].widget.attrs.update(
+            {
+                "class": "w-full rounded-xl border border-slate-200 bg-white py-3 pl-10 pr-10 text-[14px] text-slate-900 outline-none transition placeholder:text-slate-400 focus:border-primary focus:ring-4 focus:ring-primary/10",
+            }
+        )
+
 
 class CadastroPsicologoForm(UserCreationForm):
     nome = forms.CharField(
@@ -80,11 +86,13 @@ class CadastroPsicologoForm(UserCreationForm):
             })
 
         self.fields["password1"].widget.attrs.update({
-            "placeholder": "Digite uma senha segura"
+            "placeholder": "Digite uma senha segura",
+            "class": "w-full rounded-xl border border-slate-200 bg-white px-4 pr-10 py-3 text-[14px] text-slate-900 outline-none transition placeholder:text-slate-400 focus:border-primary focus:ring-4 focus:ring-primary/10"
         })
 
         self.fields["password2"].widget.attrs.update({
-            "placeholder": "Confirme a senha"
+            "placeholder": "Confirme a senha",
+            "class": "w-full rounded-xl border border-slate-200 bg-white px-4 pr-10 py-3 text-[14px] text-slate-900 outline-none transition placeholder:text-slate-400 focus:border-primary focus:ring-4 focus:ring-primary/10"
         })
 
     def clean_email(self):
