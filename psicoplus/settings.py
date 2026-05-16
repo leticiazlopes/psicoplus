@@ -26,6 +26,7 @@ INSTALLED_APPS = [
     'django.contrib.messages',
     'django.contrib.staticfiles',
     'accounts',
+    'anymail'
     
 ]
 
@@ -128,7 +129,7 @@ LOGIN_URL = 'login'
 STATIC_ROOT = BASE_DIR / 'staticfiles'
 
 # Configuração de E-mail via SMTP integrada com o Render
-EMAIL_BACKEND = 'django.core.mail.backends.smtp.EmailBackend'
+EMAIL_BACKEND = 'danymail.backends.brevo.EmailBackend'
 EMAIL_HOST = 'smtp.gmail.com'
 EMAIL_PORT = 465
 EMAIL_USE_TLS = False
@@ -144,3 +145,7 @@ DEFAULT_FROM_EMAIL = f"Equipe Psico+ <{os.getenv('EMAIL_USER')}>"
 CSRF_TRUSTED_ORIGINS = [
     'https://psicoplus.onrender.com',
 ]
+
+ANYMAIL = {
+    "BREVO_API_KEY": os.getenv("BREVO_API_KEY"),
+}
