@@ -39,8 +39,9 @@
                 Pacientes
             </a>
 
-            <a href="#" class="group flex items-center gap-3 rounded-xl px-3 py-2.5 text-[14px] font-medium transition {% if active_page == 'atendimentos' %}bg-primarySoft text-primary{% else %}text-slate-600 hover:bg-slate-50 hover:text-slate-900{% endif %}">
-                <span class="flex h-8 w-8 items-center justify-center rounded-lg {% if active_page == 'atendimentos' %}bg-white text-primary{% else %}text-slate-400{% endif %}">
+            <a href="{% url 'atendimentos_lista' %}"
+            class="group flex items-center gap-3 rounded-xl px-3 py-2.5 text-[14px] font-medium transition {% if current_url_name == 'atendimentos_lista' %}bg-primarySoft text-primary{% else %}text-slate-600 hover:bg-slate-50 hover:text-slate-900{% endif %}">
+                <span class="flex h-8 w-8 items-center justify-center rounded-lg {% if current_url_name == 'atendimentos_lista' %}bg-white text-primary{% else %}text-slate-400{% endif %}">
                     <i class="fa-regular fa-clipboard text-[14px]" aria-hidden="true"></i>
                 </span>
                 Atendimentos
