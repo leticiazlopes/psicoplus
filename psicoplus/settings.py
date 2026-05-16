@@ -119,7 +119,8 @@ STORAGES = {
 # REDIRECTION & LOGINS
 DEFAULT_AUTO_FIELD = 'django.db.models.BigAutoField'
 LOGOUT_REDIRECT_URL = 'login'
-LOGIN_URL = 'dashboard'
+LOGIN_REDIRECT_URL = 'dashboard'
+LOGIN_URL = 'login'
 
 
 # EMAIL CONFIGURATION (ANYMAIL + BREVO)
