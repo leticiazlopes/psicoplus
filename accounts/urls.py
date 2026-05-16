@@ -30,5 +30,6 @@ urlpatterns = [
     path("pacientes/<uuid:pk>/ativar/", views.ativar_paciente, name="ativar_paciente"),
     path("pacientes/<uuid:pk>/editar/", views.PacienteUpdateView.as_view(), name="editar_paciente"),
     path("esqueci-senha/", views.esqueci_senha_request, name="esqueci_senha"),
-    path("validar-codigo/", views.validar_codigo_e_salvar, name="validar_codigo")
+    path("validar-codigo/", views.validar_codigo_e_salvar, name="validar_codigo"),
+    path("inicio/", views.dashboard_view, name="dashboard"),
 ]

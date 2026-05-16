@@ -16,6 +16,7 @@ import random
 import datetime
 from django.utils import timezone
 from django.core.mail import send_mail
+from django.contrib.auth.decorators import login_required
 
 
 
@@ -100,13 +101,39 @@ class PacienteListView(LoginRequiredMixin, ListView):
     model = Paciente
     template_name = "accounts/pacientes_lista.html"
     context_object_name = "pacientes"
+
     def get_queryset(self):
+        # 1. Começamos pegando a base filtrada pelo psicólogo logado
         queryset = Paciente.objects.filter(psicologo=self.request.user.psicologo)
+        
+        # 2. CAPTURA DO CARD: Verifica se o usuário clicou em Ativos ou Inativos
+        status_filtro = self.request.GET.get('status')
+        if status_filtro == 'ativos':
+            queryset = queryset.filter(ativo=True)
+        elif status_filtro == 'inativos':
+            queryset = queryset.filter(ativo=False)
+
+        # 3. MANTÉM A SUA BUSCA POR TEXTO: Se digitaram algo na barra de pesquisa
         search_query = self.request.GET.get('search')
         if search_query:
             queryset = queryset.filter(nome_completo__icontains=search_query)
+            
         return queryset.order_by('nome_completo')
 
+    def get_context_data(self, **kwargs):
+        # Puxa o contexto padrão do Django
+        context = super().get_context_data(**kwargs)
+        psicologo_logado = self.request.user.psicologo
+
+        # 4. ALIMENTA OS CARDS: Faz as contagens reais no banco de dados
+        context["total_pacientes"] = Paciente.objects.filter(psicologo=psicologo_logado).count()
+        context["total_ativos"] = Paciente.objects.filter(psicologo=psicologo_logado, ativo=True).count()
+        context["total_inativos"] = Paciente.objects.filter(psicologo=psicologo_logado, ativo=False).count()
+        
+        # 5. ENVIA O FILTRO PRO HTML: Para acender a borda do card selecionado
+        context["status_filtro"] = self.request.GET.get('status')
+        
+        return context
 class PacienteUpdateView(LoginRequiredMixin, UpdateView):
     model = Paciente
     form_class = CadastroPacienteForm
@@ -233,3 +260,30 @@ def validar_codigo_e_salvar(request):
             messages.error(request, "Código de verificação incorreto.")
 
     return render(request, "auth/password_reset_confirm.html")
+
+@login_required
+def dashboard_view(request):
+    # 1. Pegamos a instância de Psicologo do usuário logado através do related_name
+    try:
+        psicologo_logado = request.user.psicologo
+        
+        # 2. Buscamos os pacientes vinculados a ESSE psicólogo que estejam ativos (ativo=True)
+        pacientes_ativos = Paciente.objects.filter(
+            psicologo=psicologo_logado, 
+            ativo=True
+        ).count()
+        
+    except AttributeError:
+        # Caso seja um usuário administrador ou alguém sem o perfil de Psicólogo criado
+        pacientes_ativos = 0
+
+    # 3. Montamos o contexto para alimentar o HTML
+    context = {
+        'sessoes_hoje': 0,        # Fictício por enquanto
+        'sessoes_mes': 0,         # Fictício por enquanto
+        'pacientes_ativos': pacientes_ativos, # 100% REAL E DINÂMICO! 🚀
+        'valor_pendente': "0,00",  # Fictício por enquanto
+        'proximas_sessoes': [],   # Lista vazia por enquanto
+    }
+    
+    return render(request, 'accounts/dashboard.html', context)
