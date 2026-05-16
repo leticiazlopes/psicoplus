@@ -8,9 +8,13 @@
     <div class="flex flex-col gap-4 lg:flex-row lg:items-center lg:justify-between">
 
         <form method="GET" class="relative flex-1 max-w-md flex gap-2">
+            {% if status_filtro %}
+                <input type="hidden" name="status" value="{{ status_filtro }}">
+            {% endif %}
+            
             <span class="relative flex-1">
                 <i class="fa-solid fa-magnifying-glass absolute left-4 top-1/2 -translate-y-1/2 text-slate-400 text-[14px]"></i>
-                <input type="text" name="search" value="{{ request.GET.search }}" placeholder="Buscar paciente por nome..." 
+                <input type="text" name="search" value="{{ request.GET.search|default:'' }}" placeholder="Buscar paciente por nome..." 
                     class="w-full rounded-2xl border border-white/70 bg-white/88 py-3 pl-11 pr-4 text-[14px] shadow-soft backdrop-blur-xl outline-none transition focus:border-primary/30 focus:ring-4 focus:ring-primary/5">
             </span>
             <button type="submit" class="inline-flex items-center gap-2 rounded-xl bg-gradient-to-r from-primary to-primaryDark px-4 py-2.5 text-[14px] font-semibold text-white shadow-[0_8px_16px_rgba(109,74,255,0.18)] transition hover:translate-y-[-1px]">
@@ -25,7 +29,71 @@
         </a>
     </div>
 
+    <div class="grid gap-4 md:grid-cols-3">
+        
+        <a href="{% url 'pacientes_lista' %}" 
+           class="block rounded-[18px] border transition duration-200 hover:translate-y-[-1px] shadow-soft backdrop-blur-xl p-4
+                  {% if not status_filtro %} border-primary bg-primarySoft/30 {% else %} border-white/70 bg-white/88 {% endif %}">
+            <div class="flex items-center justify-between">
+                <div class="flex h-10 w-10 items-center justify-center rounded-xl bg-primarySoft text-primary">
+                    <i class="fa-solid fa-user-group text-[15px]"></i>
+                </div>
+                <span class="rounded-full bg-primarySoft px-2.5 py-1 text-[10px] font-bold uppercase tracking-[0.16em] text-primary">
+                    Todos
+                </span>
+            </div>
+            <p class="mt-4 text-[28px] font-black tracking-[-0.05em] text-slate-900">{{ total_pacientes }}</p>
+            <p class="mt-1 text-[13px] text-slate-500">Todos os seus registros.</p>
+        </a>
+
+        <a href="{% url 'pacientes_lista' %}?status=ativos" 
+           class="block rounded-[18px] border transition duration-200 hover:translate-y-[-1px] shadow-soft backdrop-blur-xl p-4
+                  {% if status_filtro == 'ativos' %} border-emerald-500 bg-emerald-50 {% else %} border-white/70 bg-white/88 {% endif %}">
+            <div class="flex items-center justify-between">
+                <div class="flex h-10 w-10 items-center justify-center rounded-xl bg-emerald-100 text-emerald-600">
+                    <i class="fa-solid fa-circle-check text-[15px]"></i>
+                </div>
+                <span class="rounded-full bg-emerald-50 px-2.5 py-1 text-[10px] font-bold uppercase tracking-[0.16em] text-emerald-700">
+                    Ativos
+                </span>
+            </div>
+            <p class="mt-4 text-[28px] font-black tracking-[-0.05em] text-slate-900">{{ total_ativos }}</p>
+            <p class="mt-1 text-[13px] text-slate-500">Em atendimento ativo.</p>
+        </a>
+
+        <a href="{% url 'pacientes_lista' %}?status=inativos" 
+           class="block rounded-[18px] border transition duration-200 hover:translate-y-[-1px] shadow-soft backdrop-blur-xl p-4
+                  {% if status_filtro == 'inativos' %} border-amber-500 bg-amber-50 {% else %} border-white/70 bg-white/88 {% endif %}">
+            <div class="flex items-center justify-between">
+                <div class="flex h-10 w-10 items-center justify-center rounded-xl bg-amber-100 text-amber-600">
+                    <i class="fa-solid fa-clock text-[15px]"></i>
+                </div>
+                <span class="rounded-full bg-amber-50 px-2.5 py-1 text-[10px] font-bold uppercase tracking-[0.16em] text-amber-700">
+                    Inativos
+                </span>
+            </div>
+            <p class="mt-4 text-[28px] font-black tracking-[-0.05em] text-slate-900">{{ total_inativos }}</p>
+            <p class="mt-1 text-[13px] text-slate-500">Cadastros inativados.</p>
+        </a>
+    </div>
+
     <div class="rounded-[20px] border border-white/70 bg-white/88 p-5 shadow-soft backdrop-blur-xl lg:p-6">
+        
+        {% if status_filtro or request.GET.search %}
+        <div class="mb-4 flex items-center justify-between rounded-xl bg-slate-50 px-4 py-2.5 border border-slate-100">
+            <div class="flex items-center gap-2 text-[13px] text-slate-600">
+                <span class="font-bold text-slate-700">Filtros aplicados:</span>
+                {% if status_filtro == 'ativos' %}<span class="rounded-md bg-emerald-100 px-2 py-0.5 text-[11px] font-bold text-emerald-800">Apenas Ativos</span>{% endif %}
+                {% if status_filtro == 'inativos' %}<span class="rounded-md bg-amber-100 px-2 py-0.5 text-[11px] font-bold text-amber-800">Apenas Inativos</span>{% endif %}
+                {% if request.GET.search %}<span class="rounded-md bg-primarySoft px-2 py-0.5 text-[11px] font-bold text-primary">Nome: "{{ request.GET.search }}"</span>{% endif %}
+            </div>
+            <a href="{% url 'pacientes_lista' %}" class="inline-flex items-center gap-1.5 text-[12px] font-bold text-rose-600 hover:text-rose-700 transition">
+                <i class="fa-solid fa-xmark"></i>
+                Limpar Filtros
+            </a>
+        </div>
+        {% endif %}
+
         <div class="overflow-hidden rounded-[16px] border border-slate-200">
             <div class="hidden grid-cols-[minmax(0,1.5fr)_minmax(0,1fr)_minmax(0,1fr)_minmax(0,0.6fr)] gap-4 bg-slate-50/80 px-6 py-4 text-[12px] font-bold uppercase tracking-[0.18em] text-slate-400 lg:grid">
                 <span>Paciente</span>
