@@ -164,7 +164,9 @@
                                 </button>
                             </div>
                             <div class="mt-2 flex justify-end">
-                                <span class="text-[12px] font-semibold text-primary">Esqueci minha senha</span>
+                                <a href="{% url 'esqueci_senha' %}" class="text-[12px] font-semibold text-primary hover:text-primaryDark hover:underline transition-all">
+                                    Esqueci minha senha
+                                </a>
                             </div>
                             {% if form.password.errors %}
                             <div class="mt-2 space-y-1 text-[13px] text-rose-600">

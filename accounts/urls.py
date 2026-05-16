@@ -1,6 +1,6 @@
 from django.urls import path, reverse_lazy
 from django.contrib.auth import views as auth_views
-from .views import CadastroPsicologoView, LoginUsuarioView, LogoutUsuarioView, MeuPerfilUpdateView, PsicologoListView, CadastroPacienteView, PacienteListView, inativar_paciente, ativar_paciente, PacienteUpdateView
+from . import views
 import django.contrib.auth.views as auth_views
 from django.contrib import messages
 
@@ -11,9 +11,9 @@ class MyPasswordChangeView(auth_views.PasswordChangeView):
         return super().form_valid(form)
 
 urlpatterns = [
-    path("psicologos/", PsicologoListView.as_view(), name="psicologos"),
-    path("psicologos/cadastrar/", CadastroPsicologoView.as_view(), name="cadastro_psicologo"),
-    path('meu-perfil/', MeuPerfilUpdateView.as_view(), name='meu_perfil'),
+    path("psicologos/", views.PsicologoListView.as_view(), name="psicologos"),
+    path("psicologos/cadastrar/", views.CadastroPsicologoView.as_view(), name="cadastro_psicologo"),
+    path('meu-perfil/', views.MeuPerfilUpdateView.as_view(), name='meu_perfil'),
     path(
         'alterar-senha/', 
         MyPasswordChangeView.as_view(
@@ -22,11 +22,13 @@ urlpatterns = [
         ), 
         name='password_change'
     ),
-    path("login/", LoginUsuarioView.as_view(), name="login"),
-    path("logout/", LogoutUsuarioView.as_view(), name="logout"),
-    path("pacientes/", PacienteListView.as_view(), name="pacientes_lista"),
-    path("pacientes/cadastrar/", CadastroPacienteView.as_view(), name="cadastro_paciente"),
-    path("pacientes/<uuid:pk>/inativar/", inativar_paciente, name="inativar_paciente"),
-    path("pacientes/<uuid:pk>/ativar/", ativar_paciente, name="ativar_paciente"),
-    path("pacientes/<uuid:pk>/editar/", PacienteUpdateView.as_view(), name="editar_paciente"),
+    path("login/", views.LoginUsuarioView.as_view(), name="login"),
+    path("logout/", views.LogoutUsuarioView.as_view(), name="logout"),
+    path("pacientes/", views.PacienteListView.as_view(), name="pacientes_lista"),
+    path("pacientes/cadastrar/", views.CadastroPacienteView.as_view(), name="cadastro_paciente"),
+    path("pacientes/<uuid:pk>/inativar/", views.inativar_paciente, name="inativar_paciente"),
+    path("pacientes/<uuid:pk>/ativar/", views.ativar_paciente, name="ativar_paciente"),
+    path("pacientes/<uuid:pk>/editar/", views.PacienteUpdateView.as_view(), name="editar_paciente"),
+    path("esqueci-senha/", views.esqueci_senha_request, name="esqueci_senha"),
+    path("validar-codigo/", views.validar_codigo_e_salvar, name="validar_codigo")
 ]

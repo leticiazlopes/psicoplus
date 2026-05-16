@@ -18,6 +18,9 @@ class Usuario(AbstractUser):
         max_length=20,
         choices=Perfil.choices
     )
+    
+    codigo_recuperacao = models.CharField(max_length=6, blank=True, null=True)
+    codigo_expiracao = models.DateTimeField(blank=True, null=True)
 
     criado_em = models.DateTimeField(auto_now_add=True)
     atualizado_em = models.DateTimeField(auto_now=True)
