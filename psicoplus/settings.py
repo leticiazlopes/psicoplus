@@ -1,4 +1,5 @@
 from pathlib import Path
+import os
 
 # Build paths inside the project like this: BASE_DIR / 'subdir'.
 BASE_DIR = Path(__file__).resolve().parent.parent
@@ -8,13 +9,12 @@ BASE_DIR = Path(__file__).resolve().parent.parent
 # See https://docs.djangoproject.com/en/4.2/howto/deployment/checklist/
 
 # SECURITY WARNING: keep the secret key used in production secret!
-SECRET_KEY = 'django-insecure-nva^c(7m5#ah31!j@ske--yzj!x^gnz$_4=7nqexy4z(#n0tm#'
+SECRET_KEY = os.getenv('DJANGO_SECRET_KEY', 'uma-chave-padrao-temporaria')
 
 # SECURITY WARNING: don't run with debug turned on in production!
-DEBUG = True
+DEBUG = os.getenv('DJANGO_DEBUG', 'False') == 'True'
 
-ALLOWED_HOSTS = []
-
+ALLOWED_HOSTS = ['*']
 
 # Application definition
 
@@ -38,6 +38,8 @@ MIDDLEWARE = [
     'django.contrib.auth.middleware.AuthenticationMiddleware',
     'django.contrib.messages.middleware.MessageMiddleware',
     'django.middleware.clickjacking.XFrameOptionsMiddleware',
+    'whitenoise.middleware.WhiteNoiseMiddleware'
+    
 ]
 
 ROOT_URLCONF = 'psicoplus.urls'
@@ -121,3 +123,5 @@ LOGOUT_REDIRECT_URL = 'login'
 
 # URL da página de login (usada pelo LoginRequiredMixin)
 LOGIN_URL = 'login'
+
+STATIC_ROOT = BASE_DIR / 'staticfiles'
