@@ -32,13 +32,14 @@ INSTALLED_APPS = [
 AUTH_USER_MODEL = 'accounts.Usuario' 
 MIDDLEWARE = [
     'django.middleware.security.SecurityMiddleware',
+    'whitenoise.middleware.WhiteNoiseMiddleware',
     'django.contrib.sessions.middleware.SessionMiddleware',
     'django.middleware.common.CommonMiddleware',
     'django.middleware.csrf.CsrfViewMiddleware',
     'django.contrib.auth.middleware.AuthenticationMiddleware',
     'django.contrib.messages.middleware.MessageMiddleware',
     'django.middleware.clickjacking.XFrameOptionsMiddleware',
-    'whitenoise.middleware.WhiteNoiseMiddleware'
+    
     
 ]
 
@@ -125,3 +126,15 @@ LOGOUT_REDIRECT_URL = 'login'
 LOGIN_URL = 'login'
 
 STATIC_ROOT = BASE_DIR / 'staticfiles'
+
+# Configuração de E-mail via SMTP integrada com o Render
+EMAIL_BACKEND = 'django.core.mail.backends.smtp.EmailBackend'
+EMAIL_HOST = 'smtp.gmail.com'
+EMAIL_PORT = 587
+EMAIL_USE_TLS = True
+
+# Puxa as credenciais seguras do painel do Render
+EMAIL_HOST_USER = os.getenv('EMAIL_USER')
+EMAIL_HOST_PASSWORD = os.getenv('EMAIL_PASSWORD')
+
+DEFAULT_FROM_EMAIL = f"Equipe Psico+ <{os.getenv('EMAIL_USER')}>"
