@@ -89,6 +89,11 @@ class Paciente(models.Model):
         return self.nome_completo
     
 class Sessao(models.Model):
+    class Status(models.TextChoices):
+        PENDENTE = "pendente", "Pendente"
+        CONFIRMADA = "confirmada", "Confirmada"
+        CANCELADA = "cancelada", "Cancelada"
+
     id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
     
     psicologo = models.ForeignKey(
@@ -106,6 +111,11 @@ class Sessao(models.Model):
     horario_inicio = models.TimeField()
     duracao_minutos = models.PositiveIntegerField(default=50) # Duração em minutos (ex: 50, 60)
     valor = models.DecimalField(max_digits=10, decimal_places=2)
+    status = models.CharField(
+        max_length=20,
+        choices=Status.choices,
+        default=Status.PENDENTE,
+    )
     
     criado_em = models.DateTimeField(auto_now_add=True)
 
