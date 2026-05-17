@@ -4,7 +4,7 @@ from django.urls import reverse_lazy
 from django.contrib import messages
 from django.contrib.auth.mixins import LoginRequiredMixin
 from django.shortcuts import get_object_or_404, redirect, render
-from .forms import CadastroPacienteForm, CadastroPsicologoForm, LoginUsuarioForm, MeuPerfilForm, SessaoForm
+from .forms import CadastroPacienteForm, CadastroPsicologoForm, LoginUsuarioForm, MeuPerfilForm
 from .models import Usuario, Psicologo, Paciente, Sessao
 from django.views.decorators.http import require_POST
 from django.utils.decorators import method_decorator
@@ -259,36 +259,6 @@ def validar_codigo_e_salvar(request):
             messages.error(request, "Código de verificação incorreto.")
 
     return render(request, "auth/password_reset_confirm.html")
-
-
-@login_required
-def atendimentos_view(current_request):
-    # Recupera o perfil de psicólogo do usuário logado
-    psicologo_perfil = getattr(current_request.user, 'psicologo', None)
-    
-    if not psicologo_perfil:
-        return redirect('inicio') # Impede que pacientes acessem esta tela
-        
-    if current_request.method == 'POST':
-        form = SessaoForm(current_request.POST, psicologo=psicologo_perfil)
-        if form.is_valid():
-            sessao = form.save(commit=False)
-            sessao.psicologo = psicologo_perfil
-            sessao.save()
-            return redirect('atendimentos_lista')
-    else:
-        form = SessaoForm(psicologo=psicologo_perfil)
-        
-    # Busca todas as sessões agendadas do profissional
-    lista_sessoes = Sessao.objects.filter(psicologo=psicologo_perfil)
-    
-    context = {
-        'form': form,
-        'sessoes': lista_sessoes,
-        'active_page': 'atendimentos' 
-    }
-    return render(current_request, 'accounts/atendimentos.lista.html', context)
-
 @login_required
 def dashboard_view(request):
     try:
