@@ -82,9 +82,9 @@
                 <h2 class="text-[17px] font-black tracking-[-0.02em] text-slate-900">
                     Próximas Sessões do Dia
                 </h2>
-                <p class="text-xs text-slate-400 mt-0.5">Seus próximos atendimentos agendados para hoje.</p>
+                <p class="mt-0.5 text-xs text-slate-400">Seus próximos atendimentos agendados para hoje.</p>
             </div>
-            <span class="rounded-full bg-slate-50 px-3 py-1 text-xs font-semibold text-slate-500 border border-slate-100">
+            <span class="rounded-full border border-slate-100 bg-slate-50 px-3 py-1 text-xs font-semibold text-slate-500">
                 Hoje
             </span>
         </div>
@@ -105,13 +105,13 @@
                             {{ sessao.paciente.nome_completo }}
                         </td>
                         <td class="py-4 px-4 font-medium text-slate-500">
-                            <span class="inline-block text-slate-700 mr-2">
-                                <i class="fa-regular fa-calendar text-[12px] mr-1 text-slate-400"></i>
+                            <span class="mr-2 inline-block text-slate-700">
+                                <i class="fa-regular fa-calendar mr-1 text-[12px] text-slate-400"></i>
                                 {{ sessao.data|date:"d/m/Y" }}
                             </span>
                             <span class="text-slate-400">|</span>
-                            <span class="inline-block ml-2">
-                                <i class="fa-regular fa-clock text-[12px] mr-1 text-slate-400"></i>
+                            <span class="ml-2 inline-block">
+                                <i class="fa-regular fa-clock mr-1 text-[12px] text-slate-400"></i>
                                 {{ sessao.horario_inicio|time:"H:i" }}
                             </span>
                         </td>

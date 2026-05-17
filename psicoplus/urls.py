@@ -7,5 +7,6 @@ urlpatterns = [
     path('', RedirectView.as_view(url='/login/')),
     path('', include('agenda.urls')),
     path('', include('atendimentos.urls')),
+    path('', include('dashboard.urls')),
     path('', include('accounts.urls')),
 ]
