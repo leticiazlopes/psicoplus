@@ -1,7 +1,7 @@
 {% extends 'shared/base.html' %}
 
 {% block content %}
-<div class="flex-1 bg-slate-50/50 px-8 py-8" x-data="{ showModal: false }">
+<div class="flex-1 bg-slate-50/50 px-8 py-8" x-data="{ showModal: {% if form.errors %}true{% else %}false{% endif %} }">
     <div class="mb-8 flex items-center justify-between">
         <div>
             <h1 class="text-2xl font-black tracking-tight text-slate-900">Agenda</h1>
@@ -58,19 +58,36 @@
             <form method="post" class="space-y-4">
                 {% csrf_token %}
 
+                {% if form.non_field_errors %}
+                <div class="rounded-xl border border-rose-200 bg-rose-50 px-4 py-3 text-sm text-rose-700">
+                    {% for error in form.non_field_errors %}
+                    <p>{{ error }}</p>
+                    {% endfor %}
+                </div>
+                {% endif %}
+
                 <div>
                     <label class="mb-1.5 block text-xs font-bold uppercase tracking-wider text-slate-500">Paciente</label>
                     {{ form.paciente }}
+                    {% for error in form.paciente.errors %}
+                    <p class="mt-1 text-xs font-medium text-rose-600">{{ error }}</p>
+                    {% endfor %}
                 </div>
 
                 <div class="grid grid-cols-2 gap-4">
                     <div>
                         <label class="mb-1.5 block text-xs font-bold uppercase tracking-wider text-slate-500">Data</label>
                         {{ form.data }}
+                        {% for error in form.data.errors %}
+                        <p class="mt-1 text-xs font-medium text-rose-600">{{ error }}</p>
+                        {% endfor %}
                     </div>
                     <div>
                         <label class="mb-1.5 block text-xs font-bold uppercase tracking-wider text-slate-500">Horário de Início</label>
                         {{ form.horario_inicio }}
+                        {% for error in form.horario_inicio.errors %}
+                        <p class="mt-1 text-xs font-medium text-rose-600">{{ error }}</p>
+                        {% endfor %}
                     </div>
                 </div>
 
@@ -78,10 +95,16 @@
                     <div>
                         <label class="mb-1.5 block text-xs font-bold uppercase tracking-wider text-slate-500">Duração (min)</label>
                         {{ form.duracao_minutos }}
+                        {% for error in form.duracao_minutos.errors %}
+                        <p class="mt-1 text-xs font-medium text-rose-600">{{ error }}</p>
+                        {% endfor %}
                     </div>
                     <div>
                         <label class="mb-1.5 block text-xs font-bold uppercase tracking-wider text-slate-500">Valor (R$)</label>
                         {{ form.valor }}
+                        {% for error in form.valor.errors %}
+                        <p class="mt-1 text-xs font-medium text-rose-600">{{ error }}</p>
+                        {% endfor %}
                     </div>
                 </div>
 

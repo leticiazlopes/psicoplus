@@ -1,3 +1,5 @@
+import datetime
+
 from django import forms
 
 from accounts.models import Paciente, Sessao
@@ -11,6 +13,7 @@ class SessaoForm(forms.ModelForm):
     def __init__(self, *args, **kwargs):
         psicologo = kwargs.pop("psicologo", None)
         super().__init__(*args, **kwargs)
+        self.psicologo = psicologo
 
         if psicologo:
             self.fields["paciente"].queryset = Paciente.objects.filter(
@@ -31,3 +34,36 @@ class SessaoForm(forms.ModelForm):
         self.fields["horario_inicio"].widget = forms.TimeInput(
             attrs={"type": "time", "class": tailwind_classes}
         )
+
+    def clean(self):
+        cleaned_data = super().clean()
+        data = cleaned_data.get("data")
+        horario_inicio = cleaned_data.get("horario_inicio")
+        duracao_minutos = cleaned_data.get("duracao_minutos")
+
+        if not all([self.psicologo, data, horario_inicio, duracao_minutos]):
+            return cleaned_data
+
+        inicio_novo = datetime.datetime.combine(data, horario_inicio)
+        fim_novo = inicio_novo + datetime.timedelta(minutes=duracao_minutos)
+
+        sessoes_no_dia = Sessao.objects.filter(
+            psicologo=self.psicologo,
+            data=data,
+        )
+
+        if self.instance.pk:
+            sessoes_no_dia = sessoes_no_dia.exclude(pk=self.instance.pk)
+
+        for sessao in sessoes_no_dia:
+            inicio_existente = datetime.datetime.combine(data, sessao.horario_inicio)
+            fim_existente = inicio_existente + datetime.timedelta(
+                minutes=sessao.duracao_minutos
+            )
+
+            if inicio_novo < fim_existente and fim_novo > inicio_existente:
+                raise forms.ValidationError(
+                    "Já existe um agendamento nesse horário. Escolha outro intervalo."
+                )
+
+        return cleaned_data
