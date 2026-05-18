@@ -5,6 +5,7 @@ from django.contrib.auth.decorators import login_required
 from django.shortcuts import redirect, render
 from django.utils import timezone
 from django.utils.dateparse import parse_date
+from django.shortcuts import get_object_or_404
 
 from accounts.models import Sessao
 
@@ -116,3 +117,19 @@ def agendamentos_view(request):
         "ultimo_dia_mes": ultimo_dia_mes,
     }
     return render(request, "agenda/agendamentos_lista.html", context)
+
+
+@login_required
+def editar_sessao_view(request, sessao_id):
+    psicologo_perfil = getattr(request.user, "psicologo", None)
+    if not psicologo_perfil:
+        return redirect("dashboard")
+
+    sessao = get_object_or_404(Sessao, id=sessao_id, psicologo=psicologo_perfil)
+
+    if request.method == "POST":
+        form = SessaoForm(request.POST, instance=sessao, psicologo=psicologo_perfil)
+        if form.is_valid():
+            form.save()
+            
+    return redirect("agenda_lista")

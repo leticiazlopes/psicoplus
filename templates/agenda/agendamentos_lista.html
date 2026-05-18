@@ -1,14 +1,45 @@
 {% extends 'shared/base.html' %}
 
 {% block content %}
-<div class="flex-1 bg-slate-50/50 px-8 py-8" x-data="{ showModal: {% if form.errors %}true{% else %}false{% endif %}, viewMode: 'dia' }">
+<div class="flex-1 bg-slate-50/50 px-8 py-8"
+     x-data="{ 
+        showModal: {% if form.errors %}true{% else %}false{% endif %}, 
+        viewMode: 'dia',
+        modalTitle: 'Agendar Sessão',
+        formAction: '',
+
+        abrirParaCriar() {
+            this.modalTitle = 'Agendar Sessão';
+            this.formAction = ''; 
+            this.showModal = true;
+            
+            this.$refs.paciente.value = '';
+            this.$refs.data.value = '';
+            this.$refs.horario.value = '';
+            this.$refs.duracao.value = '50';
+            this.$refs.valor.value = '';
+        },
+
+        abrirParaEditar(url, pacienteId, data, horario, duracao, valor) {
+            this.modalTitle = 'Editar Agendamento';
+            this.formAction = url; 
+            this.showModal = true;
+
+            this.$refs.paciente.value = pacienteId;
+            this.$refs.data.value = data;
+            this.$refs.horario.value = horario;
+            this.$refs.duracao.value = duracao;
+            this.$refs.valor.value = valor.replace(',', '.');
+        }
+     }">
+
     <div class="mb-8 flex items-center justify-between">
         <div>
             <h1 class="text-2xl font-black tracking-tight text-slate-900">Agenda</h1>
             <p class="text-sm text-slate-500">Gerencie os agendamentos e organize os horários dos seus pacientes.</p>
         </div>
 
-        <button @click="showModal = true" class="flex items-center gap-2 rounded-xl bg-primary px-4 py-2.5 text-sm font-bold text-white shadow-lg shadow-primary/20 transition hover:bg-primaryDark">
+        <button @click="abrirParaCriar()" class="flex items-center gap-2 rounded-xl bg-primary px-4 py-2.5 text-sm font-bold text-white shadow-lg shadow-primary/20 transition hover:bg-primaryDark">
             <i class="fa-solid fa-plus"></i>
             Novo Agendamento
         </button>
@@ -17,25 +48,12 @@
     <div class="mb-6 rounded-[20px] border border-slate-100 bg-white p-4 shadow-sm">
         <form method="get" class="flex flex-col gap-3 sm:flex-row sm:items-end sm:justify-between">
             <div class="w-full sm:max-w-xs">
-                <label for="data" class="mb-1.5 block text-xs font-bold uppercase tracking-wider text-slate-500">
-                    Filtrar por data
-                </label>
-                <input
-                    id="data"
-                    name="data"
-                    type="date"
-                    value="{{ data_filtro }}"
-                    class="w-full rounded-xl border border-slate-200 bg-white px-4 py-3 text-sm text-slate-900 transition focus:border-primary focus:ring-primary"
-                >
+                <label for="data" class="mb-1.5 block text-xs font-bold uppercase tracking-wider text-slate-500">Filtrar por data</label>
+                <input id="data" name="data" type="date" value="{{ data_filtro }}" class="w-full rounded-xl border border-slate-200 bg-white px-4 py-3 text-sm text-slate-900 transition focus:border-primary focus:ring-primary">
             </div>
-
             <div class="flex gap-3">
-                <a href="{% url 'agenda_lista' %}" class="rounded-xl border border-slate-200 px-4 py-3 text-sm font-semibold text-slate-600 transition hover:bg-slate-50">
-                    Limpar
-                </a>
-                <button type="submit" class="rounded-xl bg-primary px-5 py-3 text-sm font-bold text-white shadow-lg shadow-primary/10 transition hover:bg-primaryDark">
-                    Filtrar
-                </button>
+                <a href="{% url 'agenda_lista' %}" class="rounded-xl border border-slate-200 px-4 py-3 text-sm font-semibold text-slate-600 transition hover:bg-slate-50">Limpar</a>
+                <button type="submit" class="rounded-xl bg-primary px-5 py-3 text-sm font-bold text-white shadow-lg shadow-primary/10 transition hover:bg-primaryDark">Filtrar</button>
             </div>
         </form>
     </div>
@@ -45,32 +63,10 @@
             <p class="text-xs font-bold uppercase tracking-wider text-slate-400">Visualização</p>
             <h2 class="mt-1 text-lg font-black text-slate-900">Calendário da agenda</h2>
         </div>
-
         <div class="inline-flex rounded-xl border border-slate-200 bg-white p-1 shadow-sm">
-            <button
-                type="button"
-                @click="viewMode = 'dia'"
-                class="rounded-lg px-4 py-2 text-sm font-semibold transition"
-                :class="viewMode === 'dia' ? 'bg-primary text-white shadow-sm' : 'text-slate-600 hover:bg-slate-50'"
-            >
-                Dia
-            </button>
-            <button
-                type="button"
-                @click="viewMode = 'semana'"
-                class="rounded-lg px-4 py-2 text-sm font-semibold transition"
-                :class="viewMode === 'semana' ? 'bg-primary text-white shadow-sm' : 'text-slate-600 hover:bg-slate-50'"
-            >
-                Semana
-            </button>
-            <button
-                type="button"
-                @click="viewMode = 'mes'"
-                class="rounded-lg px-4 py-2 text-sm font-semibold transition"
-                :class="viewMode === 'mes' ? 'bg-primary text-white shadow-sm' : 'text-slate-600 hover:bg-slate-50'"
-            >
-                Mês
-            </button>
+            <button type="button" @click="viewMode = 'dia'" class="rounded-lg px-4 py-2 text-sm font-semibold transition" :class="viewMode === 'dia' ? 'bg-primary text-white shadow-sm' : 'text-slate-600 hover:bg-slate-50'">Dia</button>
+            <button type="button" @click="viewMode = 'semana'" class="rounded-lg px-4 py-2 text-sm font-semibold transition" :class="viewMode === 'semana' ? 'bg-primary text-white shadow-sm' : 'text-slate-600 hover:bg-slate-50'">Semana</button>
+            <button type="button" @click="viewMode = 'mes'" class="rounded-lg px-4 py-2 text-sm font-semibold transition" :class="viewMode === 'mes' ? 'bg-primary text-white shadow-sm' : 'text-slate-600 hover:bg-slate-50'">Mês</button>
         </div>
     </div>
 
@@ -82,26 +78,34 @@
 
         <div class="divide-y divide-slate-100">
             {% for sessao in agendamentos_do_dia %}
-            <div class="flex flex-col gap-4 px-6 py-5 sm:flex-row sm:items-center sm:justify-between">
+            <div class="flex flex-row items-center justify-between px-6 py-5 hover:bg-slate-50/50 transition gap-4">
                 <div>
                     <p class="text-base font-bold text-slate-900">{{ sessao.paciente.nome_completo }}</p>
                     <p class="mt-1 text-sm text-slate-500">{{ sessao.horario_inicio|time:"H:i" }} • {{ sessao.duracao_minutos }} min</p>
                 </div>
-                <div class="text-left sm:text-right">
-                    <p class="text-sm font-semibold text-primary">R$ {{ sessao.valor }}</p>
-                    <span class="mt-1 inline-flex rounded-full px-2.5 py-1 text-[11px] font-bold uppercase tracking-wide
-                        {% if sessao.status == 'pendente' %}bg-amber-100 text-amber-700
-                        {% elif sessao.status == 'confirmada' %}bg-sky-100 text-sky-700
-                        {% elif sessao.status == 'cancelada' %}bg-rose-100 text-rose-700
-                        {% else %}bg-slate-100 text-slate-600{% endif %}">
-                        {{ sessao.get_status_display }}
-                    </span>
+                
+                <div class="flex items-center gap-6">
+                    <div class="text-right flex flex-col items-end">
+                        <p class="text-sm font-semibold text-primary">R$ {{ sessao.valor }}</p>
+                        <span class="mt-1 inline-flex rounded-full px-2.5 py-1 text-[11px] font-bold uppercase tracking-wide
+                            {% if sessao.status == 'pendente' %}bg-amber-100 text-amber-700
+                            {% elif sessao.status == 'confirmada' %}bg-sky-100 text-sky-700
+                            {% elif sessao.status == 'cancelada' %}bg-rose-100 text-rose-700
+                            {% else %}bg-slate-100 text-slate-600{% endif %}">
+                            {{ sessao.get_status_display }}
+                        </span>
+                    </div>
+
+                    <button type="button" 
+                            @click="abrirParaEditar('{% url 'editar_sessao' sessao.id %}', '{{ sessao.paciente.id }}', '{{ sessao.data|date:'Y-m-d' }}', '{{ sessao.horario_inicio|time:'H:i' }}', '{{ sessao.duracao_minutos }}', '{{ sessao.valor }}')" 
+                            class="flex h-9 w-9 items-center justify-center rounded-xl border border-slate-200 text-slate-400 hover:border-primary/30 hover:bg-primarySoft hover:text-primary transition shadow-sm">
+                        <i class="fa-solid fa-pen text-xs"></i>
+                    </button>
                 </div>
             </div>
             {% empty %}
             <div class="px-6 py-12 text-center text-slate-400">
-                <i class="fa-regular fa-calendar text-3xl mb-3 block"></i>
-                Nenhum agendamento para o dia selecionado.
+                <i class="fa-regular fa-calendar text-3xl mb-3 block"></i> Nenhum agendamento para o dia selecionado.
             </div>
             {% endfor %}
         </div>
@@ -110,11 +114,8 @@
     <div x-show="viewMode === 'semana'" style="display: none;" class="overflow-hidden rounded-[20px] border border-sky-100 bg-white shadow-sm">
         <div class="border-b border-sky-100 bg-sky-50/70 px-6 py-4">
             <p class="text-xs font-bold uppercase tracking-wider text-slate-400">Próximos 7 dias</p>
-            <h3 class="mt-1 text-lg font-black text-slate-900">
-                {{ inicio_semana|date:"d/m/Y" }} até {{ fim_semana|date:"d/m/Y" }}
-            </h3>
+            <h3 class="mt-1 text-lg font-black text-slate-900">{{ inicio_semana|date:"d/m/Y" }} até {{ fim_semana|date:"d/m/Y" }}</h3>
         </div>
-
         <div class="grid gap-px bg-slate-100 lg:grid-cols-7">
             {% for dia in semana %}
             <div class="min-h-[220px] bg-white p-4 {% if dia.data == data_referencia %}ring-2 ring-primary/20{% endif %}">
@@ -122,23 +123,11 @@
                     <p class="text-xs font-bold uppercase tracking-wider text-slate-400">{{ dia.data|date:"D" }}</p>
                     <h4 class="mt-1 text-base font-black text-slate-900">{{ dia.data|date:"d/m" }}</h4>
                 </div>
-
                 <div class="space-y-3">
                     {% for sessao in dia.agendamentos %}
-                    <div class="rounded-xl border p-3
-                        {% if sessao.status == 'pendente' %}border-amber-100 bg-amber-50/70
-                        {% elif sessao.status == 'confirmada' %}border-sky-100 bg-sky-50/70
-                        {% elif sessao.status == 'cancelada' %}border-rose-100 bg-rose-50/70
-                        {% else %}border-slate-100 bg-slate-50/80{% endif %}">
+                    <div class="rounded-xl border p-3 {% if sessao.status == 'pendente' %}border-amber-100 bg-amber-50/70 {% elif sessao.status == 'confirmada' %}border-sky-100 bg-sky-50/70 {% elif sessao.status == 'cancelada' %}border-rose-100 bg-rose-50/70 {% else %}border-slate-100 bg-slate-50/80{% endif %}">
                         <p class="text-sm font-bold text-slate-900">{{ sessao.paciente.nome_completo }}</p>
                         <p class="mt-1 text-xs text-slate-500">{{ sessao.horario_inicio|time:"H:i" }} • {{ sessao.duracao_minutos }} min</p>
-                        <p class="mt-2 text-xs font-semibold uppercase tracking-wide
-                            {% if sessao.status == 'pendente' %}text-amber-700
-                            {% elif sessao.status == 'confirmada' %}text-sky-700
-                            {% elif sessao.status == 'cancelada' %}text-rose-700
-                            {% else %}text-primary{% endif %}">
-                            {{ sessao.get_status_display }}
-                        </p>
                     </div>
                     {% empty %}
                     <p class="text-sm text-slate-400">Sem agendamentos.</p>
@@ -152,57 +141,19 @@
     <div x-show="viewMode === 'mes'" style="display: none;" class="overflow-hidden rounded-[20px] border border-emerald-100 bg-white shadow-sm">
         <div class="border-b border-emerald-100 bg-emerald-50/70 px-6 py-4">
             <p class="text-xs font-bold uppercase tracking-wider text-slate-400">Visão mensal</p>
-            <h3 class="mt-1 text-lg font-black text-slate-900">
-                {{ primeiro_dia_mes|date:"F \\d\\e Y" }}
-            </h3>
+            <h3 class="mt-1 text-lg font-black text-slate-900">{{ primeiro_dia_mes|date:"F \\d\\e Y" }}</h3>
         </div>
-
         <div class="grid grid-cols-7 gap-px bg-slate-100 text-center text-[11px] font-bold uppercase tracking-wider text-slate-500">
-            <div class="bg-slate-50 px-2 py-3">Dom</div>
-            <div class="bg-slate-50 px-2 py-3">Seg</div>
-            <div class="bg-slate-50 px-2 py-3">Ter</div>
-            <div class="bg-slate-50 px-2 py-3">Qua</div>
-            <div class="bg-slate-50 px-2 py-3">Qui</div>
-            <div class="bg-slate-50 px-2 py-3">Sex</div>
-            <div class="bg-slate-50 px-2 py-3">Sáb</div>
+            <div class="bg-slate-50 px-2 py-3">Dom</div><div class="bg-slate-50 px-2 py-3">Seg</div><div class="bg-slate-50 px-2 py-3">Ter</div><div class="bg-slate-50 px-2 py-3">Qua</div><div class="bg-slate-50 px-2 py-3">Qui</div><div class="bg-slate-50 px-2 py-3">Sex</div><div class="bg-slate-50 px-2 py-3">Sáb</div>
         </div>
-
         <div class="grid gap-px bg-slate-100">
             {% for semana_mes in calendario_mes %}
             <div class="grid grid-cols-7 gap-px">
                 {% for dia in semana_mes %}
-                <div class="min-h-[150px] bg-white p-3
-                    {% if dia.eh_referencia %}ring-2 ring-primary/20{% endif %}
-                    {% if dia.fora_do_mes %}bg-slate-50/70{% endif %}">
+                <div class="min-h-[150px] bg-white p-3 {% if dia.eh_referencia %}ring-2 ring-primary/20{% endif %} {% if dia.fora_do_mes %}bg-slate-50/70{% endif %}">
                     <div class="flex items-start justify-between">
-                        <span class="text-sm font-black
-                            {% if dia.eh_hoje %}text-primary
-                            {% elif dia.fora_do_mes %}text-slate-300
-                            {% else %}text-slate-700{% endif %}">
-                            {{ dia.data|date:"d" }}
-                        </span>
-                        {% if dia.agendamentos %}
-                        <span class="rounded-full bg-emerald-100 px-2 py-0.5 text-[10px] font-bold text-emerald-700">
-                            {{ dia.agendamentos|length }}
-                        </span>
-                        {% endif %}
-                    </div>
-
-                    <div class="mt-3 space-y-2">
-                        {% for sessao in dia.agendamentos|slice:":3" %}
-                        <div class="rounded-lg px-2.5 py-2 text-left
-                            {% if sessao.status == 'pendente' %}bg-amber-50 text-amber-800
-                            {% elif sessao.status == 'confirmada' %}bg-sky-50 text-sky-800
-                            {% elif sessao.status == 'cancelada' %}bg-rose-50 text-rose-800
-                            {% else %}bg-slate-50 text-slate-700{% endif %}">
-                            <p class="truncate text-[11px] font-bold">{{ sessao.horario_inicio|time:"H:i" }} • {{ sessao.paciente.nome_completo }}</p>
-                        </div>
-                        {% endfor %}
-                        {% if dia.agendamentos|length > 3 %}
-                        <p class="text-[11px] font-semibold text-slate-400">
-                            +{{ dia.agendamentos|length|add:"-3" }} agendamento(s)
-                        </p>
-                        {% endif %}
+                        <span class="text-sm font-black {% if dia.eh_hoje %}text-primary {% elif dia.fora_do_mes %}text-slate-300 {% else %}text-slate-700{% endif %}">{{ dia.data|date:"d" }}</span>
+                        {% if dia.agendamentos %}<span class="rounded-full bg-emerald-100 px-2 py-0.5 text-[10px] font-bold text-emerald-700">{{ dia.agendamentos|length }}</span>{% endif %}
                     </div>
                 </div>
                 {% endfor %}
@@ -214,72 +165,55 @@
     <div x-show="showModal" class="fixed inset-0 z-50 flex items-center justify-center bg-slate-900/40 backdrop-blur-sm" style="display: none;">
         <div @click.away="showModal = false" class="w-full max-w-md rounded-[24px] border border-slate-100 bg-white p-6 shadow-2xl">
             <div class="mb-5 flex items-center justify-between">
-                <h3 class="text-lg font-black text-slate-900">Agendar Sessão</h3>
+                <h3 class="text-lg font-black text-slate-900" x-text="modalTitle">Agendar Sessão</h3>
                 <button @click="showModal = false" class="text-slate-400 hover:text-slate-600">
                     <i class="fa-solid fa-xmark text-lg"></i>
                 </button>
             </div>
 
-            <form method="post" class="space-y-4">
+            <form :action="formAction" method="post" class="space-y-4">
                 {% csrf_token %}
-
-                {% if form.non_field_errors %}
-                <div class="rounded-xl border border-rose-200 bg-rose-50 px-4 py-3 text-sm text-rose-700">
-                    {% for error in form.non_field_errors %}
-                    <p>{{ error }}</p>
-                    {% endfor %}
-                </div>
-                {% endif %}
 
                 <div>
                     <label class="mb-1.5 block text-xs font-bold uppercase tracking-wider text-slate-500">Paciente</label>
-                    {{ form.paciente }}
-                    {% for error in form.paciente.errors %}
-                    <p class="mt-1 text-xs font-medium text-rose-600">{{ error }}</p>
-                    {% endfor %}
+                    <div x-init="$el.querySelector('select').setAttribute('x-ref', 'paciente')">
+                        {{ form.paciente }}
+                    </div>
                 </div>
 
                 <div class="grid grid-cols-2 gap-4">
                     <div>
                         <label class="mb-1.5 block text-xs font-bold uppercase tracking-wider text-slate-500">Data</label>
-                        {{ form.data }}
-                        {% for error in form.data.errors %}
-                        <p class="mt-1 text-xs font-medium text-rose-600">{{ error }}</p>
-                        {% endfor %}
+                        <div x-init="$el.querySelector('input').setAttribute('x-ref', 'data')">
+                            {{ form.data }}
+                        </div>
                     </div>
                     <div>
                         <label class="mb-1.5 block text-xs font-bold uppercase tracking-wider text-slate-500">Horário de Início</label>
-                        {{ form.horario_inicio }}
-                        {% for error in form.horario_inicio.errors %}
-                        <p class="mt-1 text-xs font-medium text-rose-600">{{ error }}</p>
-                        {% endfor %}
+                        <div x-init="$el.querySelector('input').setAttribute('x-ref', 'horario')">
+                            {{ form.horario_inicio }}
+                        </div>
                     </div>
                 </div>
 
                 <div class="grid grid-cols-2 gap-4">
                     <div>
                         <label class="mb-1.5 block text-xs font-bold uppercase tracking-wider text-slate-500">Duração (min)</label>
-                        {{ form.duracao_minutos }}
-                        {% for error in form.duracao_minutos.errors %}
-                        <p class="mt-1 text-xs font-medium text-rose-600">{{ error }}</p>
-                        {% endfor %}
+                        <div x-init="$el.querySelector('input').setAttribute('x-ref', 'duracao')">
+                            {{ form.duracao_minutos }}
+                        </div>
                     </div>
                     <div>
                         <label class="mb-1.5 block text-xs font-bold uppercase tracking-wider text-slate-500">Valor (R$)</label>
-                        {{ form.valor }}
-                        {% for error in form.valor.errors %}
-                        <p class="mt-1 text-xs font-medium text-rose-600">{{ error }}</p>
-                        {% endfor %}
+                        <div x-init="$el.querySelector('input').setAttribute('x-ref', 'valor')">
+                            {{ form.valor }}
+                        </div>
                     </div>
                 </div>
 
                 <div class="mt-6 flex justify-end gap-3">
-                    <button type="button" @click="showModal = false" class="rounded-xl border border-slate-200 px-4 py-2.5 text-sm font-semibold text-slate-600 hover:bg-slate-50">
-                        Cancelar
-                    </button>
-                    <button type="submit" class="rounded-xl bg-primary px-5 py-2.5 text-sm font-bold text-white shadow-lg shadow-primary/10 hover:bg-primaryDark">
-                        Confirmar Agendamento
-                    </button>
+                    <button type="button" @click="showModal = false" class="rounded-xl border border-slate-200 px-4 py-2.5 text-sm font-semibold text-slate-600 hover:bg-slate-50">Cancelar</button>
+                    <button type="submit" class="rounded-xl bg-primary px-5 py-2.5 text-sm font-bold text-white shadow-lg shadow-primary/10 hover:bg-primaryDark">Confirmar</button>
                 </div>
             </form>
         </div>
