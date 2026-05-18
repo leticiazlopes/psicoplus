@@ -8,7 +8,7 @@ from accounts.models import Paciente, Sessao
 class SessaoForm(forms.ModelForm):
     class Meta:
         model = Sessao
-        fields = ["paciente", "data", "horario_inicio", "duracao_minutos", "valor"]
+        fields = ["paciente", "data", "horario_inicio", "duracao_minutos", "valor", "atendido_por_plano"]
 
     def __init__(self, *args, **kwargs):
         psicologo = kwargs.pop("psicologo", None)

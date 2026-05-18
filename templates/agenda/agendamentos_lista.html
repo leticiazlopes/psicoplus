@@ -20,7 +20,7 @@
             this.$refs.valor.value = '';
         },
 
-        abrirParaEditar(url, pacienteId, data, horario, duracao, valor) {
+        abrirParaEditar(url, pacienteId, data, horario, duracao, valor, atendidoPorPlano) {
             this.modalTitle = 'Editar Agendamento';
             this.formAction = url; 
             this.showModal = true;
@@ -30,6 +30,7 @@
             this.$refs.horario.value = horario;
             this.$refs.duracao.value = duracao;
             this.$refs.valor.value = valor.replace(',', '.');
+            this.$refs.atendido.checked = atendidoPorPlano === 'True' || atendidoPorPlano === true || atendidoPorPlano === 1;
         }
      }">
 
@@ -97,7 +98,7 @@
                     </div>
 
                     <button type="button" 
-                            @click="abrirParaEditar('{% url 'editar_sessao' sessao.id %}', '{{ sessao.paciente.id }}', '{{ sessao.data|date:'Y-m-d' }}', '{{ sessao.horario_inicio|time:'H:i' }}', '{{ sessao.duracao_minutos }}', '{{ sessao.valor }}')" 
+                            @click="abrirParaEditar('{% url 'editar_sessao' sessao.id %}', '{{ sessao.paciente.id }}', '{{ sessao.data|date:'Y-m-d' }}', '{{ sessao.horario_inicio|time:'H:i' }}', '{{ sessao.duracao_minutos }}', '{{ sessao.valor }}', '{{ sessao.atendido_por_plano }}')" 
                             class="flex h-9 w-9 items-center justify-center rounded-xl border border-slate-200 text-slate-400 hover:border-primary/30 hover:bg-primarySoft hover:text-primary transition shadow-sm">
                         <i class="fa-solid fa-pen text-xs"></i>
                     </button>
@@ -196,6 +197,7 @@
                     </div>
                 </div>
 
+
                 <div class="grid grid-cols-2 gap-4">
                     <div>
                         <label class="mb-1.5 block text-xs font-bold uppercase tracking-wider text-slate-500">Duração (min)</label>
@@ -206,9 +208,16 @@
                     <div>
                         <label class="mb-1.5 block text-xs font-bold uppercase tracking-wider text-slate-500">Valor (R$)</label>
                         <div x-init="$el.querySelector('input').setAttribute('x-ref', 'valor')">
-                            {{ form.valor }}
+                            <input type="number" name="valor" step="0.01" min="0" :disabled="$refs.atendido.checked" class="w-full rounded-xl border border-slate-200 bg-white px-4 py-3 text-sm text-slate-900 transition focus:border-primary focus:ring-primary" x-model="$refs.valor.value" />
                         </div>
                     </div>
+                </div>
+
+                <div>
+                    <label class="inline-flex items-center mt-2">
+                        <input type="checkbox" name="atendido_por_plano" x-ref="atendido" class="h-4 w-4 rounded border-slate-300 text-primary focus:ring-primary cursor-pointer mr-2" @change="$refs.valor.value = $refs.atendido.checked ? 0 : ''">
+                        <span class="text-sm text-slate-700">Atendido por plano de saúde?</span>
+                    </label>
                 </div>
 
                 <div class="mt-6 flex justify-end gap-3">

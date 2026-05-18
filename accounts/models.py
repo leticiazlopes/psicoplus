@@ -116,7 +116,8 @@ class Sessao(models.Model):
         choices=Status.choices,
         default=Status.PENDENTE,
     )
-    
+
+    atendido_por_plano = models.BooleanField(default=False, verbose_name="Atendido por Plano de Saúde")
     criado_em = models.DateTimeField(auto_now_add=True)
 
     class Meta:
