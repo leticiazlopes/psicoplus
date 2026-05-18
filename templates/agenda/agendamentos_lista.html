@@ -98,11 +98,48 @@
                         </span>
                     </div>
 
-                    <button type="button" 
-                            @click="abrirParaEditar('{% url 'editar_sessao' sessao.id %}', '{{ sessao.paciente.id }}', '{{ sessao.data|date:'Y-m-d' }}', '{{ sessao.horario_inicio|time:'H:i' }}', '{{ sessao.duracao_minutos }}', '{{ sessao.valor }}', '{{ sessao.atendido_por_plano }}', '{{ sessao.isento_pagamento }}')" 
-                            class="flex h-9 w-9 items-center justify-center rounded-xl border border-slate-200 text-slate-400 hover:border-primary/30 hover:bg-primarySoft hover:text-primary transition shadow-sm">
-                        <i class="fa-solid fa-pen text-xs"></i>
-                    </button>
+                    {% if sessao.status == 'pendente' %}
+                        <button type="button" 
+                                @click="abrirParaEditar('{% url 'editar_sessao' sessao.id %}', '{{ sessao.paciente.id }}', '{{ sessao.data|date:'Y-m-d' }}', '{{ sessao.horario_inicio|time:'H:i' }}', '{{ sessao.duracao_minutos }}', '{{ sessao.valor }}', '{{ sessao.atendido_por_plano }}', '{{ sessao.isento_pagamento }}')" 
+                                class="flex h-9 w-9 items-center justify-center rounded-xl border border-slate-200 text-slate-400 hover:border-primary/30 hover:bg-primarySoft hover:text-primary transition shadow-sm">
+                            <i class="fa-solid fa-pen text-xs"></i>
+                        </button>
+                        <button type="button" onclick="openCancelarModal('{% url 'cancelar_sessao' sessao.id %}')" class="flex items-center justify-center rounded-xl border border-rose-200 text-rose-400 hover:border-rose-400 hover:bg-rose-50 hover:text-rose-600 transition shadow-sm ml-2 px-3 py-2 text-sm font-semibold" title="Cancelar">
+                            Cancelar
+                        </button>
+                    <div id="modal-cancelar" class="fixed inset-0 z-50 flex items-center justify-center bg-black/30 hidden">
+                        <div class="bg-white rounded-2xl shadow-xl p-8 max-w-sm w-full">
+                            <div class="flex flex-col items-center text-center">
+                                <div class="flex h-12 w-12 items-center justify-center rounded-xl bg-rose-100 text-rose-600 mb-4">
+                                    <i class="fa-solid fa-calendar-xmark text-2xl"></i>
+                                </div>
+                                <h2 class="text-lg font-bold mb-2">Cancelar sessão</h2>
+                                <p class="text-slate-600 mb-6">Deseja realmente cancelar esta sessão?</p>
+                                <div class="flex gap-3 w-full">
+                                    <button onclick="closeCancelarModal()" type="button" class="flex-1 rounded-xl border border-slate-200 bg-slate-100 px-4 py-2 font-semibold text-slate-600 transition hover:bg-slate-200">
+                                        Voltar
+                                    </button>
+                                    <form id="form-cancelar" method="POST" class="flex-1">
+                                        {% csrf_token %}
+                                        <button type="submit" class="w-full rounded-xl bg-gradient-to-r from-rose-500 to-rose-600 px-4 py-2 font-semibold text-white transition hover:from-rose-600 hover:to-rose-700">
+                                            Cancelar sessão
+                                        </button>
+                                    </form>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <script>
+                        function openCancelarModal(url) {
+                            document.getElementById('modal-cancelar').classList.remove('hidden');
+                            document.getElementById('form-cancelar').setAttribute('action', url);
+                        }
+                        function closeCancelarModal() {
+                            document.getElementById('modal-cancelar').classList.add('hidden');
+                        }
+                    </script>
+                    {% endif %}
                 </div>
             </div>
             {% empty %}

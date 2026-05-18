@@ -2,8 +2,27 @@ import calendar
 import datetime
 
 from django.contrib.auth.decorators import login_required
-from django.shortcuts import redirect, render
+from django.shortcuts import redirect, render, get_object_or_404
 from django.utils import timezone
+
+from accounts.models import Sessao
+
+from .forms import SessaoForm
+
+
+@login_required
+def cancelar_sessao_view(request, sessao_id):
+    psicologo_perfil = getattr(request.user, "psicologo", None)
+    if not psicologo_perfil:
+        return redirect("dashboard")
+
+    sessao = get_object_or_404(Sessao, id=sessao_id, psicologo=psicologo_perfil)
+
+    if sessao.status == Sessao.Status.PENDENTE:
+        sessao.status = Sessao.Status.CANCELADA
+        sessao.save()
+
+    return redirect("agenda_lista")
 from django.utils.dateparse import parse_date
 from django.shortcuts import get_object_or_404
 
