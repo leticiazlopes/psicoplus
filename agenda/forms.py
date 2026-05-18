@@ -41,6 +41,11 @@ class SessaoForm(forms.ModelForm):
         horario_inicio = cleaned_data.get("horario_inicio")
         duracao_minutos = cleaned_data.get("duracao_minutos")
 
+        if data and data < datetime.date.today():
+            raise forms.ValidationError(
+                "A data do agendamento deve ser hoje ou uma data futura."
+            )
+
         if not all([self.psicologo, data, horario_inicio, duracao_minutos]):
             return cleaned_data
 
