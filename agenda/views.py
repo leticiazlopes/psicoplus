@@ -1,5 +1,6 @@
 from django.contrib.auth.decorators import login_required
 from django.shortcuts import redirect, render
+from django.utils.dateparse import parse_date
 
 from accounts.models import Sessao
 
@@ -24,9 +25,16 @@ def agendamentos_view(request):
         form = SessaoForm(psicologo=psicologo_perfil)
 
     lista_sessoes = Sessao.objects.filter(psicologo=psicologo_perfil)
+    data_filtro = request.GET.get("data")
+
+    if data_filtro:
+        data_selecionada = parse_date(data_filtro)
+        if data_selecionada:
+            lista_sessoes = lista_sessoes.filter(data=data_selecionada)
 
     context = {
         "form": form,
         "sessoes": lista_sessoes,
+        "data_filtro": data_filtro or "",
     }
     return render(request, "agenda/agendamentos_lista.html", context)

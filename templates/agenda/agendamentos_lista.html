@@ -14,6 +14,32 @@
         </button>
     </div>
 
+    <div class="mb-6 rounded-[20px] border border-slate-100 bg-white p-4 shadow-sm">
+        <form method="get" class="flex flex-col gap-3 sm:flex-row sm:items-end sm:justify-between">
+            <div class="w-full sm:max-w-xs">
+                <label for="data" class="mb-1.5 block text-xs font-bold uppercase tracking-wider text-slate-500">
+                    Filtrar por data
+                </label>
+                <input
+                    id="data"
+                    name="data"
+                    type="date"
+                    value="{{ data_filtro }}"
+                    class="w-full rounded-xl border border-slate-200 bg-white px-4 py-3 text-sm text-slate-900 transition focus:border-primary focus:ring-primary"
+                >
+            </div>
+
+            <div class="flex gap-3">
+                <a href="{% url 'agenda_lista' %}" class="rounded-xl border border-slate-200 px-4 py-3 text-sm font-semibold text-slate-600 transition hover:bg-slate-50">
+                    Limpar
+                </a>
+                <button type="submit" class="rounded-xl bg-primary px-5 py-3 text-sm font-bold text-white shadow-lg shadow-primary/10 transition hover:bg-primaryDark">
+                    Filtrar
+                </button>
+            </div>
+        </form>
+    </div>
+
     <div class="overflow-hidden rounded-[20px] border border-slate-100 bg-white shadow-sm">
         <table class="w-full border-collapse text-left text-sm text-slate-600">
             <thead class="bg-slate-50 text-xs font-bold uppercase tracking-wider text-slate-500">
