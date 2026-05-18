@@ -118,6 +118,7 @@ class Sessao(models.Model):
     )
 
     atendido_por_plano = models.BooleanField(default=False, verbose_name="Atendido por Plano de Saúde")
+    isento_pagamento = models.BooleanField(default=False, verbose_name="Isento de Pagamento")
     criado_em = models.DateTimeField(auto_now_add=True)
 
     class Meta:

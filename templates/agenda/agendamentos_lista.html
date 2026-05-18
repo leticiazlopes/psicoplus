@@ -20,7 +20,7 @@
             this.$refs.valor.value = '';
         },
 
-        abrirParaEditar(url, pacienteId, data, horario, duracao, valor, atendidoPorPlano) {
+        abrirParaEditar(url, pacienteId, data, horario, duracao, valor, atendidoPorPlano, isentoPagamento) {
             this.modalTitle = 'Editar Agendamento';
             this.formAction = url; 
             this.showModal = true;
@@ -31,6 +31,7 @@
             this.$refs.duracao.value = duracao;
             this.$refs.valor.value = valor.replace(',', '.');
             this.$refs.atendido.checked = atendidoPorPlano === 'True' || atendidoPorPlano === true || atendidoPorPlano === 1;
+            this.$refs.isento.checked = isentoPagamento === 'True' || isentoPagamento === true || isentoPagamento === 1;
         }
      }">
 
@@ -98,7 +99,7 @@
                     </div>
 
                     <button type="button" 
-                            @click="abrirParaEditar('{% url 'editar_sessao' sessao.id %}', '{{ sessao.paciente.id }}', '{{ sessao.data|date:'Y-m-d' }}', '{{ sessao.horario_inicio|time:'H:i' }}', '{{ sessao.duracao_minutos }}', '{{ sessao.valor }}', '{{ sessao.atendido_por_plano }}')" 
+                            @click="abrirParaEditar('{% url 'editar_sessao' sessao.id %}', '{{ sessao.paciente.id }}', '{{ sessao.data|date:'Y-m-d' }}', '{{ sessao.horario_inicio|time:'H:i' }}', '{{ sessao.duracao_minutos }}', '{{ sessao.valor }}', '{{ sessao.atendido_por_plano }}', '{{ sessao.isento_pagamento }}')" 
                             class="flex h-9 w-9 items-center justify-center rounded-xl border border-slate-200 text-slate-400 hover:border-primary/30 hover:bg-primarySoft hover:text-primary transition shadow-sm">
                         <i class="fa-solid fa-pen text-xs"></i>
                     </button>
@@ -208,15 +209,19 @@
                     <div>
                         <label class="mb-1.5 block text-xs font-bold uppercase tracking-wider text-slate-500">Valor (R$)</label>
                         <div x-init="$el.querySelector('input').setAttribute('x-ref', 'valor')">
-                            <input type="number" name="valor" step="0.01" min="0" :disabled="$refs.atendido.checked" class="w-full rounded-xl border border-slate-200 bg-white px-4 py-3 text-sm text-slate-900 transition focus:border-primary focus:ring-primary" x-model="$refs.valor.value" />
+                            <input type="number" name="valor" step="0.01" min="0" :disabled="$refs.atendido.checked || $refs.isento.checked" class="w-full rounded-xl border border-slate-200 bg-white px-4 py-3 text-sm text-slate-900 transition focus:border-primary focus:ring-primary" x-model="$refs.valor.value" />
                         </div>
                     </div>
                 </div>
 
-                <div>
+                <div class="flex flex-col gap-2">
                     <label class="inline-flex items-center mt-2">
-                        <input type="checkbox" name="atendido_por_plano" x-ref="atendido" class="h-4 w-4 rounded border-slate-300 text-primary focus:ring-primary cursor-pointer mr-2" @change="$refs.valor.value = $refs.atendido.checked ? 0 : ''">
+                        <input type="checkbox" name="atendido_por_plano" x-ref="atendido" class="h-4 w-4 rounded border-slate-300 text-primary focus:ring-primary cursor-pointer mr-2" @change="$refs.valor.value = ($refs.atendido.checked || $refs.isento.checked) ? 0 : ''">
                         <span class="text-sm text-slate-700">Atendido por plano de saúde?</span>
+                    </label>
+                    <label class="inline-flex items-center mt-2">
+                        <input type="checkbox" name="isento_pagamento" x-ref="isento" class="h-4 w-4 rounded border-slate-300 text-primary focus:ring-primary cursor-pointer mr-2" @change="$refs.valor.value = ($refs.atendido.checked || $refs.isento.checked) ? 0 : ''">
+                        <span class="text-sm text-slate-700">Isento de pagamento</span>
                     </label>
                 </div>
 
