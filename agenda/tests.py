@@ -7,6 +7,7 @@ from django.urls import reverse
 from accounts.models import Paciente, Psicologo, SerieSessao, Sessao, Usuario
 
 from .forms import SessaoForm
+from .views import _build_sessoes_queryset
 
 
 class SessaoFormTests(TestCase):
@@ -243,6 +244,37 @@ class SessaoViewsTests(TestCase):
                 data_inicial + datetime.timedelta(days=21),
             ],
         )
+
+    def test_queryset_da_agenda_traz_metadados_da_serie_para_exibicao_visual(self):
+        serie = SerieSessao.objects.create(
+            psicologo=self.psicologo,
+            paciente=self.paciente,
+        )
+        sessao_recorrente = Sessao.objects.create(
+            psicologo=self.psicologo,
+            paciente=self.paciente,
+            serie=serie,
+            posicao_na_serie=1,
+            data=self.sessao.data,
+            horario_inicio=datetime.time(15, 30),
+            duracao_minutos=50,
+            valor="180.00",
+        )
+        Sessao.objects.create(
+            psicologo=self.psicologo,
+            paciente=self.paciente,
+            serie=serie,
+            posicao_na_serie=2,
+            data=self.sessao.data + datetime.timedelta(days=7),
+            horario_inicio=datetime.time(15, 30),
+            duracao_minutos=50,
+            valor="180.00",
+        )
+
+        sessao_anotada = _build_sessoes_queryset(self.psicologo).get(id=sessao_recorrente.id)
+
+        self.assertEqual(sessao_anotada.posicao_na_serie, 1)
+        self.assertEqual(sessao_anotada.total_sessoes_serie, 2)
 
 
 class SerieSessaoTests(TestCase):

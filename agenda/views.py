@@ -3,6 +3,7 @@ import datetime
 from urllib.parse import parse_qs, urlparse
 
 from django.contrib.auth.decorators import login_required
+from django.db.models import Count
 from django.shortcuts import get_object_or_404, redirect, render
 from django.utils.dateparse import parse_date
 from django.utils import timezone
@@ -72,6 +73,14 @@ def _criar_sessao_ou_serie(psicologo_perfil, form):
     Sessao.objects.bulk_create(sessoes)
 
 
+def _build_sessoes_queryset(psicologo_perfil):
+    return (
+        Sessao.objects.filter(psicologo=psicologo_perfil)
+        .select_related("paciente", "serie")
+        .annotate(total_sessoes_serie=Count("serie__sessoes"))
+    )
+
+
 @login_required
 def cancelar_sessao_view(request, sessao_id):
     psicologo_perfil = getattr(request.user, "psicologo", None)
@@ -88,7 +97,7 @@ def cancelar_sessao_view(request, sessao_id):
 
 
 def _render_agendamentos(request, psicologo_perfil, form):
-    lista_sessoes = Sessao.objects.filter(psicologo=psicologo_perfil).order_by(
+    lista_sessoes = _build_sessoes_queryset(psicologo_perfil).order_by(
         "data",
         "horario_inicio",
     )
@@ -101,19 +110,16 @@ def _render_agendamentos(request, psicologo_perfil, form):
             data_referencia = data_selecionada
             lista_sessoes = lista_sessoes.filter(data=data_selecionada)
 
-    agendamentos_do_dia = Sessao.objects.filter(
-        psicologo=psicologo_perfil,
+    agendamentos_do_dia = _build_sessoes_queryset(psicologo_perfil).filter(
         data=data_referencia,
     ).order_by("horario_inicio")
 
     inicio_semana = data_referencia
     fim_semana = inicio_semana + datetime.timedelta(days=6)
     agendamentos_da_semana = (
-        Sessao.objects.filter(
-            psicologo=psicologo_perfil,
+        _build_sessoes_queryset(psicologo_perfil).filter(
             data__range=(inicio_semana, fim_semana),
         )
-        .select_related("paciente")
         .order_by("data", "horario_inicio")
     )
 
@@ -132,11 +138,9 @@ def _render_agendamentos(request, psicologo_perfil, form):
         day=calendar.monthrange(data_referencia.year, data_referencia.month)[1]
     )
     agendamentos_do_mes = (
-        Sessao.objects.filter(
-            psicologo=psicologo_perfil,
+        _build_sessoes_queryset(psicologo_perfil).filter(
             data__range=(primeiro_dia_mes, ultimo_dia_mes),
         )
-        .select_related("paciente")
         .order_by("data", "horario_inicio")
     )
     agendamentos_por_dia = {}
