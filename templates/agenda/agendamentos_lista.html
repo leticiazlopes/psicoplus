@@ -304,8 +304,13 @@
                     </div>
                     <div class="mt-3 space-y-1.5">
                         {% for sessao in dia.agendamentos|slice:":3" %}
-                            <div class="rounded-lg bg-slate-50 px-2 py-1 text-left">
-                                <p class="truncate text-[11px] font-semibold text-slate-700">{{ sessao.horario_inicio|time:"H:i" }} {{ sessao.paciente.nome_completo }}</p>
+                            <div class="rounded-lg px-2 py-1 text-left
+                                {% if sessao.status == 'cancelada' %}bg-rose-100 border border-rose-200{% else %}bg-slate-50{% endif %}">
+                                <p class="truncate text-[11px] font-semibold 
+                                    {% if sessao.status == 'cancelada' %}text-rose-700 line-through{% else %}text-slate-700{% endif %}">
+                                    {{ sessao.horario_inicio|time:"H:i" }} {{ sessao.paciente.nome_completo }}
+                                    {% if sessao.status == 'cancelada' %}<span class="ml-1 text-[10px] font-bold uppercase">(Cancelada)</span>{% endif %}
+                                </p>
                                 {% if sessao.serie_id %}
                                     <p class="text-[10px] font-bold uppercase tracking-wide text-violet-700">Série {{ sessao.posicao_na_serie }}/{{ sessao.total_sessoes_serie }}</p>
                                 {% endif %}
