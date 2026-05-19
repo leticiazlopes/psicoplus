@@ -53,8 +53,8 @@ class SessaoFormTests(TestCase):
 
         self.assertFalse(form.is_valid())
         self.assertIn(
-            "Já existe um agendamento nesse horário. Escolha outro intervalo.",
-            form.non_field_errors(),
+            "Já existe um agendamento nesse horário para",
+            form.non_field_errors()[0],
         )
 
     def test_agendamento_que_engloba_intervalo_existente_e_invalido(self):
@@ -62,8 +62,8 @@ class SessaoFormTests(TestCase):
 
         self.assertFalse(form.is_valid())
         self.assertIn(
-            "Já existe um agendamento nesse horário. Escolha outro intervalo.",
-            form.non_field_errors(),
+            "Já existe um agendamento nesse horário para",
+            form.non_field_errors()[0],
         )
 
     def test_agendamento_sem_conflito_de_horario_e_valido(self):
@@ -117,6 +117,35 @@ class SessaoFormTests(TestCase):
 
         self.assertFalse(form.is_valid())
         self.assertIn("repeticoes", form.errors)
+
+    def test_agendamento_recorrente_valida_conflito_em_qualquer_ocorrencia_da_serie(self):
+        Sessao.objects.create(
+            psicologo=self.psicologo,
+            paciente=self.paciente,
+            data=self.data_agendamento + datetime.timedelta(days=14),
+            horario_inicio=datetime.time(11, 0),
+            duracao_minutos=50,
+            valor="150.00",
+        )
+
+        form = SessaoForm(
+            data={
+                "paciente": str(self.paciente.pk),
+                "data": self.data_agendamento.isoformat(),
+                "horario_inicio": "11:00",
+                "duracao_minutos": 50,
+                "valor": "180.00",
+                "eh_recorrente": "on",
+                "repeticoes": 4,
+            },
+            psicologo=self.psicologo,
+        )
+
+        self.assertFalse(form.is_valid())
+        self.assertIn(
+            f"{(self.data_agendamento + datetime.timedelta(days=14)).strftime('%d/%m/%Y')}",
+            form.non_field_errors()[0],
+        )
 
 
 class SessaoViewsTests(TestCase):

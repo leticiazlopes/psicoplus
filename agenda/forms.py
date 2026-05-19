@@ -46,6 +46,29 @@ class SessaoForm(forms.ModelForm):
             }
         )
 
+    def _validar_conflito_no_horario(self, data, horario_inicio, duracao_minutos):
+        inicio_novo = datetime.datetime.combine(data, horario_inicio)
+        fim_novo = inicio_novo + datetime.timedelta(minutes=duracao_minutos)
+
+        sessoes_no_dia = Sessao.objects.filter(
+            psicologo=self.psicologo,
+            data=data,
+        )
+
+        if self.instance.pk:
+            sessoes_no_dia = sessoes_no_dia.exclude(pk=self.instance.pk)
+
+        for sessao in sessoes_no_dia:
+            inicio_existente = datetime.datetime.combine(data, sessao.horario_inicio)
+            fim_existente = inicio_existente + datetime.timedelta(
+                minutes=sessao.duracao_minutos
+            )
+
+            if inicio_novo < fim_existente and fim_novo > inicio_existente:
+                return False
+
+        return True
+
     def clean(self):
         cleaned_data = super().clean()
         data = cleaned_data.get("data")
@@ -82,26 +105,20 @@ class SessaoForm(forms.ModelForm):
         if not all([self.psicologo, data, horario_inicio, duracao_minutos]):
             return cleaned_data
 
-        inicio_novo = datetime.datetime.combine(data, horario_inicio)
-        fim_novo = inicio_novo + datetime.timedelta(minutes=duracao_minutos)
-
-        sessoes_no_dia = Sessao.objects.filter(
-            psicologo=self.psicologo,
-            data=data,
-        )
-
-        if self.instance.pk:
-            sessoes_no_dia = sessoes_no_dia.exclude(pk=self.instance.pk)
-
-        for sessao in sessoes_no_dia:
-            inicio_existente = datetime.datetime.combine(data, sessao.horario_inicio)
-            fim_existente = inicio_existente + datetime.timedelta(
-                minutes=sessao.duracao_minutos
-            )
-
-            if inicio_novo < fim_existente and fim_novo > inicio_existente:
+        total_ocorrencias = repeticoes if eh_recorrente and repeticoes else 1
+        for indice in range(total_ocorrencias):
+            data_ocorrencia = data + datetime.timedelta(days=7 * indice)
+            if not self._validar_conflito_no_horario(
+                data_ocorrencia,
+                horario_inicio,
+                duracao_minutos,
+            ):
                 raise forms.ValidationError(
-                    "Já existe um agendamento nesse horário. Escolha outro intervalo."
+                    (
+                        "Já existe um agendamento nesse horário para "
+                        f"{data_ocorrencia.strftime('%d/%m/%Y')}. "
+                        "Escolha outro intervalo."
+                    )
                 )
 
         return cleaned_data
