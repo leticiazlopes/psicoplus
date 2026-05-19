@@ -32,7 +32,11 @@ class SessaoForm(forms.ModelForm):
             field.widget.attrs["class"] = tailwind_classes
 
         self.fields["data"].widget = forms.DateInput(
-            attrs={"type": "date", "class": tailwind_classes}
+            attrs={
+                "type": "date",
+                "class": tailwind_classes,
+                "x-model": "dataSessao",
+            }
         )
         self.fields["horario_inicio"].widget = forms.TimeInput(
             attrs={"type": "time", "class": tailwind_classes}
@@ -43,6 +47,7 @@ class SessaoForm(forms.ModelForm):
                 "max": 52,
                 "placeholder": "Ex: 4, 8, 12",
                 "class": tailwind_classes,
+                "x-model": "repeticoesRecorrencia",
             }
         )
 
