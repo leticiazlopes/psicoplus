@@ -160,9 +160,10 @@ def ativar_paciente(request, pk):
     paciente.ativo = True
     paciente.save()
 
+
     hoje = timezone.now().date()
-    sessoes_canceladas = Sessao.objects.filter(paciente=paciente, data__gte=hoje, status=Sessao.Status.CANCELADA)
-    sessoes_canceladas.update(status=Sessao.Status.PENDENTE)
+    sessoes_futuras_canceladas = Sessao.objects.filter(paciente=paciente, data__gt=hoje, status=Sessao.Status.CANCELADA)
+    sessoes_futuras_canceladas.update(status=Sessao.Status.PENDENTE)
 
     messages.success(request, "Paciente ativado com sucesso. Sessões futuras reativadas.")
     return redirect("pacientes_lista")
