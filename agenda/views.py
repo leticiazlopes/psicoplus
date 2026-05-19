@@ -7,7 +7,7 @@ from django.shortcuts import get_object_or_404, redirect, render
 from django.utils.dateparse import parse_date
 from django.utils import timezone
 
-from accounts.models import Sessao
+from accounts.models import SerieSessao, Sessao
 
 from .forms import SessaoForm
 
@@ -34,6 +34,42 @@ def _get_redirect_destino(request):
         return f"/agenda/?data={data_filtro}"
 
     return "agenda_lista"
+
+
+def _criar_sessao_ou_serie(psicologo_perfil, form):
+    sessao = form.save(commit=False)
+    sessao.psicologo = psicologo_perfil
+
+    repeticoes = form.cleaned_data.get("repeticoes")
+    if not repeticoes:
+        sessao.save()
+        return
+
+    serie = SerieSessao.objects.create(
+        psicologo=psicologo_perfil,
+        paciente=sessao.paciente,
+    )
+
+    sessoes = []
+    for indice in range(repeticoes):
+        data_sessao = sessao.data + datetime.timedelta(days=7 * indice)
+        sessoes.append(
+            Sessao(
+                psicologo=psicologo_perfil,
+                paciente=sessao.paciente,
+                serie=serie,
+                posicao_na_serie=indice + 1,
+                data=data_sessao,
+                horario_inicio=sessao.horario_inicio,
+                duracao_minutos=sessao.duracao_minutos,
+                valor=sessao.valor,
+                status=sessao.status,
+                atendido_por_plano=sessao.atendido_por_plano,
+                isento_pagamento=sessao.isento_pagamento,
+            )
+        )
+
+    Sessao.objects.bulk_create(sessoes)
 
 
 @login_required
@@ -153,9 +189,7 @@ def agendamentos_view(request):
     if request.method == "POST":
         form = SessaoForm(request.POST, psicologo=psicologo_perfil)
         if form.is_valid():
-            sessao = form.save(commit=False)
-            sessao.psicologo = psicologo_perfil
-            sessao.save()
+            _criar_sessao_ou_serie(psicologo_perfil, form)
             return redirect(_get_redirect_destino(request))
     else:
         form = SessaoForm(psicologo=psicologo_perfil)

@@ -6,6 +6,9 @@ from accounts.models import Paciente, Sessao
 
 
 class SessaoForm(forms.ModelForm):
+    eh_recorrente = forms.BooleanField(required=False)
+    repeticoes = forms.IntegerField(required=False, min_value=2, max_value=52)
+
     class Meta:
         model = Sessao
         fields = ["paciente", "data", "horario_inicio", "duracao_minutos", "valor", "atendido_por_plano", "isento_pagamento"]
@@ -34,6 +37,14 @@ class SessaoForm(forms.ModelForm):
         self.fields["horario_inicio"].widget = forms.TimeInput(
             attrs={"type": "time", "class": tailwind_classes}
         )
+        self.fields["repeticoes"].widget = forms.NumberInput(
+            attrs={
+                "min": 2,
+                "max": 52,
+                "placeholder": "Ex: 4, 8, 12",
+                "class": tailwind_classes,
+            }
+        )
 
     def clean(self):
         cleaned_data = super().clean()
@@ -43,6 +54,8 @@ class SessaoForm(forms.ModelForm):
         valor = cleaned_data.get("valor")
         atendido_por_plano = cleaned_data.get("atendido_por_plano")
         isento_pagamento = cleaned_data.get("isento_pagamento")
+        eh_recorrente = cleaned_data.get("eh_recorrente")
+        repeticoes = cleaned_data.get("repeticoes")
 
         if data and data < datetime.date.today():
             raise forms.ValidationError(
@@ -56,6 +69,15 @@ class SessaoForm(forms.ModelForm):
                 "valor",
                 "Informe um valor maior que zero quando a sessão não for isenta nem atendida por plano.",
             )
+
+        if eh_recorrente and not repeticoes:
+            self.add_error(
+                "repeticoes",
+                "Informe por quantas semanas a sessão deve se repetir.",
+            )
+
+        if not eh_recorrente:
+            cleaned_data["repeticoes"] = None
 
         if not all([self.psicologo, data, horario_inicio, duracao_minutos]):
             return cleaned_data

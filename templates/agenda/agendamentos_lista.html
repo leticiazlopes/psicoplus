@@ -8,8 +8,10 @@
         viewMode: 'dia',
         modalTitle: 'Agendar Sessão',
         formAction: '',
+        modoEdicao: false,
         atendidoPorPlano: {% if form.atendido_por_plano.value %}true{% else %}false{% endif %},
         isentoPagamento: {% if form.isento_pagamento.value %}true{% else %}false{% endif %},
+        ehRecorrente: {% if form.eh_recorrente.value %}true{% else %}false{% endif %},
 
         campo(nome) {
             return this.$refs.formSessao.querySelector('[name=' + nome + ']');
@@ -19,14 +21,17 @@
             this.modalTitle = 'Agendar Sessão';
             this.formAction = ''; 
             this.showModal = true;
+            this.modoEdicao = false;
             
             this.campo('paciente').value = '';
             this.campo('data').value = '';
             this.campo('horario_inicio').value = '';
             this.campo('duracao_minutos').value = '50';
             this.campo('valor').value = '';
+            this.campo('repeticoes').value = '';
             this.atendidoPorPlano = false;
             this.isentoPagamento = false;
+            this.ehRecorrente = false;
             this.atualizarValorPagamento();
         },
 
@@ -34,6 +39,7 @@
             this.modalTitle = 'Editar Agendamento';
             this.formAction = url; 
             this.showModal = true;
+            this.modoEdicao = true;
 
             this.campo('paciente').value = pacienteId;
             this.campo('data').value = data;
@@ -42,6 +48,8 @@
             this.atendidoPorPlano = atendidoPorPlano === 'True' || atendidoPorPlano === true || atendidoPorPlano === 1;
             this.isentoPagamento = isentoPagamento === 'True' || isentoPagamento === true || isentoPagamento === 1;
             this.campo('valor').value = valor.replace(',', '.');
+            this.ehRecorrente = false;
+            this.campo('repeticoes').value = '';
             this.atualizarValorPagamento();
         },
 
@@ -291,6 +299,25 @@
                     <div class="flex items-center gap-2">
                         <input type="checkbox" name="isento_pagamento" x-model="isentoPagamento" class="h-4 w-4 rounded border-slate-300 text-primary focus:ring-primary cursor-pointer" @change="atualizarValorPagamento()">
                         <span class="text-sm font-medium text-slate-700">Sim</span>
+                    </div>
+                </div>
+
+                <div x-show="!modoEdicao" style="display: none;" class="rounded-2xl border border-slate-200 bg-slate-50/80 p-4">
+                    <label class="mb-2 block text-xs font-bold uppercase tracking-wider text-slate-500">Recorrência semanal</label>
+                    <div class="flex items-center gap-2">
+                        <input type="checkbox" name="eh_recorrente" x-model="ehRecorrente" class="h-4 w-4 rounded border-slate-300 text-primary focus:ring-primary cursor-pointer">
+                        <span class="text-sm font-medium text-slate-700">Repetir esta sessão semanalmente</span>
+                    </div>
+
+                    <div x-show="ehRecorrente" style="display: none;" class="mt-4">
+                        <label class="mb-1.5 block text-xs font-bold uppercase tracking-wider text-slate-500">Quantidade de semanas</label>
+                        <div>
+                            {{ form.repeticoes }}
+                        </div>
+                        <p class="mt-1 text-xs text-slate-500">Exemplo: `4` cria 4 sessões semanais contando esta primeira.</p>
+                        {% if form.repeticoes.errors %}
+                            <p class="mt-1 text-xs font-medium text-rose-500">{{ form.repeticoes.errors.0 }}</p>
+                        {% endif %}
                     </div>
                 </div>
 

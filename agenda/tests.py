@@ -102,6 +102,22 @@ class SessaoFormTests(TestCase):
         self.assertFalse(form.is_valid())
         self.assertIn("valor", form.errors)
 
+    def test_agendamento_recorrente_exige_quantidade_de_repeticoes(self):
+        form = SessaoForm(
+            data={
+                "paciente": str(self.paciente.pk),
+                "data": self.data_agendamento.isoformat(),
+                "horario_inicio": "11:00",
+                "duracao_minutos": 50,
+                "valor": "180.00",
+                "eh_recorrente": "on",
+            },
+            psicologo=self.psicologo,
+        )
+
+        self.assertFalse(form.is_valid())
+        self.assertIn("repeticoes", form.errors)
+
 
 class SessaoViewsTests(TestCase):
     def setUp(self):
@@ -159,6 +175,44 @@ class SessaoViewsTests(TestCase):
             response,
             f"{reverse('agenda_lista')}?data={self.sessao.data.isoformat()}",
             fetch_redirect_response=False,
+        )
+
+    def test_agendar_sessao_recorrente_cria_serie_com_todas_as_ocorrencias(self):
+        data_inicial = datetime.date.today() + datetime.timedelta(days=3)
+
+        response = self.client.post(
+            reverse("agenda_lista"),
+            data={
+                "paciente": str(self.paciente.pk),
+                "data": data_inicial.isoformat(),
+                "horario_inicio": "16:00",
+                "duracao_minutos": 50,
+                "valor": "200.00",
+                "eh_recorrente": "on",
+                "repeticoes": 4,
+            },
+        )
+
+        self.assertRedirects(response, reverse("agenda_lista"), fetch_redirect_response=False)
+
+        sessoes = Sessao.objects.filter(
+            psicologo=self.psicologo,
+            paciente=self.paciente,
+            horario_inicio=datetime.time(16, 0),
+        ).order_by("data")
+
+        self.assertEqual(sessoes.count(), 4)
+        self.assertTrue(all(sessao.serie_id for sessao in sessoes))
+        self.assertEqual(len({sessao.serie_id for sessao in sessoes}), 1)
+        self.assertEqual([sessao.posicao_na_serie for sessao in sessoes], [1, 2, 3, 4])
+        self.assertEqual(
+            [sessao.data for sessao in sessoes],
+            [
+                data_inicial,
+                data_inicial + datetime.timedelta(days=7),
+                data_inicial + datetime.timedelta(days=14),
+                data_inicial + datetime.timedelta(days=21),
+            ],
         )
 
 
