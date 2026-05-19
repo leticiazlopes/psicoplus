@@ -1,6 +1,9 @@
+import uuid
 from django.db import models
 from django.contrib.auth.models import AbstractUser
-import uuid
+from django.utils import timezone
+from django.db.models.signals import post_save
+from django.dispatch import receiver
 
 
 class Usuario(AbstractUser):
@@ -119,8 +122,16 @@ class Sessao(models.Model):
         PENDENTE = "pendente", "Pendente"
         CONFIRMADA = "confirmada", "Confirmada"
         CANCELADA = "cancelada", "Cancelada"
+        REALIZADA = "realizada", "Realizada"
+        FALTA = "falta", "Falta"
 
     id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
+    
+    @property
+    def pode_evoluir(self):
+        """Retorna True apenas se o status for Realizada, 
+        servindo de gancho de segurança para o prontuário."""
+        return self.status == self.Status.REALIZADA
     
     psicologo = models.ForeignKey(
         Psicologo, 
@@ -142,7 +153,7 @@ class Sessao(models.Model):
     
     data = models.DateField()
     horario_inicio = models.TimeField()
-    duracao_minutos = models.PositiveIntegerField(default=50) # Duração em minutos (ex: 50, 60)
+    duracao_minutos = models.PositiveIntegerField(default=50)
     posicao_na_serie = models.PositiveIntegerField(blank=True, null=True)
     valor = models.DecimalField(max_digits=10, decimal_places=2)
     status = models.CharField(
@@ -167,3 +178,49 @@ class Sessao(models.Model):
     def __str__(self):
         return f"Sessão: {self.paciente.nome_completo} - {self.data} às {self.horario_inicio}"
     
+
+class HistoricoStatusSessao(models.Model):
+    id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
+    sessao = models.ForeignKey(
+        Sessao, 
+        on_delete=models.CASCADE, 
+        related_name='historico_status'
+    )
+    status_anterior = models.CharField(max_length=20)
+    status_novo = models.CharField(max_length=20)
+    alterado_em = models.DateTimeField(auto_now_add=True)
+    
+    class Meta:
+        ordering = ['-alterado_em']
+
+    def __str__(self):
+        return f"{self.sessao.paciente.nome_completo}: {self.status_anterior} -> {self.status_novo}"
+
+
+# ==========================================
+# SIGNALS (Gatilhos Automáticos de Histórico)
+# ==========================================
+
+@receiver(post_save, sender=Sessao)
+def registrar_historico_status(sender, instance, created, **kwargs):
+    """
+    Intercapta o salvamento da Sessão para gerar logs automaticamente.
+    Mantém o histórico limpo e centralizado no servidor.
+    """
+    if created:
+        # Quando o psicólogo agenda uma nova sessão
+        HistoricoStatusSessao.objects.create(
+            sessao=instance,
+            status_anterior='criado',
+            status_novo=instance.status
+        )
+    else:
+        # Quando há atualização na listagem inline ou dentro do modal
+        # Buscamos de forma limpa o último estado salvo no banco de dados para comparar
+        original = Sessao.objects.filter(pk=instance.pk).first()
+        if original and original.status != instance.status:
+            HistoricoStatusSessao.objects.create(
+                sessao=instance,
+                status_anterior=original.status,
+                status_novo=instance.status
+            )

@@ -237,7 +237,6 @@ def esqueci_senha_request(request):
 
 
 def validar_codigo_e_salvar(request):
-    """Passo 2: Valida o código digitado e atualiza a senha de forma segura"""
     email = request.session.get('email_recuperacao')
     
     

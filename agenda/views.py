@@ -13,6 +13,10 @@ from accounts.models import SerieSessao, Sessao
 
 from .forms import SessaoForm
 
+import json
+from django.http import JsonResponse
+from accounts.models import HistoricoStatusSessao
+from django.views.decorators.http import require_POST
 
 def _get_data_filtro(request):
     data_filtro = request.GET.get("data")
@@ -302,3 +306,42 @@ def editar_sessao_view(request, sessao_id):
         return _render_agendamentos(request, psicologo_perfil, form)
 
     return redirect("agenda_lista")
+
+@login_required
+@require_POST
+def atualizar_status_sessao(request, sessao_id):
+    """
+    Módulo Interativo (Aba Atendimentos):
+    Altera o status da consulta via AJAX/Fetch API sem recarregar a página.
+    """
+    try:
+        
+        psicologo = request.user.psicologo
+    except AttributeError:
+        return JsonResponse({'success': False, 'error': 'Usuário não possui perfil de psicólogo.'}, status=403)
+        
+    
+    sessao = get_object_or_404(Sessao, id=sessao_id, psicologo=psicologo)
+    
+    try:
+        data = json.loads(request.body)
+        novo_status = data.get('status')
+        
+        
+        if novo_status not in Sessao.Status.values:
+            return JsonResponse({'success': False, 'error': 'Status inválido.'}, status=400)
+        
+        if sessao.status != novo_status:
+            sessao.status = novo_status
+            
+            
+            sessao.save()
+            
+        return JsonResponse({
+            'success': True, 
+            'pode_evoluir': sessao.pode_evoluir,
+            'message': 'Status atualizado com sucesso.'
+        })
+        
+    except Exception as e:
+        return JsonResponse({'success': False, 'error': str(e)}, status=500)
