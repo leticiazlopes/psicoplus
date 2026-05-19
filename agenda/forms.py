@@ -40,10 +40,21 @@ class SessaoForm(forms.ModelForm):
         data = cleaned_data.get("data")
         horario_inicio = cleaned_data.get("horario_inicio")
         duracao_minutos = cleaned_data.get("duracao_minutos")
+        valor = cleaned_data.get("valor")
+        atendido_por_plano = cleaned_data.get("atendido_por_plano")
+        isento_pagamento = cleaned_data.get("isento_pagamento")
 
         if data and data < datetime.date.today():
             raise forms.ValidationError(
                 "A data do agendamento deve ser hoje ou uma data futura."
+            )
+
+        if atendido_por_plano or isento_pagamento:
+            cleaned_data["valor"] = 0
+        elif valor is None or valor <= 0:
+            self.add_error(
+                "valor",
+                "Informe um valor maior que zero quando a sessão não for isenta nem atendida por plano.",
             )
 
         if not all([self.psicologo, data, horario_inicio, duracao_minutos]):

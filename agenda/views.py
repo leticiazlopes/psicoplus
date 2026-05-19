@@ -1,13 +1,39 @@
 import calendar
 import datetime
+from urllib.parse import parse_qs, urlparse
 
 from django.contrib.auth.decorators import login_required
-from django.shortcuts import redirect, render, get_object_or_404
+from django.shortcuts import get_object_or_404, redirect, render
+from django.utils.dateparse import parse_date
 from django.utils import timezone
 
 from accounts.models import Sessao
 
 from .forms import SessaoForm
+
+
+def _get_data_filtro(request):
+    data_filtro = request.GET.get("data")
+    if data_filtro:
+        return data_filtro
+
+    return_to = request.POST.get("return_to", "")
+    if not return_to:
+        return ""
+
+    return parse_qs(urlparse(return_to).query).get("data", [""])[0]
+
+
+def _get_redirect_destino(request):
+    return_to = request.POST.get("return_to") or request.GET.get("return_to")
+    if return_to and return_to.startswith("/"):
+        return return_to
+
+    data_filtro = _get_data_filtro(request)
+    if data_filtro:
+        return f"/agenda/?data={data_filtro}"
+
+    return "agenda_lista"
 
 
 @login_required
@@ -22,37 +48,15 @@ def cancelar_sessao_view(request, sessao_id):
         sessao.status = Sessao.Status.CANCELADA
         sessao.save()
 
-    return redirect("agenda_lista")
-from django.utils.dateparse import parse_date
-from django.shortcuts import get_object_or_404
-
-from accounts.models import Sessao
-
-from .forms import SessaoForm
+    return redirect(_get_redirect_destino(request))
 
 
-@login_required
-def agendamentos_view(request):
-    psicologo_perfil = getattr(request.user, "psicologo", None)
-
-    if not psicologo_perfil:
-        return redirect("dashboard")
-
-    if request.method == "POST":
-        form = SessaoForm(request.POST, psicologo=psicologo_perfil)
-        if form.is_valid():
-            sessao = form.save(commit=False)
-            sessao.psicologo = psicologo_perfil
-            sessao.save()
-            return redirect("agenda_lista")
-    else:
-        form = SessaoForm(psicologo=psicologo_perfil)
-
+def _render_agendamentos(request, psicologo_perfil, form):
     lista_sessoes = Sessao.objects.filter(psicologo=psicologo_perfil).order_by(
         "data",
         "horario_inicio",
     )
-    data_filtro = request.GET.get("data")
+    data_filtro = _get_data_filtro(request)
     data_referencia = timezone.localdate()
 
     if data_filtro:
@@ -126,6 +130,7 @@ def agendamentos_view(request):
         "form": form,
         "sessoes": lista_sessoes,
         "data_filtro": data_filtro or "",
+        "return_to": request.POST.get("return_to") or request.get_full_path(),
         "data_referencia": data_referencia,
         "agendamentos_do_dia": agendamentos_do_dia,
         "semana": semana,
@@ -136,6 +141,26 @@ def agendamentos_view(request):
         "ultimo_dia_mes": ultimo_dia_mes,
     }
     return render(request, "agenda/agendamentos_lista.html", context)
+
+
+@login_required
+def agendamentos_view(request):
+    psicologo_perfil = getattr(request.user, "psicologo", None)
+
+    if not psicologo_perfil:
+        return redirect("dashboard")
+
+    if request.method == "POST":
+        form = SessaoForm(request.POST, psicologo=psicologo_perfil)
+        if form.is_valid():
+            sessao = form.save(commit=False)
+            sessao.psicologo = psicologo_perfil
+            sessao.save()
+            return redirect(_get_redirect_destino(request))
+    else:
+        form = SessaoForm(psicologo=psicologo_perfil)
+
+    return _render_agendamentos(request, psicologo_perfil, form)
 
 
 @login_required
@@ -150,5 +175,8 @@ def editar_sessao_view(request, sessao_id):
         form = SessaoForm(request.POST, instance=sessao, psicologo=psicologo_perfil)
         if form.is_valid():
             form.save()
-            
+            return redirect(_get_redirect_destino(request))
+
+        return _render_agendamentos(request, psicologo_perfil, form)
+
     return redirect("agenda_lista")

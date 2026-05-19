@@ -2,22 +2,32 @@
 
 {% block content %}
 <div class="flex-1 bg-slate-50/50 px-8 py-8"
+     x-init="$nextTick(() => { if (showModal) { atualizarValorPagamento(); } })"
      x-data="{ 
         showModal: {% if form.errors %}true{% else %}false{% endif %}, 
         viewMode: 'dia',
         modalTitle: 'Agendar Sessão',
         formAction: '',
+        atendidoPorPlano: {% if form.atendido_por_plano.value %}true{% else %}false{% endif %},
+        isentoPagamento: {% if form.isento_pagamento.value %}true{% else %}false{% endif %},
+
+        campo(nome) {
+            return this.$refs.formSessao.querySelector('[name=\"' + nome + '\"]');
+        },
 
         abrirParaCriar() {
             this.modalTitle = 'Agendar Sessão';
             this.formAction = ''; 
             this.showModal = true;
             
-            this.$refs.paciente.value = '';
-            this.$refs.data.value = '';
-            this.$refs.horario.value = '';
-            this.$refs.duracao.value = '50';
-            this.$refs.valor.value = '';
+            this.campo('paciente').value = '';
+            this.campo('data').value = '';
+            this.campo('horario_inicio').value = '';
+            this.campo('duracao_minutos').value = '50';
+            this.campo('valor').value = '';
+            this.atendidoPorPlano = false;
+            this.isentoPagamento = false;
+            this.atualizarValorPagamento();
         },
 
         abrirParaEditar(url, pacienteId, data, horario, duracao, valor, atendidoPorPlano, isentoPagamento) {
@@ -25,13 +35,20 @@
             this.formAction = url; 
             this.showModal = true;
 
-            this.$refs.paciente.value = pacienteId;
-            this.$refs.data.value = data;
-            this.$refs.horario.value = horario;
-            this.$refs.duracao.value = duracao;
-            this.$refs.valor.value = valor.replace(',', '.');
-            this.$refs.atendido.checked = atendidoPorPlano === 'True' || atendidoPorPlano === true || atendidoPorPlano === 1;
-            this.$refs.isento.checked = isentoPagamento === 'True' || isentoPagamento === true || isentoPagamento === 1;
+            this.campo('paciente').value = pacienteId;
+            this.campo('data').value = data;
+            this.campo('horario_inicio').value = horario;
+            this.campo('duracao_minutos').value = duracao;
+            this.atendidoPorPlano = atendidoPorPlano === 'True' || atendidoPorPlano === true || atendidoPorPlano === 1;
+            this.isentoPagamento = isentoPagamento === 'True' || isentoPagamento === true || isentoPagamento === 1;
+            this.campo('valor').value = valor.replace(',', '.');
+            this.atualizarValorPagamento();
+        },
+
+        atualizarValorPagamento() {
+            if (this.atendidoPorPlano || this.isentoPagamento) {
+                this.campo('valor').value = '0';
+            }
         }
      }">
 
@@ -121,6 +138,7 @@
                                     </button>
                                     <form id="form-cancelar" method="POST" class="flex-1">
                                         {% csrf_token %}
+                                        <input id="cancelar-return-to" type="hidden" name="return_to" value="{{ return_to }}">
                                         <button type="submit" class="w-full rounded-xl bg-gradient-to-r from-rose-500 to-rose-600 px-4 py-2 font-semibold text-white transition hover:from-rose-600 hover:to-rose-700">
                                             Cancelar sessão
                                         </button>
@@ -210,12 +228,19 @@
                 </button>
             </div>
 
-            <form :action="formAction" method="post" class="space-y-4">
+            <form x-ref="formSessao" :action="formAction" method="post" class="space-y-4">
                 {% csrf_token %}
+                <input type="hidden" name="return_to" value="{{ return_to }}">
+
+                {% if form.non_field_errors %}
+                    <div class="rounded-xl border border-rose-200 bg-rose-50 px-4 py-3 text-sm text-rose-600">
+                        {{ form.non_field_errors.0 }}
+                    </div>
+                {% endif %}
 
                 <div>
                     <label class="mb-1.5 block text-xs font-bold uppercase tracking-wider text-slate-500">Paciente</label>
-                    <div x-init="$el.querySelector('select').setAttribute('x-ref', 'paciente')">
+                    <div>
                         {{ form.paciente }}
                     </div>
                 </div>
@@ -223,13 +248,13 @@
                 <div class="grid grid-cols-2 gap-4">
                     <div>
                         <label class="mb-1.5 block text-xs font-bold uppercase tracking-wider text-slate-500">Data</label>
-                        <div x-init="$el.querySelector('input').setAttribute('x-ref', 'data')">
+                        <div>
                             {{ form.data }}
                         </div>
                     </div>
                     <div>
                         <label class="mb-1.5 block text-xs font-bold uppercase tracking-wider text-slate-500">Horário de Início</label>
-                        <div x-init="$el.querySelector('input').setAttribute('x-ref', 'horario')">
+                        <div>
                             {{ form.horario_inicio }}
                         </div>
                     </div>
@@ -239,29 +264,32 @@
                 <div class="grid grid-cols-2 gap-4">
                     <div>
                         <label class="mb-1.5 block text-xs font-bold uppercase tracking-wider text-slate-500">Duração (min)</label>
-                        <div x-init="$el.querySelector('input').setAttribute('x-ref', 'duracao')">
+                        <div>
                             {{ form.duracao_minutos }}
                         </div>
                     </div>
                     <div>
                         <label class="mb-1.5 block text-xs font-bold uppercase tracking-wider text-slate-500">Valor (R$)</label>
-                        <div x-init="$el.querySelector('input').setAttribute('x-ref', 'valor')">
-                            <input type="number" name="valor" step="0.01" min="0" :disabled="$refs.atendido.checked || $refs.isento.checked" class="w-full rounded-xl border border-slate-200 bg-white px-4 py-3 text-sm text-slate-900 transition focus:border-primary focus:ring-primary" x-model="$refs.valor.value" />
+                        <div>
+                            <input type="number" name="valor" x-ref="valor" step="0.01" min="0" value="{{ form.valor.value|default_if_none:'' }}" :readonly="atendidoPorPlano || isentoPagamento" class="w-full rounded-xl border border-slate-200 bg-white px-4 py-3 text-sm text-slate-900 transition focus:border-primary focus:ring-primary read-only:bg-slate-100 read-only:text-slate-500 read-only:cursor-not-allowed" />
                         </div>
+                        {% if form.valor.errors %}
+                            <p class="mt-1 text-xs font-medium text-rose-500">{{ form.valor.errors.0 }}</p>
+                        {% endif %}
                     </div>
                 </div>
 
                 <div>
                     <label class="mb-1.5 block text-xs font-bold uppercase tracking-wider text-slate-500">Atendido por plano de saúde?</label>
                     <div class="flex items-center gap-2">
-                        <input type="checkbox" name="atendido_por_plano" x-ref="atendido" class="h-4 w-4 rounded border-slate-300 text-primary focus:ring-primary cursor-pointer" @change="$refs.valor.value = ($refs.atendido.checked || $refs.isento.checked) ? 0 : ''">
+                        <input type="checkbox" name="atendido_por_plano" x-model="atendidoPorPlano" class="h-4 w-4 rounded border-slate-300 text-primary focus:ring-primary cursor-pointer" @change="atualizarValorPagamento()">
                         <span class="text-sm font-medium text-slate-700">Sim</span>
                     </div>
                 </div>
                 <div>
                     <label class="mb-1.5 block text-xs font-bold uppercase tracking-wider text-slate-500">Isento de pagamento</label>
                     <div class="flex items-center gap-2">
-                        <input type="checkbox" name="isento_pagamento" x-ref="isento" class="h-4 w-4 rounded border-slate-300 text-primary focus:ring-primary cursor-pointer" @change="$refs.valor.value = ($refs.atendido.checked || $refs.isento.checked) ? 0 : ''">
+                        <input type="checkbox" name="isento_pagamento" x-model="isentoPagamento" class="h-4 w-4 rounded border-slate-300 text-primary focus:ring-primary cursor-pointer" @change="atualizarValorPagamento()">
                         <span class="text-sm font-medium text-slate-700">Sim</span>
                     </div>
                 </div>
