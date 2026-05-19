@@ -4,6 +4,7 @@ from urllib.parse import parse_qs, urlparse
 
 from django.contrib.auth.decorators import login_required
 from django.db.models import Count
+from django.db import transaction
 from django.shortcuts import get_object_or_404, redirect, render
 from django.utils.dateparse import parse_date
 from django.utils import timezone
@@ -79,6 +80,69 @@ def _build_sessoes_queryset(psicologo_perfil):
         .select_related("paciente", "serie")
         .annotate(total_sessoes_serie=Count("serie__sessoes"))
     )
+
+
+def _get_sessoes_ativas_da_serie(sessao):
+    return (
+        Sessao.objects.filter(serie=sessao.serie)
+        .exclude(status=Sessao.Status.CANCELADA)
+        .order_by("posicao_na_serie", "data", "horario_inicio")
+    )
+
+
+def _get_sessoes_ativas_a_partir_da_atual(sessao):
+    posicao_referencia = sessao.posicao_na_serie or 1
+    return (
+        _get_sessoes_ativas_da_serie(sessao)
+        .filter(posicao_na_serie__gte=posicao_referencia)
+    )
+
+
+def _validar_conflitos_edicao_seguintes(sessao_original, form):
+    sessoes_da_serie = list(_get_sessoes_ativas_a_partir_da_atual(sessao_original))
+    ids_serie = [sessao.id for sessao in sessoes_da_serie]
+    posicao_referencia = sessao_original.posicao_na_serie or 1
+
+    for sessao in sessoes_da_serie:
+        posicao_atual = sessao.posicao_na_serie or posicao_referencia
+        deslocamento_semanas = posicao_atual - posicao_referencia
+        nova_data = form.cleaned_data["data"] + datetime.timedelta(days=7 * deslocamento_semanas)
+
+        if not form._validar_conflito_no_horario(
+            nova_data,
+            form.cleaned_data["horario_inicio"],
+            form.cleaned_data["duracao_minutos"],
+            excluir_ids=ids_serie,
+        ):
+            return (
+                "Já existe um agendamento nesse horário para "
+                f"{nova_data.strftime('%d/%m/%Y')} ao aplicar a alteração nas próximas sessões."
+            )
+
+    return None
+
+
+@transaction.atomic
+def _atualizar_sessoes_seguintes(sessao_original, form):
+    serie = sessao_original.serie
+    sessoes_da_serie = list(_get_sessoes_ativas_a_partir_da_atual(sessao_original))
+    posicao_referencia = sessao_original.posicao_na_serie or 1
+
+    if serie.paciente_id != form.cleaned_data["paciente"].id:
+        serie.paciente = form.cleaned_data["paciente"]
+        serie.save(update_fields=["paciente"])
+
+    for sessao in sessoes_da_serie:
+        posicao_atual = sessao.posicao_na_serie or posicao_referencia
+        deslocamento_semanas = posicao_atual - posicao_referencia
+        sessao.paciente = form.cleaned_data["paciente"]
+        sessao.data = form.cleaned_data["data"] + datetime.timedelta(days=7 * deslocamento_semanas)
+        sessao.horario_inicio = form.cleaned_data["horario_inicio"]
+        sessao.duracao_minutos = form.cleaned_data["duracao_minutos"]
+        sessao.valor = form.cleaned_data["valor"]
+        sessao.atendido_por_plano = form.cleaned_data["atendido_por_plano"]
+        sessao.isento_pagamento = form.cleaned_data["isento_pagamento"]
+        sessao.save()
 
 
 @login_required
@@ -171,6 +235,7 @@ def _render_agendamentos(request, psicologo_perfil, form):
         "sessoes": lista_sessoes,
         "data_filtro": data_filtro or "",
         "return_to": request.POST.get("return_to") or request.get_full_path(),
+        "aplicar_em": request.POST.get("aplicar_em", "sessao"),
         "data_referencia": data_referencia,
         "agendamentos_do_dia": agendamentos_do_dia,
         "semana": semana,
@@ -212,7 +277,15 @@ def editar_sessao_view(request, sessao_id):
     if request.method == "POST":
         form = SessaoForm(request.POST, instance=sessao, psicologo=psicologo_perfil)
         if form.is_valid():
-            form.save()
+            aplicar_em = request.POST.get("aplicar_em", "sessao")
+            if aplicar_em == "seguintes" and sessao.serie_id:
+                mensagem_erro = _validar_conflitos_edicao_seguintes(sessao, form)
+                if mensagem_erro:
+                    form.add_error(None, mensagem_erro)
+                    return _render_agendamentos(request, psicologo_perfil, form)
+                _atualizar_sessoes_seguintes(sessao, form)
+            else:
+                form.save()
             return redirect(_get_redirect_destino(request))
 
         return _render_agendamentos(request, psicologo_perfil, form)

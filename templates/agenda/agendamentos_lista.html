@@ -9,6 +9,8 @@
         modalTitle: 'Agendar Sessão',
         formAction: '',
         modoEdicao: false,
+        sessaoEhSerie: {% if form.instance.pk and form.instance.serie_id %}true{% else %}false{% endif %},
+        aplicarEm: '{{ aplicar_em|default:"sessao" }}',
         atendidoPorPlano: {% if form.atendido_por_plano.value %}true{% else %}false{% endif %},
         isentoPagamento: {% if form.isento_pagamento.value %}true{% else %}false{% endif %},
         ehRecorrente: {% if form.eh_recorrente.value %}true{% else %}false{% endif %},
@@ -22,6 +24,8 @@
             this.formAction = ''; 
             this.showModal = true;
             this.modoEdicao = false;
+            this.sessaoEhSerie = false;
+            this.aplicarEm = 'sessao';
             
             this.campo('paciente').value = '';
             this.campo('data').value = '';
@@ -35,11 +39,13 @@
             this.atualizarValorPagamento();
         },
 
-        abrirParaEditar(url, pacienteId, data, horario, duracao, valor, atendidoPorPlano, isentoPagamento) {
+        abrirParaEditar(url, pacienteId, data, horario, duracao, valor, atendidoPorPlano, isentoPagamento, serieId) {
             this.modalTitle = 'Editar Agendamento';
             this.formAction = url; 
             this.showModal = true;
             this.modoEdicao = true;
+            this.sessaoEhSerie = !!serieId;
+            this.aplicarEm = 'sessao';
 
             this.campo('paciente').value = pacienteId;
             this.campo('data').value = data;
@@ -132,7 +138,7 @@
 
                     {% if sessao.status == 'pendente' %}
                         <button type="button" 
-                                @click="abrirParaEditar('{% url 'editar_sessao' sessao.id %}', '{{ sessao.paciente.id }}', '{{ sessao.data|date:'Y-m-d' }}', '{{ sessao.horario_inicio|time:'H:i' }}', '{{ sessao.duracao_minutos }}', '{{ sessao.valor }}', '{{ sessao.atendido_por_plano }}', '{{ sessao.isento_pagamento }}')" 
+                                @click="abrirParaEditar('{% url 'editar_sessao' sessao.id %}', '{{ sessao.paciente.id }}', '{{ sessao.data|date:'Y-m-d' }}', '{{ sessao.horario_inicio|time:'H:i' }}', '{{ sessao.duracao_minutos }}', '{{ sessao.valor }}', '{{ sessao.atendido_por_plano }}', '{{ sessao.isento_pagamento }}', '{{ sessao.serie_id|default_if_none:'' }}')" 
                                 class="flex h-9 w-9 items-center justify-center rounded-xl border border-slate-200 text-slate-400 hover:border-primary/30 hover:bg-primarySoft hover:text-primary transition shadow-sm">
                             <i class="fa-solid fa-pen text-xs"></i>
                         </button>
@@ -266,6 +272,7 @@
             <form x-ref="formSessao" :action="formAction" method="post" class="space-y-4">
                 {% csrf_token %}
                 <input type="hidden" name="return_to" value="{{ return_to }}">
+                <input type="hidden" name="aplicar_em" :value="aplicarEm">
 
                 {% if form.non_field_errors %}
                     <div class="rounded-xl border border-rose-200 bg-rose-50 px-4 py-3 text-sm text-rose-600">
@@ -326,6 +333,20 @@
                     <div class="flex items-center gap-2">
                         <input type="checkbox" name="isento_pagamento" x-model="isentoPagamento" class="h-4 w-4 rounded border-slate-300 text-primary focus:ring-primary cursor-pointer" @change="atualizarValorPagamento()">
                         <span class="text-sm font-medium text-slate-700">Sim</span>
+                    </div>
+                </div>
+
+                <div x-show="modoEdicao && sessaoEhSerie" style="display: none;" class="rounded-2xl border border-violet-200 bg-violet-50/70 p-4">
+                    <label class="mb-2 block text-xs font-bold uppercase tracking-wider text-violet-700">Aplicar alteração</label>
+                    <div class="space-y-2">
+                        <label class="flex items-center gap-2 text-sm font-medium text-slate-700">
+                            <input type="radio" name="aplicar_em_radio" value="sessao" x-model="aplicarEm" class="h-4 w-4 border-slate-300 text-primary focus:ring-primary">
+                            Somente esta sessão
+                        </label>
+                        <label class="flex items-center gap-2 text-sm font-medium text-slate-700">
+                            <input type="radio" name="aplicar_em_radio" value="seguintes" x-model="aplicarEm" class="h-4 w-4 border-slate-300 text-primary focus:ring-primary">
+                            Esta e as próximas
+                        </label>
                     </div>
                 </div>
 

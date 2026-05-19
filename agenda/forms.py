@@ -46,7 +46,13 @@ class SessaoForm(forms.ModelForm):
             }
         )
 
-    def _validar_conflito_no_horario(self, data, horario_inicio, duracao_minutos):
+    def _validar_conflito_no_horario(
+        self,
+        data,
+        horario_inicio,
+        duracao_minutos,
+        excluir_ids=None,
+    ):
         inicio_novo = datetime.datetime.combine(data, horario_inicio)
         fim_novo = inicio_novo + datetime.timedelta(minutes=duracao_minutos)
 
@@ -54,6 +60,9 @@ class SessaoForm(forms.ModelForm):
             psicologo=self.psicologo,
             data=data,
         )
+
+        if excluir_ids:
+            sessoes_no_dia = sessoes_no_dia.exclude(id__in=excluir_ids)
 
         if self.instance.pk:
             sessoes_no_dia = sessoes_no_dia.exclude(pk=self.instance.pk)
