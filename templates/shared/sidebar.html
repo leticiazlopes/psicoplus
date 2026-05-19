@@ -3,15 +3,16 @@
     {% if request.user.is_authenticated %}
     <div class="sticky top-0 flex h-screen flex-col border-r border-slate-200/70 bg-white/88 px-5 py-6 backdrop-blur-xl">
         <div class="mb-8 flex items-center gap-3">
-            <div class="flex h-10 w-10 items-center justify-center rounded-xl bg-gradient-to-br from-primarySoft via-white to-primarySoft text-primary shadow-[0_10px_24px_rgba(109,74,255,0.14)]">
-                <i class="fa-solid fa-brain text-[20px]" aria-hidden="true"></i>
-            </div>
-
-            <div>
-                <h2 class="text-[19px] font-black tracking-[-0.03em] text-slate-900">
-                    Psico<span class="text-primary">+</span>
-                </h2>
-            </div>
+            <a href="{% url 'dashboard' %}" class="flex items-center gap-3 group">
+                <div class="flex h-10 w-10 items-center justify-center rounded-xl bg-gradient-to-br from-primarySoft via-white to-primarySoft text-primary shadow-[0_10px_24px_rgba(109,74,255,0.14)] group-hover:scale-105 transition-transform">
+                    <i class="fa-solid fa-brain text-[20px]" aria-hidden="true"></i>
+                </div>
+                <div>
+                    <h2 class="text-[19px] font-black tracking-[-0.03em] text-slate-900 group-hover:text-primary transition-colors">
+                        Psico<span class="text-primary">+</span>
+                    </h2>
+                </div>
+            </a>
         </div>
 
         <nav class="space-y-1">
