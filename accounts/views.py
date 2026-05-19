@@ -187,27 +187,31 @@ def esqueci_senha_request(request):
             
             
             
+          # Código HTML corrigido e com os estilos fechados corretamente
             html_message = f"""
-            <div style="background-color: 
-                <div style="background-color: 
+            <div style="background-color: #f7f5ff; padding: 30px; font-family: sans-serif;">
+                <div style="max-width: 600px; margin: 0 auto; background-color: #ffffff; padding: 30px; border-radius: 20px; border: 1px solid #e7e9f2;">
                     
-                    <h2 style="color: 
+                    <h2 style="color: #1e293b; font-size: 24px; margin-top: 0;">
                         Recuperação de Acesso — Psico+
                     </h2>
                     
-                    <p style="font-size: 15px; line-height: 1.6; color: 
-                    <p style="font-size: 15px; line-height: 1.6; color: 
-                    <p style="font-size: 15px; line-height: 1.6; color: 
+                    <p style="font-size: 15px; line-height: 1.6; color: #475569;">
+                        Olá,
+                    </p>
+                    <p style="font-size: 15px; line-height: 1.6; color: #475569;">
+                        Recebemos uma solicitação para redefinir a senha da sua conta no sistema <strong>Psico+</strong>. Utilize o código de verificação abaixo para prosseguir:
+                    </p>
                     
-                    <div style="background-color: 
+                    <div style="background-color: #eee9ff; color: #6d4aff; font-size: 32px; font-weight: bold; text-align: center; padding: 20px; border-radius: 12px; margin: 25px 0; letter-spacing: 5px;">
                         {codigo}
                     </div>
                     
-                    <p style="color: 
+                    <p style="color: #ef4444; font-size: 14px; font-weight: bold;">
                         ⚠️ Atenção: Este código é válido por 15 minutos.
                     </p>
                     
-                    <p style="color: 
+                    <p style="color: #64748b; font-size: 13px; line-height: 1.6; margin-bottom: 0; border-top: 1px solid #f1f5f9; padding-top: 20px;">
                         Se você não solicitou essa redefinição, nenhuma ação é necessária. Sua senha atual continuará segura e seu acesso protegido.
                     </p>
                 </div>
