@@ -98,6 +98,14 @@ def _get_sessoes_ativas_a_partir_da_atual(sessao):
     )
 
 
+@transaction.atomic
+def _cancelar_sessoes_seguintes(sessao_original):
+    for sessao in _get_sessoes_ativas_a_partir_da_atual(sessao_original):
+        if sessao.status == Sessao.Status.PENDENTE:
+            sessao.status = Sessao.Status.CANCELADA
+            sessao.save(update_fields=["status"])
+
+
 def _validar_conflitos_edicao_seguintes(sessao_original, form):
     sessoes_da_serie = list(_get_sessoes_ativas_a_partir_da_atual(sessao_original))
     ids_serie = [sessao.id for sessao in sessoes_da_serie]
@@ -153,7 +161,10 @@ def cancelar_sessao_view(request, sessao_id):
 
     sessao = get_object_or_404(Sessao, id=sessao_id, psicologo=psicologo_perfil)
 
-    if sessao.status == Sessao.Status.PENDENTE:
+    aplicar_em = request.POST.get("cancelar_em", "sessao")
+    if aplicar_em == "seguintes" and sessao.serie_id:
+        _cancelar_sessoes_seguintes(sessao)
+    elif sessao.status == Sessao.Status.PENDENTE:
         sessao.status = Sessao.Status.CANCELADA
         sessao.save()
 

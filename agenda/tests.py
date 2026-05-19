@@ -207,6 +207,106 @@ class SessaoViewsTests(TestCase):
             fetch_redirect_response=False,
         )
 
+    def test_cancelar_sessao_recorrente_pode_cancelar_somente_a_atual(self):
+        serie = SerieSessao.objects.create(
+            psicologo=self.psicologo,
+            paciente=self.paciente,
+        )
+        primeira = Sessao.objects.create(
+            psicologo=self.psicologo,
+            paciente=self.paciente,
+            serie=serie,
+            posicao_na_serie=1,
+            data=self.sessao.data,
+            horario_inicio=datetime.time(15, 0),
+            duracao_minutos=50,
+            valor="180.00",
+        )
+        segunda = Sessao.objects.create(
+            psicologo=self.psicologo,
+            paciente=self.paciente,
+            serie=serie,
+            posicao_na_serie=2,
+            data=self.sessao.data + datetime.timedelta(days=7),
+            horario_inicio=datetime.time(15, 0),
+            duracao_minutos=50,
+            valor="180.00",
+        )
+
+        response = self.client.post(
+            reverse("cancelar_sessao", args=[primeira.id]),
+            data={
+                "cancelar_em": "sessao",
+                "return_to": f"{reverse('agenda_lista')}?data={primeira.data.isoformat()}",
+            },
+        )
+
+        self.assertRedirects(
+            response,
+            f"{reverse('agenda_lista')}?data={primeira.data.isoformat()}",
+            fetch_redirect_response=False,
+        )
+        primeira.refresh_from_db()
+        segunda.refresh_from_db()
+        self.assertEqual(primeira.status, Sessao.Status.CANCELADA)
+        self.assertEqual(segunda.status, Sessao.Status.PENDENTE)
+
+    def test_cancelar_sessao_recorrente_pode_cancelar_atual_e_seguintes(self):
+        serie = SerieSessao.objects.create(
+            psicologo=self.psicologo,
+            paciente=self.paciente,
+        )
+        anterior = Sessao.objects.create(
+            psicologo=self.psicologo,
+            paciente=self.paciente,
+            serie=serie,
+            posicao_na_serie=1,
+            data=self.sessao.data - datetime.timedelta(days=7),
+            horario_inicio=datetime.time(15, 0),
+            duracao_minutos=50,
+            valor="180.00",
+        )
+        atual = Sessao.objects.create(
+            psicologo=self.psicologo,
+            paciente=self.paciente,
+            serie=serie,
+            posicao_na_serie=2,
+            data=self.sessao.data,
+            horario_inicio=datetime.time(15, 0),
+            duracao_minutos=50,
+            valor="180.00",
+        )
+        proxima = Sessao.objects.create(
+            psicologo=self.psicologo,
+            paciente=self.paciente,
+            serie=serie,
+            posicao_na_serie=3,
+            data=self.sessao.data + datetime.timedelta(days=7),
+            horario_inicio=datetime.time(15, 0),
+            duracao_minutos=50,
+            valor="180.00",
+        )
+
+        response = self.client.post(
+            reverse("cancelar_sessao", args=[atual.id]),
+            data={
+                "cancelar_em": "seguintes",
+                "return_to": f"{reverse('agenda_lista')}?data={atual.data.isoformat()}",
+            },
+        )
+
+        self.assertRedirects(
+            response,
+            f"{reverse('agenda_lista')}?data={atual.data.isoformat()}",
+            fetch_redirect_response=False,
+        )
+        anterior.refresh_from_db()
+        atual.refresh_from_db()
+        proxima.refresh_from_db()
+        self.assertEqual(anterior.status, Sessao.Status.PENDENTE)
+        self.assertEqual(atual.status, Sessao.Status.CANCELADA)
+        self.assertEqual(proxima.status, Sessao.Status.CANCELADA)
+
     def test_agendar_sessao_recorrente_cria_serie_com_todas_as_ocorrencias(self):
         data_inicial = datetime.date.today() + datetime.timedelta(days=3)
 

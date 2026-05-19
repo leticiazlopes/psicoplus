@@ -11,6 +11,7 @@
         modoEdicao: false,
         sessaoEhSerie: {% if form.instance.pk and form.instance.serie_id %}true{% else %}false{% endif %},
         aplicarEm: '{{ aplicar_em|default:"sessao" }}',
+        cancelarEm: 'sessao',
         atendidoPorPlano: {% if form.atendido_por_plano.value %}true{% else %}false{% endif %},
         isentoPagamento: {% if form.isento_pagamento.value %}true{% else %}false{% endif %},
         ehRecorrente: {% if form.eh_recorrente.value %}true{% else %}false{% endif %},
@@ -142,7 +143,7 @@
                                 class="flex h-9 w-9 items-center justify-center rounded-xl border border-slate-200 text-slate-400 hover:border-primary/30 hover:bg-primarySoft hover:text-primary transition shadow-sm">
                             <i class="fa-solid fa-pen text-xs"></i>
                         </button>
-                        <button type="button" onclick="openCancelarModal('{% url 'cancelar_sessao' sessao.id %}')" class="flex items-center justify-center rounded-xl border border-rose-200 text-rose-400 hover:border-rose-400 hover:bg-rose-50 hover:text-rose-600 transition shadow-sm ml-2 px-3 py-2 text-sm font-semibold" title="Cancelar">
+                        <button type="button" onclick="openCancelarModal('{% url 'cancelar_sessao' sessao.id %}', '{{ sessao.serie_id|default_if_none:'' }}')" class="flex items-center justify-center rounded-xl border border-rose-200 text-rose-400 hover:border-rose-400 hover:bg-rose-50 hover:text-rose-600 transition shadow-sm ml-2 px-3 py-2 text-sm font-semibold" title="Cancelar">
                             Cancelar
                         </button>
                     <div id="modal-cancelar" class="fixed inset-0 z-50 flex items-center justify-center bg-black/30 hidden">
@@ -153,26 +154,52 @@
                                 </div>
                                 <h2 class="text-lg font-bold mb-2">Cancelar sessão</h2>
                                 <p class="text-slate-600 mb-6">Deseja realmente cancelar esta sessão?</p>
-                                <div class="flex gap-3 w-full">
-                                    <button onclick="closeCancelarModal()" type="button" class="flex-1 rounded-xl border border-slate-200 bg-slate-100 px-4 py-2 font-semibold text-slate-600 transition hover:bg-slate-200">
-                                        Voltar
-                                    </button>
-                                    <form id="form-cancelar" method="POST" class="flex-1">
+                                <form id="form-cancelar" method="POST" class="w-full">
+                                    <div id="cancelar-opcoes-serie" class="mb-4 hidden rounded-xl border border-violet-200 bg-violet-50 px-4 py-3 text-left">
                                         {% csrf_token %}
                                         <input id="cancelar-return-to" type="hidden" name="return_to" value="{{ return_to }}">
-                                        <button type="submit" class="w-full rounded-xl bg-gradient-to-r from-rose-500 to-rose-600 px-4 py-2 font-semibold text-white transition hover:from-rose-600 hover:to-rose-700">
+                                        <input id="cancelar-em" type="hidden" name="cancelar_em" value="sessao">
+                                        <p class="mb-2 text-xs font-bold uppercase tracking-wider text-violet-700">Aplicar cancelamento</p>
+                                        <label class="mb-2 flex items-center gap-2 text-sm font-medium text-slate-700">
+                                            <input type="radio" name="cancelar_em_radio" value="sessao" checked onchange="setCancelarEm(this.value)" class="h-4 w-4 border-slate-300 text-primary focus:ring-primary">
+                                            Somente esta sessão
+                                        </label>
+                                        <label class="flex items-center gap-2 text-sm font-medium text-slate-700">
+                                            <input type="radio" name="cancelar_em_radio" value="seguintes" onchange="setCancelarEm(this.value)" class="h-4 w-4 border-slate-300 text-primary focus:ring-primary">
+                                            Esta e as próximas
+                                        </label>
+                                    </div>
+                                    <div class="flex gap-3 w-full">
+                                        <button onclick="closeCancelarModal()" type="button" class="flex-1 rounded-xl border border-slate-200 bg-slate-100 px-4 py-3 font-semibold text-slate-600 transition hover:bg-slate-200">
+                                            Voltar
+                                        </button>
+                                        <button type="submit" class="flex-1 rounded-xl bg-gradient-to-r from-rose-500 to-rose-600 px-4 py-3 font-semibold text-white transition hover:from-rose-600 hover:to-rose-700">
                                             Cancelar sessão
                                         </button>
-                                    </form>
-                                </div>
+                                    </div>
+                                </form>
                             </div>
                         </div>
                     </div>
 
                     <script>
-                        function openCancelarModal(url) {
+                        function openCancelarModal(url, serieId) {
                             document.getElementById('modal-cancelar').classList.remove('hidden');
                             document.getElementById('form-cancelar').setAttribute('action', url);
+                            document.getElementById('cancelar-em').value = 'sessao';
+                            const opcoesSerie = document.getElementById('cancelar-opcoes-serie');
+                            const radios = document.querySelectorAll('input[name="cancelar_em_radio"]');
+                            radios.forEach((radio) => {
+                                radio.checked = radio.value === 'sessao';
+                            });
+                            if (serieId) {
+                                opcoesSerie.classList.remove('hidden');
+                            } else {
+                                opcoesSerie.classList.add('hidden');
+                            }
+                        }
+                        function setCancelarEm(valor) {
+                            document.getElementById('cancelar-em').value = valor;
                         }
                         function closeCancelarModal() {
                             document.getElementById('modal-cancelar').classList.add('hidden');
