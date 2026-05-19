@@ -5,7 +5,7 @@ from django.contrib import messages
 from django.contrib.auth.mixins import LoginRequiredMixin
 from django.shortcuts import get_object_or_404, redirect, render
 from .forms import CadastroPacienteForm, CadastroPsicologoForm, LoginUsuarioForm, MeuPerfilForm
-from .models import Usuario, Psicologo, Paciente
+from .models import Usuario, Psicologo, Paciente, Sessao
 from django.views.decorators.http import require_POST
 from django.utils.decorators import method_decorator
 from django.contrib.messages.views import SuccessMessageMixin
@@ -147,14 +147,24 @@ def inativar_paciente(request, pk):
     paciente = get_object_or_404(Paciente, pk=pk, psicologo=request.user.psicologo)
     paciente.ativo = False
     paciente.save()
-    messages.success(request, "Paciente inativado com sucesso.")
+
+    hoje = timezone.now().date()
+    sessoes_futuras = Sessao.objects.filter(paciente=paciente, data__gte=hoje).exclude(status=Sessao.Status.CANCELADA)
+    sessoes_futuras.update(status=Sessao.Status.CANCELADA)
+
+    messages.success(request, "Paciente inativado com sucesso. Sessões futuras foram canceladas.")
     return redirect("pacientes_lista")
 
 def ativar_paciente(request, pk):
     paciente = get_object_or_404(Paciente, pk=pk, psicologo=request.user.psicologo)
     paciente.ativo = True
     paciente.save()
-    messages.success(request, "Paciente ativado com sucesso.")  
+
+    hoje = timezone.now().date()
+    sessoes_canceladas = Sessao.objects.filter(paciente=paciente, data__gte=hoje, status=Sessao.Status.CANCELADA)
+    sessoes_canceladas.update(status=Sessao.Status.PENDENTE)
+
+    messages.success(request, "Paciente ativado com sucesso. Sessões futuras reativadas.")
     return redirect("pacientes_lista")
 
 def esqueci_senha_request(request):
