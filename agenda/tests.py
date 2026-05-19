@@ -1,9 +1,10 @@
 import datetime
 
+from django.db import IntegrityError
 from django.test import TestCase
 from django.urls import reverse
 
-from accounts.models import Paciente, Psicologo, Sessao, Usuario
+from accounts.models import Paciente, Psicologo, SerieSessao, Sessao, Usuario
 
 from .forms import SessaoForm
 
@@ -159,3 +160,80 @@ class SessaoViewsTests(TestCase):
             f"{reverse('agenda_lista')}?data={self.sessao.data.isoformat()}",
             fetch_redirect_response=False,
         )
+
+
+class SerieSessaoTests(TestCase):
+    def setUp(self):
+        self.user = Usuario.objects.create_user(
+            username="psico3@teste.com",
+            email="psico3@teste.com",
+            password="senha123",
+            perfil=Usuario.Perfil.PSICOLOGO,
+        )
+        self.psicologo = Psicologo.objects.create(usuario=self.user, crp="67890")
+        self.paciente = Paciente.objects.create(
+            nome_completo="Paciente Três",
+            psicologo=self.psicologo,
+            email="paciente3@teste.com",
+            ativo=True,
+        )
+
+    def test_sessoes_podem_ser_agrupadas_em_uma_mesma_serie(self):
+        serie = SerieSessao.objects.create(
+            psicologo=self.psicologo,
+            paciente=self.paciente,
+        )
+
+        primeira_sessao = Sessao.objects.create(
+            psicologo=self.psicologo,
+            paciente=self.paciente,
+            serie=serie,
+            posicao_na_serie=1,
+            data=datetime.date.today() + datetime.timedelta(days=7),
+            horario_inicio=datetime.time(9, 0),
+            duracao_minutos=50,
+            valor="120.00",
+        )
+        segunda_sessao = Sessao.objects.create(
+            psicologo=self.psicologo,
+            paciente=self.paciente,
+            serie=serie,
+            posicao_na_serie=2,
+            data=datetime.date.today() + datetime.timedelta(days=14),
+            horario_inicio=datetime.time(9, 0),
+            duracao_minutos=50,
+            valor="120.00",
+        )
+
+        self.assertEqual(primeira_sessao.serie_id, serie.id)
+        self.assertEqual(segunda_sessao.serie_id, serie.id)
+        self.assertEqual(serie.sessoes.count(), 2)
+
+    def test_posicao_na_serie_deve_ser_unica_dentro_da_mesma_serie(self):
+        serie = SerieSessao.objects.create(
+            psicologo=self.psicologo,
+            paciente=self.paciente,
+        )
+
+        Sessao.objects.create(
+            psicologo=self.psicologo,
+            paciente=self.paciente,
+            serie=serie,
+            posicao_na_serie=1,
+            data=datetime.date.today() + datetime.timedelta(days=7),
+            horario_inicio=datetime.time(9, 0),
+            duracao_minutos=50,
+            valor="120.00",
+        )
+
+        with self.assertRaises(IntegrityError):
+            Sessao.objects.create(
+                psicologo=self.psicologo,
+                paciente=self.paciente,
+                serie=serie,
+                posicao_na_serie=1,
+                data=datetime.date.today() + datetime.timedelta(days=14),
+                horario_inicio=datetime.time(9, 0),
+                duracao_minutos=50,
+                valor="120.00",
+            )

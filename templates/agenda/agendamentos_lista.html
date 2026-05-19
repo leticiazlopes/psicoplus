@@ -12,7 +12,7 @@
         isentoPagamento: {% if form.isento_pagamento.value %}true{% else %}false{% endif %},
 
         campo(nome) {
-            return this.$refs.formSessao.querySelector('[name=\"' + nome + '\"]');
+            return this.$refs.formSessao.querySelector('[name=' + nome + ']');
         },
 
         abrirParaCriar() {

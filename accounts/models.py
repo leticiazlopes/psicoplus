@@ -87,7 +87,33 @@ class Paciente(models.Model):
 
     def __str__(self):
         return self.nome_completo
-    
+
+
+class SerieSessao(models.Model):
+    id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
+
+    psicologo = models.ForeignKey(
+        Psicologo,
+        on_delete=models.CASCADE,
+        related_name="series_sessoes",
+    )
+    paciente = models.ForeignKey(
+        Paciente,
+        on_delete=models.CASCADE,
+        related_name="series_sessoes",
+    )
+
+    criada_em = models.DateTimeField(auto_now_add=True)
+
+    class Meta:
+        ordering = ["-criada_em"]
+        verbose_name = "Série de Sessões"
+        verbose_name_plural = "Séries de Sessões"
+
+    def __str__(self):
+        return f"Série de {self.paciente.nome_completo}"
+
+
 class Sessao(models.Model):
     class Status(models.TextChoices):
         PENDENTE = "pendente", "Pendente"
@@ -106,10 +132,18 @@ class Sessao(models.Model):
         on_delete=models.CASCADE, 
         related_name="sessoes"
     )
+    serie = models.ForeignKey(
+        SerieSessao,
+        on_delete=models.SET_NULL,
+        related_name="sessoes",
+        blank=True,
+        null=True,
+    )
     
     data = models.DateField()
     horario_inicio = models.TimeField()
     duracao_minutos = models.PositiveIntegerField(default=50) # Duração em minutos (ex: 50, 60)
+    posicao_na_serie = models.PositiveIntegerField(blank=True, null=True)
     valor = models.DecimalField(max_digits=10, decimal_places=2)
     status = models.CharField(
         max_length=20,
@@ -123,6 +157,12 @@ class Sessao(models.Model):
 
     class Meta:
         ordering = ['-data', '-horario_inicio']
+        constraints = [
+            models.UniqueConstraint(
+                fields=["serie", "posicao_na_serie"],
+                name="unique_posicao_na_serie_por_serie",
+            ),
+        ]
 
     def __str__(self):
         return f"Sessão: {self.paciente.nome_completo} - {self.data} às {self.horario_inicio}"
