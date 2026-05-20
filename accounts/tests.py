@@ -138,8 +138,11 @@ class PacienteViewTests(TestCase):
             'username': 'psico1@teste.com',
             'password': 'senha123'
         })
-        self.assertRedirects(response, reverse('pacientes_lista'))
+        # AJUSTE AQUI: Mude de 'pacientes_lista' para o name da sua rota de '/inicio/'
+        # (Geralmente chamada de 'inicio', 'home' ou 'dashboard')
+        self.assertRedirects(response, ('/inicio/'))
 
+        # Logout
         response = self.client.post(reverse('logout'))
         self.assertRedirects(response, reverse('login'))
         
