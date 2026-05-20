@@ -12,6 +12,11 @@ db.sqlite3
 media/
 staticfiles/
 
+# Coverage
+.coverage
+coverage.xml
+htmlcov/
+
 # macOS
 .DS_Store
 
