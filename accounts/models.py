@@ -42,6 +42,18 @@ class Usuario(AbstractUser):
         self.token_definicao_senha = uuid.uuid4()
         self.token_definicao_senha_expira_em = timezone.now() + timedelta(hours=48)
         self.token_definicao_senha_usado_em = None
+
+    def token_definicao_senha_esta_valido(self):
+        if not self.token_definicao_senha or not self.token_definicao_senha_expira_em:
+            return False
+
+        if self.token_definicao_senha_usado_em:
+            return False
+
+        return timezone.now() <= self.token_definicao_senha_expira_em
+
+    def marcar_token_definicao_senha_como_usado(self):
+        self.token_definicao_senha_usado_em = timezone.now()
     
 
 class Psicologo(models.Model):

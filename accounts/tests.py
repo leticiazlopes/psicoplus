@@ -1,7 +1,8 @@
 from django.test import TestCase
-from django.urls import reverse
+from django.urls import resolve, reverse
 from datetime import timedelta
 from django.utils import timezone
+from .forms import CadastroPacienteForm
 from .models import Usuario, Psicologo, Paciente
 
 class PacienteViewTests(TestCase):
@@ -125,6 +126,65 @@ class PacienteViewTests(TestCase):
             'email',
             'Este e-mail já está em uso por outro usuário.',
         )
+
+    def test_rota_definir_senha_paciente_existe(self):
+        self.paciente.email = 'rota@teste.com'
+        self.paciente.save()
+
+        form = CadastroPacienteForm(
+            instance=self.paciente,
+            data={
+                'nome_completo': self.paciente.nome_completo,
+                'email': self.paciente.email,
+            },
+        )
+        self.assertTrue(form.is_valid())
+        paciente = form.save()
+
+        url = reverse('definir_senha_paciente', kwargs={'token': paciente.usuario.token_definicao_senha})
+        self.assertEqual(resolve(url).view_name, 'definir_senha_paciente')
+
+    def test_definir_senha_com_token_salva_hash_e_marca_token_como_usado(self):
+        self.client.force_login(self.user)
+        dados = {
+            'nome_completo': 'Paciente Token',
+            'email': 'paciente_token@teste.com',
+        }
+        self.client.post(reverse('cadastro_paciente'), data=dados)
+
+        paciente = Paciente.objects.get(email='paciente_token@teste.com')
+        token = paciente.usuario.token_definicao_senha
+        self.client.logout()
+
+        response = self.client.post(
+            reverse('definir_senha_paciente', kwargs={'token': token}),
+            data={
+                'new_password1': 'SenhaNova@123',
+                'new_password2': 'SenhaNova@123',
+            },
+        )
+
+        self.assertEqual(response.status_code, 302)
+        self.assertEqual(response.url, reverse('login'))
+
+        paciente.usuario.refresh_from_db()
+        self.assertTrue(paciente.usuario.check_password('SenhaNova@123'))
+        self.assertIsNotNone(paciente.usuario.token_definicao_senha_usado_em)
+        self.assertFalse(paciente.usuario.token_definicao_senha_esta_valido())
+
+    def test_token_definicao_senha_expirado_nao_e_valido(self):
+        usuario_paciente = Usuario.objects.create(
+            username='paciente.expirado@teste.com',
+            email='paciente.expirado@teste.com',
+            nome='Paciente Expirado',
+            perfil=Usuario.Perfil.PACIENTE,
+        )
+        usuario_paciente.set_unusable_password()
+        usuario_paciente.gerar_token_definicao_senha()
+        usuario_paciente.token_definicao_senha_expira_em = timezone.now() - timedelta(minutes=1)
+        usuario_paciente.save()
+
+        self.assertFalse(usuario_paciente.token_definicao_senha_esta_valido())
 
     # --- TESTES DE STATUS (ATIVAR/INATIVAR) ---
 

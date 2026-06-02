@@ -24,6 +24,7 @@ urlpatterns = [
     ),
     path("login/", views.LoginUsuarioView.as_view(), name="login"),
     path("logout/", views.LogoutUsuarioView.as_view(), name="logout"),
+    path("definir-senha/<uuid:token>/", views.DefinirSenhaPacienteView.as_view(), name="definir_senha_paciente"),
     path("pacientes/", views.PacienteListView.as_view(), name="pacientes_lista"),
     path("pacientes/cadastrar/", views.CadastroPacienteView.as_view(), name="cadastro_paciente"),
     path("pacientes/<uuid:pk>/inativar/", views.inativar_paciente, name="inativar_paciente"),

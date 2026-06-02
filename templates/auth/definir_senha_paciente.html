@@ -1,0 +1,187 @@
+{% load static %}
+<!DOCTYPE html>
+<html lang="pt-br">
+<head>
+    <meta charset="UTF-8">
+    <title>Definir Senha | Psico+</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/7.0.1/css/all.min.css">
+
+    <script>
+        tailwind.config = {
+            theme: {
+                extend: {
+                    colors: {
+                        primary: "#6D4AFF",
+                        primaryDark: "#5737D8",
+                        primarySoft: "#EEE9FF",
+                        borderSoft: "#E7E9F2",
+                        textMuted: "#667085",
+                    },
+                    boxShadow: {
+                        soft: "0 18px 45px rgba(31,41,55,0.08)",
+                    }
+                }
+            }
+        }
+    </script>
+</head>
+<body class="h-screen overflow-hidden bg-[#f7f5ff] p-4 text-slate-900 lg:p-5">
+    <div class="mx-auto flex h-[calc(100vh-2rem)] max-w-[1400px] overflow-hidden rounded-[28px] border border-white/70 bg-white shadow-soft lg:h-[calc(100vh-2.5rem)]">
+        <section class="hidden h-full w-1/2 flex-col justify-between overflow-hidden bg-gradient-to-br from-[#f3efff] via-[#f6f3ff] to-[#f7f6ff] px-10 py-10 xl:px-12 xl:py-11 lg:flex">
+            <div>
+                <div class="flex items-center gap-4">
+                    <div class="flex h-16 w-16 items-center justify-center rounded-[20px] bg-white text-primary shadow-[0_16px_40px_rgba(109,74,255,0.12)]">
+                        <i class="fa-solid fa-brain text-[30px]"></i>
+                    </div>
+
+                    <h1 class="text-[42px] font-black tracking-[-0.06em] text-slate-900">
+                        Psico<span class="text-primary">+</span>
+                    </h1>
+                </div>
+
+                <div class="mt-10 max-w-[360px]">
+                    <p class="text-[18px] font-bold leading-8 text-slate-900">
+                        Seu primeiro acesso com seguranca.
+                    </p>
+                    <p class="mt-2 text-[17px] leading-8 text-slate-800">
+                        Defina uma senha para entrar no
+                        <span class="font-semibold text-primary">Psico+</span>
+                        sempre que precisar.
+                    </p>
+                </div>
+            </div>
+
+            <div class="flex flex-1 items-center justify-center py-4">
+                <img src="{% static 'img/accounts/login.png' %}" alt="Ilustracao Psico+" class="w-full max-w-[390px] xl:max-w-[430px]">
+            </div>
+
+            <div class="grid grid-cols-3 gap-5 border-t border-primary/10 pt-5 text-center">
+                <div class="flex flex-col items-center">
+                    <div class="flex h-11 w-11 items-center justify-center rounded-full bg-white text-primary shadow-sm">
+                        <i class="fa-regular fa-shield text-[17px]"></i>
+                    </div>
+                    <p class="mt-3 text-[13px] leading-5 text-slate-600">Link temporario</p>
+                </div>
+
+                <div class="flex flex-col items-center">
+                    <div class="flex h-11 w-11 items-center justify-center rounded-full bg-white text-primary shadow-sm">
+                        <i class="fa-solid fa-lock text-[17px]"></i>
+                    </div>
+                    <p class="mt-3 text-[13px] leading-5 text-slate-600">Senha protegida</p>
+                </div>
+
+                <div class="flex flex-col items-center">
+                    <div class="flex h-11 w-11 items-center justify-center rounded-full bg-white text-primary shadow-sm">
+                        <i class="fa-solid fa-user-check text-[17px]"></i>
+                    </div>
+                    <p class="mt-3 text-[13px] leading-5 text-slate-600">Acesso pessoal</p>
+                </div>
+            </div>
+        </section>
+
+        <section class="flex h-full w-full items-center justify-center overflow-hidden bg-white px-6 py-6 lg:w-1/2 lg:px-10">
+            <div class="w-full max-w-[430px]">
+                {% include "shared/messages.html" %}
+
+                <div class="rounded-[20px] border border-borderSoft bg-white px-7 py-7 shadow-[0_12px_30px_rgba(15,23,42,0.06)]">
+                    <div class="mb-6">
+                        <h2 class="text-[28px] font-black tracking-[-0.05em] text-slate-900">
+                            Definir senha <span class="text-primary">🔐</span>
+                        </h2>
+                        {% if token_valido %}
+                        <p class="mt-2 text-[14px] text-textMuted leading-6">
+                            Crie sua senha para acessar a conta vinculada a
+                            <span class="font-semibold text-primary">{{ paciente_email }}</span>.
+                        </p>
+                        {% else %}
+                        <p class="mt-2 text-[14px] text-textMuted leading-6">
+                            Nao foi possivel liberar a definicao de senha com este link.
+                        </p>
+                        {% endif %}
+                    </div>
+
+                    {% if token_valido and form %}
+                    <form method="post" class="space-y-4" novalidate>
+                        {% csrf_token %}
+
+                        {% if form.non_field_errors %}
+                        <div class="rounded-[14px] border border-rose-200 bg-rose-50 px-4 py-3 text-[14px] text-rose-700">
+                            {% for error in form.non_field_errors %}
+                            <p>{{ error }}</p>
+                            {% endfor %}
+                        </div>
+                        {% endif %}
+
+                        {% for field in form %}
+                        <div>
+                            <label for="{{ field.id_for_label }}" class="mb-2 block text-[13px] font-bold text-slate-700">
+                                {{ field.label }}
+                            </label>
+                            <div class="relative">
+                                <span class="pointer-events-none absolute inset-y-0 left-0 flex items-center pl-4 text-slate-400">
+                                    <i class="fa-solid fa-lock text-[14px]"></i>
+                                </span>
+                                {{ field }}
+                                <button type="button" data-toggle-password class="absolute inset-y-0 right-0 flex items-center pr-4 text-slate-400" aria-label="Visualizar senha">
+                                    <i class="fa-regular fa-eye text-[14px]"></i>
+                                </button>
+                            </div>
+                            {% if field.errors %}
+                            <div class="mt-2 space-y-1 text-[13px] text-rose-600">
+                                {% for error in field.errors %}
+                                <p>{{ error }}</p>
+                                {% endfor %}
+                            </div>
+                            {% endif %}
+                            {% if field.help_text %}
+                            <div class="mt-2 text-[12px] leading-5 text-slate-400">
+                                {{ field.help_text|safe }}
+                            </div>
+                            {% endif %}
+                        </div>
+                        {% endfor %}
+
+                        <button type="submit" class="inline-flex w-full items-center justify-center gap-2 rounded-[12px] bg-gradient-to-r from-primary to-primaryDark px-5 py-3.5 text-[15px] font-semibold text-white shadow-[0_16px_30px_rgba(109,74,255,0.24)]">
+                            <i class="fa-solid fa-circle-check text-[14px]"></i>
+                            Salvar senha e continuar
+                        </button>
+                    </form>
+                    {% else %}
+                    <div class="rounded-[16px] border border-amber-200 bg-amber-50 px-4 py-4 text-[14px] leading-6 text-amber-900">
+                        {{ mensagem_token }}
+                    </div>
+
+                    <div class="mt-5">
+                        <a href="{% url 'login' %}" class="inline-flex w-full items-center justify-center gap-2 rounded-[12px] border border-borderSoft px-5 py-3.5 text-[15px] font-semibold text-slate-700 transition hover:border-primary hover:text-primary">
+                            <i class="fa-solid fa-arrow-left text-[13px]"></i>
+                            Voltar para o login
+                        </a>
+                    </div>
+                    {% endif %}
+                </div>
+            </div>
+        </section>
+    </div>
+
+    <script>
+        document.querySelectorAll('button[data-toggle-password]').forEach(button => {
+            const wrapper = button.closest('.relative');
+            const input = wrapper?.querySelector('input[type="password"], input[type="text"]');
+            const icon = button.querySelector('i');
+
+            if (!input || !icon) return;
+
+            button.addEventListener('click', () => {
+                const isPassword = input.getAttribute('type') === 'password';
+                input.setAttribute('type', isPassword ? 'text' : 'password');
+                icon.classList.toggle('fa-eye');
+                icon.classList.toggle('fa-eye-slash');
+                button.setAttribute('aria-label', isPassword ? 'Ocultar senha' : 'Visualizar senha');
+            });
+        });
+    </script>
+</body>
+</html>

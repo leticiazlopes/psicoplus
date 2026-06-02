@@ -1,10 +1,10 @@
-from django.views.generic import CreateView, ListView, UpdateView
+from django.views.generic import CreateView, FormView, ListView, UpdateView
 from django.contrib.auth.views import LoginView, LogoutView
 from django.urls import reverse_lazy
 from django.contrib import messages
 from django.contrib.auth.mixins import LoginRequiredMixin
 from django.shortcuts import get_object_or_404, redirect, render
-from .forms import CadastroPacienteForm, CadastroPsicologoForm, LoginUsuarioForm, MeuPerfilForm
+from .forms import CadastroPacienteForm, CadastroPsicologoForm, DefinirSenhaPacienteForm, LoginUsuarioForm, MeuPerfilForm
 from .models import Usuario, Psicologo, Paciente, Sessao
 from django.views.decorators.http import require_POST
 from django.utils.decorators import method_decorator
@@ -92,6 +92,70 @@ class CadastroPacienteView(LoginRequiredMixin, CreateView):
     def form_valid(self, form):
         form.instance.psicologo = self.request.user.psicologo
         messages.success(self.request, "Paciente cadastrado com sucesso!")
+        return super().form_valid(form)
+
+
+class DefinirSenhaPacienteView(FormView):
+    template_name = "auth/definir_senha_paciente.html"
+    form_class = DefinirSenhaPacienteForm
+    success_url = reverse_lazy("login")
+    usuario = None
+
+    def dispatch(self, request, *args, **kwargs):
+        self.usuario = Usuario.objects.filter(
+            token_definicao_senha=self.kwargs["token"],
+            perfil=Usuario.Perfil.PACIENTE,
+        ).first()
+        return super().dispatch(request, *args, **kwargs)
+
+    def get_form_kwargs(self):
+        kwargs = super().get_form_kwargs()
+        kwargs["user"] = self.usuario
+        return kwargs
+
+    def get_context_data(self, **kwargs):
+        context = super().get_context_data(**kwargs)
+        context["token_valido"] = self.token_valido
+        context["mensagem_token"] = self.mensagem_token
+        context["paciente_email"] = self.usuario.email if self.usuario else None
+        return context
+
+    @property
+    def token_valido(self):
+        return bool(self.usuario and self.usuario.token_definicao_senha_esta_valido())
+
+    @property
+    def mensagem_token(self):
+        if not self.usuario:
+            return "Este link de definição de senha é inválido."
+
+        if self.usuario.token_definicao_senha_usado_em:
+            return "Este link já foi utilizado para definir a senha."
+
+        if not self.usuario.token_definicao_senha_expira_em or timezone.now() > self.usuario.token_definicao_senha_expira_em:
+            return "Este link expirou. Solicite um novo acesso ao seu psicólogo."
+
+        return ""
+
+    def get(self, request, *args, **kwargs):
+        if not self.token_valido:
+            messages.error(request, self.mensagem_token)
+        return super().get(request, *args, **kwargs)
+
+    def post(self, request, *args, **kwargs):
+        if not self.token_valido:
+            messages.error(request, self.mensagem_token)
+            return self.render_to_response(self.get_context_data(form=None))
+        return super().post(request, *args, **kwargs)
+
+    def get_form(self, form_class=None):
+        if not self.token_valido:
+            return None
+        return super().get_form(form_class)
+
+    def form_valid(self, form):
+        form.save()
+        messages.success(self.request, "Senha definida com sucesso! Agora voce ja pode fazer login.")
         return super().form_valid(form)
 
 class PacienteListView(LoginRequiredMixin, ListView):

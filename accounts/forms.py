@@ -1,5 +1,5 @@
 from django import forms
-from django.contrib.auth.forms import AuthenticationForm, UserCreationForm
+from django.contrib.auth.forms import AuthenticationForm, SetPasswordForm, UserCreationForm
 from django.contrib.auth import get_user_model
 from django.db import transaction
 from django.contrib.auth.hashers import check_password
@@ -251,3 +251,37 @@ class MeuPerfilForm(forms.ModelForm):
             user.save()
             p.save()
         return p
+
+
+class DefinirSenhaPacienteForm(SetPasswordForm):
+    error_messages = {
+        "password_mismatch": "As senhas informadas não coincidem.",
+    }
+
+    def __init__(self, user, *args, **kwargs):
+        super().__init__(user, *args, **kwargs)
+
+        self.fields["new_password1"].label = "Nova senha"
+        self.fields["new_password2"].label = "Confirme a nova senha"
+
+        self.fields["new_password1"].widget.attrs.update(
+            {
+                "placeholder": "Digite uma senha segura",
+                "class": "w-full rounded-[12px] border border-borderSoft bg-white py-3.5 pl-11 pr-12 text-[14.5px] text-slate-900 outline-none transition-all placeholder:text-slate-400 focus:border-primary focus:ring-2 focus:ring-primarySoft",
+            }
+        )
+        self.fields["new_password2"].widget.attrs.update(
+            {
+                "placeholder": "Repita a senha",
+                "class": "w-full rounded-[12px] border border-borderSoft bg-white py-3.5 pl-11 pr-12 text-[14.5px] text-slate-900 outline-none transition-all placeholder:text-slate-400 focus:border-primary focus:ring-2 focus:ring-primarySoft",
+            }
+        )
+
+    def save(self, commit=True):
+        user = super().save(commit=False)
+        user.marcar_token_definicao_senha_como_usado()
+
+        if commit:
+            user.save()
+
+        return user
