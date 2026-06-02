@@ -389,6 +389,36 @@
                     </div>
                 </div>
 
+                <!-- Opções de Pagamento -->
+                <div class="space-y-3">
+                    <label class="mb-1.5 block text-xs font-bold uppercase tracking-wider text-slate-500">Formas de Pagamento</label>
+                    <div class="space-y-2">
+                        <label class="flex items-center gap-3 cursor-pointer">
+                            <input type="checkbox" name="atendido_por_plano" x-model="atendidoPorPlano" @change="atualizarValorPagamento()" class="h-4 w-4 rounded border-slate-300 text-primary focus:ring-primary" />
+                            <span class="text-sm text-slate-700">Atendido por Plano de Saúde</span>
+                        </label>
+                        <label class="flex items-center gap-3 cursor-pointer">
+                            <input type="checkbox" name="isento_pagamento" x-model="isentoPagamento" @change="atualizarValorPagamento()" class="h-4 w-4 rounded border-slate-300 text-primary focus:ring-primary" />
+                            <span class="text-sm text-slate-700">Isento de Pagamento</span>
+                        </label>
+                    </div>
+                </div>
+
+                <!-- Recorrência -->
+                <div class="space-y-3">
+                    <label class="flex items-center gap-3 cursor-pointer">
+                        <input type="checkbox" name="eh_recorrente" x-model="ehRecorrente" class="h-4 w-4 rounded border-slate-300 text-primary focus:ring-primary" />
+                        <span class="text-sm font-semibold text-slate-700">Sessão Recorrente (semanal)</span>
+                    </label>
+                    <template x-if="ehRecorrente">
+                        <div>
+                            <label class="mb-1.5 block text-xs font-bold uppercase tracking-wider text-slate-500">Número de Repetições</label>
+                            {{ form.repeticoes }}
+                            <p class="mt-2 text-xs text-slate-500" x-text="previewRecorrencia()"></p>
+                        </div>
+                    </template>
+                </div>
+
                 <div class="mt-6 flex justify-end gap-3">
                     <button type="button" @click="showModal = false" class="rounded-xl border border-slate-200 px-4 py-2.5 text-sm font-semibold text-slate-600 hover:bg-slate-50">Cancelar</button>
                     <button type="submit" class="rounded-xl bg-primary px-5 py-2.5 text-sm font-bold text-white shadow-lg shadow-primary/10 hover:bg-primaryDark">Confirmar</button>
