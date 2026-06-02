@@ -1,10 +1,14 @@
 from django import forms
 from django.contrib.auth.forms import AuthenticationForm, UserCreationForm
+from django.contrib.auth import get_user_model
 from django.db import transaction
 from django.contrib.auth.hashers import check_password
 
 from .models import Usuario, Psicologo
 from .models import Paciente
+
+
+User = get_user_model()
 
 
 class LoginUsuarioForm(AuthenticationForm):
@@ -132,8 +136,6 @@ class CadastroPsicologoForm(UserCreationForm):
         return usuario  
 
 class CadastroPacienteForm(forms.ModelForm):
-    
-
     class Meta:
         model = Paciente
         fields = [
@@ -169,8 +171,42 @@ class CadastroPacienteForm(forms.ModelForm):
             
         if pacientes_com_esse_email.exists():
             raise forms.ValidationError("Este e-mail já está em uso por outro paciente.")
+
+        usuario_com_esse_email = User.objects.filter(email=email)
+        if self.instance.pk and self.instance.usuario_id:
+            usuario_com_esse_email = usuario_com_esse_email.exclude(pk=self.instance.usuario_id)
+
+        if usuario_com_esse_email.exists():
+            raise forms.ValidationError("Este e-mail já está em uso por outro usuário.")
             
         return email
+
+    @transaction.atomic
+    def save(self, commit=True):
+        paciente = super().save(commit=False)
+
+        if paciente.usuario_id:
+            usuario = paciente.usuario
+            usuario.nome = paciente.nome_completo
+            usuario.email = paciente.email
+            usuario.username = paciente.email
+        else:
+            usuario = User(
+                nome=paciente.nome_completo,
+                email=paciente.email,
+                username=paciente.email,
+                perfil=Usuario.Perfil.PACIENTE,
+            )
+            usuario.set_unusable_password()
+            usuario.gerar_token_definicao_senha()
+
+        if commit:
+            usuario.save()
+            paciente.usuario = usuario
+            paciente.save()
+            self.save_m2m()
+
+        return paciente
 
 class MeuPerfilForm(forms.ModelForm):
     nome = forms.CharField(label="Nome Completo")

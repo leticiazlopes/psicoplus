@@ -1,5 +1,7 @@
 from django.test import TestCase
 from django.urls import reverse
+from datetime import timedelta
+from django.utils import timezone
 from .models import Usuario, Psicologo, Paciente
 
 class PacienteViewTests(TestCase):
@@ -74,6 +76,16 @@ class PacienteViewTests(TestCase):
         
         novo_p = Paciente.objects.get(nome_completo='Novo Paciente')
         self.assertEqual(novo_p.contato_emergencia_nome, 'Maria Mãe')
+        self.assertIsNotNone(novo_p.usuario)
+        self.assertEqual(novo_p.usuario.perfil, Usuario.Perfil.PACIENTE)
+        self.assertEqual(novo_p.usuario.email, 'paciente_novo@teste.com')
+        self.assertFalse(novo_p.usuario.has_usable_password())
+        self.assertIsNotNone(novo_p.usuario.token_definicao_senha)
+        self.assertIsNotNone(novo_p.usuario.token_definicao_senha_expira_em)
+        self.assertGreater(
+            novo_p.usuario.token_definicao_senha_expira_em,
+            timezone.now() + timedelta(hours=47, minutes=59),
+        )
 
     def test_update_paciente(self):
         self.client.force_login(self.user)
@@ -92,6 +104,27 @@ class PacienteViewTests(TestCase):
         self.assertEqual(response.status_code, 200)
         # Remova o hífen de "e-mail"
         self.assertFormError(response.context['form'], 'email', 'Informe um endereço de email válido.')
+
+    def test_cadastro_paciente_bloqueia_email_ja_usado_por_usuario(self):
+        Usuario.objects.create_user(
+            username='jaexiste@teste.com',
+            email='jaexiste@teste.com',
+            password='senha123',
+            perfil=Usuario.Perfil.PSICOLOGO,
+        )
+
+        self.client.force_login(self.user)
+        response = self.client.post(
+            reverse('cadastro_paciente'),
+            data={'nome_completo': 'Paciente Repetido', 'email': 'jaexiste@teste.com'},
+        )
+
+        self.assertEqual(response.status_code, 200)
+        self.assertFormError(
+            response.context['form'],
+            'email',
+            'Este e-mail já está em uso por outro usuário.',
+        )
 
     # --- TESTES DE STATUS (ATIVAR/INATIVAR) ---
 

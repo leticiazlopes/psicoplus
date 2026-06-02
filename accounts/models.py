@@ -1,4 +1,5 @@
 import uuid
+from datetime import timedelta
 from django.db import models
 from django.contrib.auth.models import AbstractUser
 from django.utils import timezone
@@ -24,6 +25,9 @@ class Usuario(AbstractUser):
     
     codigo_recuperacao = models.CharField(max_length=6, blank=True, null=True)
     codigo_expiracao = models.DateTimeField(blank=True, null=True)
+    token_definicao_senha = models.UUIDField(blank=True, null=True, unique=True)
+    token_definicao_senha_expira_em = models.DateTimeField(blank=True, null=True)
+    token_definicao_senha_usado_em = models.DateTimeField(blank=True, null=True)
 
     criado_em = models.DateTimeField(auto_now_add=True)
     atualizado_em = models.DateTimeField(auto_now=True)
@@ -33,6 +37,11 @@ class Usuario(AbstractUser):
 
     def __str__(self):
         return f"{self.nome} - {self.email}"
+
+    def gerar_token_definicao_senha(self):
+        self.token_definicao_senha = uuid.uuid4()
+        self.token_definicao_senha_expira_em = timezone.now() + timedelta(hours=48)
+        self.token_definicao_senha_usado_em = None
     
 
 class Psicologo(models.Model):
