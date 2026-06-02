@@ -186,6 +186,23 @@ class Sessao(models.Model):
     atendido_por_plano = models.BooleanField(default=False, verbose_name="Atendido por Plano de Saúde")
     isento_pagamento = models.BooleanField(default=False, verbose_name="Isento de Pagamento")
     criado_em = models.DateTimeField(auto_now_add=True)
+    
+    
+    token_confirmacao = models.UUIDField(default=uuid.uuid4, editable=False, null=True, blank=True)
+    confirmado_por = models.CharField(max_length=20, blank=True, null=True) 
+    confirmado_em = models.DateTimeField(blank=True, null=True)
+
+    @property
+    def link_expirado(self):
+        """Retorna True se a data/hora da sessão já passou no presente"""
+        from django.utils import timezone
+        import datetime
+        
+        
+        data_hora_sessao = timezone.make_aware(
+            datetime.datetime.combine(self.data, self.horario_inicio)
+        )
+        return timezone.now() > data_hora_sessao
 
     class Meta:
         ordering = ['-data', '-horario_inicio']
@@ -218,9 +235,9 @@ class HistoricoStatusSessao(models.Model):
         return f"{self.sessao.paciente.nome_completo}: {self.status_anterior} -> {self.status_novo}"
 
 
-# ==========================================
-# SIGNALS (Gatilhos Automáticos de Histórico)
-# ==========================================
+
+
+
 
 @receiver(post_save, sender=Sessao)
 def registrar_historico_status(sender, instance, created, **kwargs):
@@ -229,15 +246,15 @@ def registrar_historico_status(sender, instance, created, **kwargs):
     Mantém o histórico limpo e centralizado no servidor.
     """
     if created:
-        # Quando o psicólogo agenda uma nova sessão
+        
         HistoricoStatusSessao.objects.create(
             sessao=instance,
             status_anterior='criado',
             status_novo=instance.status
         )
     else:
-        # Quando há atualização na listagem inline ou dentro do modal
-        # Buscamos de forma limpa o último estado salvo no banco de dados para comparar
+        
+        
         original = Sessao.objects.filter(pk=instance.pk).first()
         if original and original.status != instance.status:
             HistoricoStatusSessao.objects.create(

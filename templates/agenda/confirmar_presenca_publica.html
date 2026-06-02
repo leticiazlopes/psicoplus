@@ -1,0 +1,157 @@
+{% load static %}
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <title>Confirmar Presença | Psico+</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+</head>
+<body class="min-h-screen bg-[#f7f5ff] flex items-center justify-center p-4 text-slate-900">
+
+    <div id="app-card" class="w-full max-w-md bg-white rounded-[24px] shadow-[0_18px_45px_rgba(31,41,55,0.06)] border border-[#E7E9F2] overflow-hidden opacity-0 transition-opacity duration-300">
+        
+        <div class="bg-gradient-to-r from-[#6D4AFF] to-[#5737D8] p-6 text-white text-center">
+            <div class="inline-flex h-12 w-12 items-center justify-center rounded-full bg-white/20 mb-3 text-[20px]">
+                <i class="fa-solid fa-calendar-check"></i>
+            </div>
+            <h1 class="text-xl font-bold tracking-tight">Confirmação de Agendamento</h1>
+            <p class="text-xs text-purple-200 mt-1">Plataforma Psico+</p>
+        </div>
+
+        <div class="p-6">
+            <div id="loading-state" class="text-center py-8">
+                <div class="inline-block h-8 w-8 animate-spin rounded-full border-4 border-solid border-current border-r-transparent align-[-0.125em] text-[#6D4AFF]" role="status"></div>
+                <p class="text-sm text-slate-500 mt-4">Buscando informações da sua sessão...</p>
+            </div>
+
+            <div id="main-content" class="hidden">
+                <div class="text-center mb-6">
+                    <p class="text-slate-500 text-sm">Olá, <span id="paciente-nome" class="font-semibold text-slate-800"></span>!</p>
+                    <p class="text-slate-600 text-sm mt-1">Por favor, confirme sua presença para a sessão abaixo:</p>
+                </div>
+
+                <div class="bg-[#fcfbff] rounded-[16px] border border-[#EEE9FF] p-4 space-y-3 mb-6">
+                    <div class="flex items-center gap-3 text-slate-700">
+                        <i class="fa-regular fa-user text-[#6D4AFF] w-4 text-center"></i>
+                        <span class="text-sm">Psicólogo(a): <strong id="psicologo-nome"></strong></span>
+                    </div>
+                    <div class="flex items-center gap-3 text-slate-700">
+                        <i class="fa-regular fa-calendar text-[#6D4AFF] w-4 text-center"></i>
+                        <span class="text-sm">Data: <strong id="sessao-data"></strong></span>
+                    </div>
+                    <div class="flex items-center gap-3 text-slate-700">
+                        <i class="fa-regular fa-clock text-[#6D4AFF] w-4 text-center"></i>
+                        <span class="text-sm">Horário: <strong id="sessao-hora"></strong></span>
+                    </div>
+                </div>
+
+                <button onclick="confirmarPresenca()" id="btn-confirmar" class="w-full bg-[#6D4AFF] hover:bg-[#5737D8] text-white font-semibold py-3.5 px-4 rounded-[12px] transition flex items-center justify-center gap-2 shadow-lg shadow-purple-200">
+                    <i class="fa-solid fa-check"></i>
+                    Confirmar minha presença
+                </button>
+            </div>
+
+            <div id="feedback-state" class="text-center py-4 hidden">
+                <div id="feedback-icon" class="inline-flex h-14 w-14 items-center justify-center rounded-full mb-4 text-2xl"></div>
+                <h2 id="feedback-title" class="text-lg font-bold text-slate-800"></h2>
+                <p id="feedback-message" class="text-slate-500 text-sm mt-2 px-4"></p>
+                <div class="mt-6 pt-5 border-t border-slate-100">
+                    <span class="text-xs text-slate-400 font-medium">Psico+ Sistema de Atendimento</span>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // O Django injeta o token da URL aqui nesta variável JavaScript
+        const token = "{{ token }}";
+        const apiUrl = `/api/sessoes/confirmar/${token}/`;
+
+        // Elementos de Controle de Estado
+        const card = document.getElementById('app-card');
+        const loadingState = document.getElementById('loading-state');
+        const mainContent = document.getElementById('main-content');
+        const feedbackState = document.getElementById('feedback-state');
+
+        // Elementos de Injeção de Dados
+        const pacienteNome = document.getElementById('paciente-nome');
+        const psicologoNome = document.getElementById('psicologo-nome');
+        const sessaoData = document.getElementById('sessao-data');
+        const sessaoHora = document.getElementById('sessao-hora');
+
+        // Elementos de Feedback Visual
+        const feedbackIcon = document.getElementById('feedback-icon');
+        const feedbackTitle = document.getElementById('feedback-title');
+        const feedbackMessage = document.getElementById('feedback-message');
+
+        // 1. Executa assim que a página carrega (GET) para validar e buscar os dados
+        window.addEventListener('DOMContentLoaded', async () => {
+            card.classList.remove('opacity-0');
+            try {
+                const response = await fetch(apiUrl);
+                const data = await response.json();
+
+                loadingState.classList.add('hidden');
+
+                if (response.status === 200) {
+                    // Injeta os dados retornados pela API na tela
+                    pacienteNome.textContent = data.paciente;
+                    psicologoNome.textContent = data.psicologo;
+                    sessaoData.textContent = data.data;
+                    sessaoHora.textContent = data.horario_inicio;
+                    mainContent.classList.remove('hidden');
+                } else {
+                    // Captura erros de link expirado ou já confirmado (Status 400)
+                    mostrarFeedback(false, "Não foi possível prosseguir", data.error);
+                }
+            } catch (err) {
+                loadingState.classList.add('hidden');
+                mostrarFeedback(false, "Erro de Conexão", "Não foi possível conectar ao servidor.");
+            }
+        });
+
+        // 2. Executa quando o paciente clica no botão "Confirmar minha presença" (POST)
+        async function confirmarPresenca() {
+            const btn = document.getElementById('btn-confirmar');
+            btn.disabled = true;
+            btn.innerHTML = `<i class="fa-solid fa-spinner animate-spin"></i> Confirmando...`;
+
+            try {
+                const response = await fetch(apiUrl, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' }
+                });
+                const data = await response.json();
+
+                mainContent.classList.add('hidden');
+
+                if (response.ok) {
+                    mostrarFeedback(true, "Presença Confirmada!", "Obrigado! Sua confirmação foi registrada e o seu psicólogo já foi notificado.");
+                } else {
+                    mostrarFeedback(false, "Ops! Ocorreu um problema", data.error);
+                }
+            } catch (err) {
+                mainContent.classList.add('hidden');
+                mostrarFeedback(false, "Erro Inesperado", "Houve um erro ao processar sua confirmação.");
+            }
+        }
+
+        // Função auxiliar para mudar o visual da tela em caso de sucesso ou erro
+        function mostrarFeedback(isSuccess, title, message) {
+            feedbackState.classList.remove('hidden');
+            feedbackTitle.textContent = title;
+            feedbackMessage.textContent = message;
+
+            if (isSuccess) {
+                feedbackIcon.className = "inline-flex h-14 w-14 items-center justify-center rounded-full bg-emerald-50 text-emerald-500 mb-4 text-2xl";
+                feedbackIcon.innerHTML = `<i class="fa-solid fa-circle-check"></i>`;
+            } else {
+                feedbackIcon.className = "inline-flex h-14 w-14 items-center justify-center rounded-full bg-rose-50 text-rose-500 mb-4 text-2xl";
+                feedbackIcon.innerHTML = `<i class="fa-solid fa-circle-exclamation"></i>`;
+            }
+        }
+    </script>
+</body>
+</html>
