@@ -12,11 +12,22 @@ from django.utils import timezone
 from accounts.models import SerieSessao, Sessao
 
 from .forms import SessaoForm
+from django.views.decorators.csrf import csrf_exempt
 
 import json
 from django.http import JsonResponse
-from accounts.models import HistoricoStatusSessao
+from accounts.models import HistoricoStatusSessao, Sessao
 from django.views.decorators.http import require_POST
+from django.shortcuts import render, get_object_or_404
+from django.views import View
+from django.http import HttpResponseRedirect
+from django.urls import reverse
+from django.contrib import messages
+import logging
+from django.core.mail import send_mail, BadHeaderError
+from django.conf import settings
+
+logger = logging.getLogger(__name__)
 
 def _get_data_filtro(request):
     data_filtro = request.GET.get("data")
@@ -345,3 +356,206 @@ def atualizar_status_sessao(request, sessao_id):
         
     except Exception as e:
         return JsonResponse({'success': False, 'error': str(e)}, status=500)
+
+
+@login_required
+@require_POST
+def enviar_confirmacao_email(request, sessao_id):
+    try:
+        psicologo = request.user.psicologo
+    except AttributeError:
+        return JsonResponse({'success': False, 'error': 'Usuário não possui perfil de psicólogo.'}, status=403)
+
+    sessao = get_object_or_404(Sessao, id=sessao_id, psicologo=psicologo)
+    paciente = sessao.paciente
+
+    if not paciente.email:
+        return JsonResponse({'success': False, 'error': 'Paciente não possui e-mail cadastrado.'}, status=400)
+
+    if not paciente.aceita_lembrete_email:
+        return JsonResponse({'success': False, 'error': 'Paciente não aceita lembretes por e-mail.'}, status=400)
+
+    token = sessao.token_confirmacao
+    confirm_url = request.build_absolute_uri(reverse('visualizar_confirmacao_publica', args=[token]))
+
+    assunto = f"Confirmação de agendamento - {sessao.psicologo.usuario.nome}"
+    corpo = (
+        f"Olá {paciente.nome_completo},\n\n"
+        f"Você possui um agendamento em {sessao.data.strftime('%d/%m/%Y')} às {sessao.horario_inicio.strftime('%H:%M')}.\n"
+        f"Para confirmar sua presença, acesse: {confirm_url}\n\n"
+        f"Atenciosamente,\n{sessao.psicologo.usuario.nome}"
+    )
+
+    # HTML com a mesma identidade visual do e-mail de recuperação de senha
+    html_message = f"""
+    <div style="background-color: #f7f5ff; padding: 30px; font-family: sans-serif;">
+        <div style="max-width: 600px; margin: 0 auto; background-color: #ffffff; padding: 30px; border-radius: 20px; border: 1px solid #e7e9f2;">
+            <h2 style="color: #1e293b; font-size: 24px; margin-top: 0;">Confirmação de Agendamento — Psico+</h2>
+            <p style="font-size: 15px; line-height: 1.6; color: #475569;">Olá {paciente.nome_completo},</p>
+            <p style="font-size: 15px; line-height: 1.6; color: #475569;">Seu agendamento está marcado para <strong>{sessao.data.strftime('%d/%m/%Y')}</strong> às <strong>{sessao.horario_inicio.strftime('%H:%M')}</strong>.</p>
+            <div style="text-align:center; margin: 20px 0;">
+                <a href="{confirm_url}" style="display:inline-block; padding:12px 20px; background:linear-gradient(90deg,#06b6d4,#3b82f6); color:#fff; border-radius:10px; text-decoration:none; font-weight:bold;">Confirmar presença</a>
+            </div>
+            <p style="color: #64748b; font-size: 13px; line-height: 1.6; margin-bottom: 0; border-top: 1px solid #f1f5f9; padding-top: 20px;">Se você não reconhece este agendamento, ignore este e-mail ou entre em contato com sua clínica.</p>
+            <p style="color: #64748b; font-size: 13px; line-height: 1.6; margin-top: 12px;">Atenciosamente,<br/>{sessao.psicologo.usuario.nome}</p>
+        </div>
+    </div>
+    """
+
+    from_email = getattr(settings, 'DEFAULT_FROM_EMAIL', None) or None
+
+    # Em ambiente de desenvolvimento, apenas exibe o conteúdo do e-mail no terminal/log.
+    if getattr(settings, 'DEBUG', False):
+        logger.info('--- E-mail de confirmação (simulado) ---')
+        logger.info('Para: %s', paciente.email)
+        logger.info('Assunto: %s', assunto)
+        logger.info('Corpo (texto):\n%s', corpo)
+        logger.info('Corpo (HTML):\n%s', html_message)
+        logger.info('--- FIM E-mail ---')
+        # também printa para facilitar visualização direta no terminal
+        print('\n--- E-mail de confirmação (simulado) ---')
+        print('Para:', paciente.email)
+        print('Assunto:', assunto)
+        print('\nCorpo (texto):\n', corpo)
+        print('\nCorpo (HTML):\n', html_message)
+        print('--- FIM E-mail ---\n')
+        debug_user = None
+        try:
+            debug_user = request.user.email if request.user.is_authenticated else None
+        except Exception:
+            debug_user = None
+        return JsonResponse({'success': True, 'html': html_message, 'debug_user': debug_user})
+
+    try:
+        send_mail(subject=assunto, message=corpo, from_email=from_email, recipient_list=[paciente.email], html_message=html_message, fail_silently=False)
+        return JsonResponse({'success': True, 'message': 'E-mail de confirmação enviado.'})
+    except BadHeaderError:
+        return JsonResponse({'success': False, 'error': 'Cabeçalho de e-mail inválido.'}, status=500)
+    except Exception as e:
+        logger.exception('Erro ao enviar e-mail de confirmação')
+        return JsonResponse({'success': False, 'error': str(e)}, status=500)
+
+class DetalheConfirmacaoPublicaView(View):
+    def get(self, request, token):
+        sessao = get_object_or_404(Sessao, token_confirmacao=token)
+        
+        context = {
+            'sessao': sessao,
+            'token_valido': True,
+            'erro_codigo': None,
+            'token': token,
+        }
+
+        if sessao.link_expirado:
+            context['token_valido'] = False
+            context['erro_codigo'] = 'EXPIRADO'
+            context['mensagem_erro'] = 'Link expirado. A sessão já passou.'
+        elif sessao.status == Sessao.Status.CONFIRMADA:
+            context['token_valido'] = False
+            context['erro_codigo'] = 'JA_CONFIRMADO'
+            context['mensagem_erro'] = 'Presença já confirmada.'
+
+        return render(request, "agenda/confirmar_presenca_publica.html", context)
+
+    def post(self, request, token):
+        sessao = get_object_or_404(Sessao, token_confirmacao=token)
+
+        
+        if sessao.link_expirado:
+            messages.error(request, 'Link expirado. A sessão já passou.')
+            return redirect('visualizar_confirmacao_publica', token=token)
+
+        if sessao.status == Sessao.Status.CONFIRMADA:
+            messages.info(request, 'Presença já confirmada.')
+            return redirect('visualizar_confirmacao_publica', token=token)
+
+        
+        sessao.status = Sessao.Status.CONFIRMADA
+        sessao.confirmado_por = 'paciente'
+        sessao.confirmado_en = timezone.now() 
+        sessao.save()
+
+        messages.success(request, 'Presença confirmada com sucesso!')
+        return redirect('visualizar_confirmacao_publica', token=token)
+
+@csrf_exempt
+def api_publica_confirmar(request, token):
+    try:
+        sessao = Sessao.objects.get(token_confirmacao=token)
+    except Sessao.DoesNotExist:
+        return JsonResponse({"error": "Link de confirmação inválido."}, status=404)
+
+    # Subtask: Token já usado retorna status 400 com mensagem específica
+    if sessao.status == Sessao.Status.CONFIRMADA:
+        return JsonResponse({"error": "Presença já confirmada."}, status=400)
+
+    # Subtask: Token expirado retorna status 400 com mensagem específica
+    if sessao.link_expirado:
+        return JsonResponse({"error": "Link expirado. A sessão já passou."}, status=400)
+
+    # Resposta para o carregamento inicial da página (GET)
+    if request.method == "GET":
+        return JsonResponse({
+            "paciente": sessao.paciente.nome_completo if hasattr(sessao.paciente, 'nome_completo') else str(sessao.paciente),
+            "psicologo": sessao.psicologo.usuario.nome if hasattr(sessao.psicologo.usuario, 'nome') else str(sessao.psicologo),
+            "data": sessao.data.strftime("%d/%m/%Y"),
+            "horario_inicio": sessao.horario_inicio.strftime("%H:%M"),
+        })
+
+    # Resposta para a ação do clique do botão (POST)
+    elif request.method == "POST":
+        sessao.status = Sessao.Status.CONFIRMADA
+        sessao.confirmado_por = "paciente"
+        sessao.confirmado_em = timezone.now()
+        sessao.save()
+        return JsonResponse({"success": True, "message": "Presença confirmada com sucesso!"})
+
+    return JsonResponse({"error": "Método não permitido."}, status=405)
+
+
+@login_required
+def api_status_sessoes(request):
+    ids_param = request.GET.get('ids', '')
+    if not ids_param:
+        return JsonResponse({'ids': {} })
+
+    ids = [i for i in ids_param.split(',') if i]
+    psicologo = getattr(request.user, 'psicologo', None)
+    if not psicologo:
+        return JsonResponse({'error': 'Não autorizado.'}, status=403)
+
+    sessoes = Sessao.objects.filter(id__in=ids, psicologo=psicologo).values('id', 'status', 'confirmado_por', 'confirmado_em')
+    mapping = {
+        str(s['id']): {
+            'status': s['status'],
+            'confirmado_por': s['confirmado_por'],
+            'confirmado_em': s['confirmado_em'].isoformat() if s['confirmado_em'] else None,
+        }
+        for s in sessoes
+    }
+    return JsonResponse({'ids': mapping})
+
+@login_required
+@require_POST
+def confirmar_sessao_psicologo(request, sessao_id):
+    psicologo_perfil = getattr(request.user, "psicologo", None)
+    if not psicologo_perfil:
+        return JsonResponse({'success': False, 'error': 'Não autorizado.'}, status=403)
+
+    sessao = get_object_or_404(Sessao, id=sessao_id, psicologo=psicologo_perfil)
+
+    if sessao.status != Sessao.Status.PENDENTE:
+        return JsonResponse({'success': False, 'error': 'Apenas sessões pendentes podem ser confirmadas.'}, status=400)
+
+    sessao.status = Sessao.Status.CONFIRMADA
+    sessao.confirmado_por = 'psicologo'
+    sessao.confirmado_em = timezone.now()
+    sessao.save()
+
+    # Simplificado para garantir que retorne JSON para a requisição do botão da agenda
+    return JsonResponse({
+        'success': True,
+        'status_novo': sessao.status,
+        'confirmado_por': sessao.confirmado_por,
+        'message': 'Presença confirmada pelo psicólogo com sucesso.'
+    })

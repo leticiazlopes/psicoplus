@@ -66,6 +66,64 @@
             this.atualizarValorPagamento();
         },
 
+        abrirParaConfirmar(sessaoId, pacienteNome, data, horario) {
+            const modal = document.getElementById('modal-confirmar');
+            const titulo = document.getElementById('confirmar-titulo');
+            const descricao = document.getElementById('confirmar-descricao');
+            const form = document.getElementById('form-confirmar');
+            const inputSessaoId = document.getElementById('confirmar-sessao-id');
+
+            titulo.innerText = 'Confirmar Agendamento';
+            descricao.innerText = `Deseja confirmar o agendamento de ${pacienteNome} para ${data} às ${horario}?`;
+            inputSessaoId.value = sessaoId;
+            form.setAttribute('data-sessao-id', sessaoId);
+            modal.classList.remove('hidden');
+        },
+
+        enviarEmailConfirmacao(sessaoId) {
+            // Faz POST para o endpoint que envia o e-mail de confirmação
+            const url = `/agenda/enviar-confirmacao-email/${sessaoId}/`;
+            const btn = document.getElementById('confirmar-acao');
+            const originalText = btn ? btn.innerText : null;
+            if (btn) {
+                btn.disabled = true;
+                btn.innerText = 'Enviando...';
+            }
+
+            console.log('enviarEmailConfirmacao ->', sessaoId, url);
+            fetch(url, {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'X-CSRFToken': getCookie('csrftoken')
+                },
+                body: JSON.stringify({})
+            })
+            .then((resp) => {
+                console.log('fetch response status', resp.status);
+                return resp.json();
+            })
+            .then((data) => {
+                console.log('fetch response json', data);
+                if (data.success) {
+                    // Sucesso: fecha o modal sem exibir mensagem ao usuário
+                    closeConfirmarModal();
+                } else {
+                    alert('Erro ao enviar e-mail: ' + (data.error || 'Erro desconhecido'));
+                }
+            })
+            .catch((err) => {
+                console.error('fetch error', err);
+                alert('Erro de comunicação ao enviar e-mail.');
+            })
+            .finally(() => {
+                if (btn) {
+                    btn.disabled = false;
+                    if (originalText) btn.innerText = originalText;
+                }
+            });
+        },
+
         atualizarValorPagamento() {
             if (this.atendidoPorPlano || this.isentoPagamento) {
                 this.campo('valor').value = '0';
@@ -149,6 +207,7 @@
         <div class="divide-y divide-slate-100">
             {% for sessao in agendamentos_do_dia %}
             <div x-data="{ currentStatus: '{{ sessao.status }}' }"
+                 data-sessao-id="{{ sessao.id }}"
                  class="flex flex-row items-center justify-between px-6 py-5 transition-colors duration-300 gap-4"
                  :class="{
                      'bg-amber-50/40': currentStatus === 'pendente',
@@ -170,22 +229,23 @@
                         {% endif %}
                     </div>
                     <p class="mt-1 text-sm text-slate-500">{{ sessao.horario_inicio|time:"H:i" }} • {{ sessao.duracao_minutos }} min</p>
+                    <p class="mt-2 text-[11px] font-semibold uppercase tracking-wide text-sky-700" data-confirm-info>
+                        {% if sessao.status == 'confirmada' and sessao.confirmado_em %}
+                            Confirmado por {{ sessao.confirmado_por|title }} em {{ sessao.confirmado_em|date:"d/m H:i" }}
+                        {% endif %}
+                    </p>
                 </div>
 
-                <div class="flex items-center gap-6">
-                    <div class="text-right flex flex-col items-end">
-                        <p class="text-sm font-bold transition-all duration-300 mb-1.5"
-                           :class="(currentStatus === 'cancelada' || currentStatus === 'falta') ? 'text-slate-400 line-through' : 'text-slate-900'">
-                           R$ {{ sessao.valor }}
-                        </p>
-
-                        <div class="relative inline-block w-36">
-                            <select class="w-full appearance-none rounded-xl border border-slate-200 bg-white px-3 py-2 pr-8 text-xs font-bold uppercase tracking-wider text-slate-700 shadow-sm cursor-pointer transition hover:bg-slate-50 focus:border-primary focus:ring-2 focus:ring-primary/30 focus:ring-offset-1 focus:outline-none"
+                <div class="flex items-center gap-3">
+                    <div class="relative inline-block w-36">
+                            <select class="w-full appearance-none rounded-xl border border-slate-200 bg-white px-2.5 py-2 pr-8 text-[10px] font-bold uppercase tracking-wider text-slate-700 shadow-sm cursor-pointer transition hover:bg-slate-50 focus:border-primary focus:ring-2 focus:ring-primary/30 focus:ring-offset-1 focus:outline-none"
                                 data-sessao-id="{{ sessao.id }}"
                                 :data-status-atual="currentStatus"
                                 @change="atualizarStatusInline($el).then(novoStatus => { if (novoStatus) currentStatus = novoStatus; })">
+                                {% if sessao.status == 'confirmada' %}
+                                    <option value="confirmada" selected disabled>Confirmada</option>
+                                {% endif %}
                                 <option value="pendente" {% if sessao.status == 'pendente' %}selected{% endif %}>Pendente</option>
-                                <option value="confirmada" {% if sessao.status == 'confirmada' %}selected{% endif %}>Confirmada</option>
                                 <option value="realizada" {% if sessao.status == 'realizada' %}selected{% endif %}>Realizada</option>
                                 <option value="cancelada" {% if sessao.status == 'cancelada' %}selected{% endif %}>Cancelada</option>
                                 <option value="falta" {% if sessao.status == 'falta' %}selected{% endif %}>Falta</option>
@@ -194,12 +254,20 @@
                                 <i class="fa-solid fa-chevron-down text-[10px]"></i>
                             </div>
                         </div>
-                    </div>
+
+                    <button type="button"
+                            data-confirmar-botao
+                            x-show="currentStatus === 'pendente'"
+                            @click="abrirParaConfirmar('{{ sessao.id }}', '{{ sessao.paciente.nome_completo|escapejs }}', '{{ sessao.data|date:'d/m/Y' }}', '{{ sessao.horario_inicio|time:'H:i' }}')"
+                            class="rounded-full bg-emerald-600 px-3 py-1.5 text-[10px] font-bold uppercase tracking-wide text-white shadow-sm shadow-emerald-500/20 hover:bg-emerald-700 transition flex items-center gap-2">
+                        <i class="fa-solid fa-check"></i>
+                        Confirmar
+                    </button>
 
                     <button type="button"
                             x-show="currentStatus === 'pendente'"
                             @click="abrirParaEditar('{% url 'editar_sessao' sessao.id %}', '{{ sessao.paciente.id }}', '{{ sessao.data|date:'Y-m-d' }}', '{{ sessao.horario_inicio|time:'H:i' }}', '{{ sessao.duracao_minutos }}', '{{ sessao.valor }}', '{{ sessao.atendido_por_plano }}', '{{ sessao.isento_pagamento }}', '{{ sessao.serie_id|default_if_none:'' }}')"
-                            class="flex h-9 w-9 items-center justify-center rounded-xl border border-slate-200 text-slate-400 hover:border-primary/30 hover:bg-primarySoft hover:text-primary transition shadow-sm">
+                            class="h-9 w-9 rounded-xl border border-slate-200 text-slate-400 hover:border-primary/30 hover:bg-primarySoft hover:text-primary transition shadow-sm flex items-center justify-center">
                         <i class="fa-solid fa-pen text-xs"></i>
                     </button>
 
@@ -247,6 +315,42 @@
                         </button>
                         <button type="submit" class="flex-1 rounded-xl bg-gradient-to-r from-rose-500 to-rose-600 px-4 py-3 text-sm font-bold text-white shadow-lg shadow-rose-500/20 transition hover:from-rose-600 hover:to-rose-700">
                             Confirmar
+                        </button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+
+    <div id="modal-confirmar" class="fixed inset-0 z-50 flex items-center justify-center bg-slate-900/40 backdrop-blur-sm hidden">
+        <div class="bg-white rounded-2xl shadow-xl p-8 max-w-sm w-full transition transform">
+            <div class="flex flex-col items-center text-center">
+                <div class="flex h-12 w-12 items-center justify-center rounded-xl bg-emerald-100 text-emerald-700 mb-4">
+                    <i class="fa-solid fa-check text-2xl"></i>
+                </div>
+                <h2 id="confirmar-titulo" class="text-lg font-bold mb-2 text-slate-900">Confirmar Agendamento</h2>
+                <p id="confirmar-descricao" class="text-slate-500 text-sm mb-6">Deseja confirmar este agendamento?</p>
+
+                <form id="form-confirmar" class="w-full">
+                    {% csrf_token %}
+                    <input id="confirmar-sessao-id" type="hidden" name="sessao_id" value="">
+                    <div class="mb-4 text-left">
+                        <p class="mb-2 text-xs font-bold uppercase tracking-wide text-slate-400">Como deseja finalizar?</p>
+                        <label class="flex items-center gap-3 rounded-xl border border-slate-200 bg-slate-50 px-4 py-3 mb-2 cursor-pointer">
+                            <input type="radio" name="confirmar_acao" value="confirmar" checked class="h-4 w-4 text-emerald-600 focus:ring-emerald-500" />
+                            <span class="text-sm font-semibold text-slate-700">Confirmar internamente</span>
+                        </label>
+                        <label class="flex items-center gap-3 rounded-xl border border-slate-200 bg-slate-50 px-4 py-3 cursor-pointer">
+                            <input type="radio" name="confirmar_acao" value="email" class="h-4 w-4 text-sky-600 focus:ring-sky-500" />
+                            <span class="text-sm font-semibold text-slate-700">Enviar e-mail de confirmação ao paciente</span>
+                        </label>
+                    </div>
+                    <div class="flex gap-3 w-full">
+                        <button onclick="closeConfirmarModal(); return false;" type="button" class="flex-1 rounded-xl border border-slate-200 bg-white px-4 py-3 text-sm font-semibold text-slate-600 transition hover:bg-slate-50">
+                            Voltar
+                        </button>
+                        <button id="confirmar-acao" type="submit" class="flex-1 rounded-xl bg-gradient-to-r from-emerald-500 to-emerald-600 px-4 py-3 text-sm font-bold text-white shadow-lg shadow-emerald-500/20 transition hover:from-emerald-600 hover:to-emerald-700">
+                            Executar ação
                         </button>
                     </div>
                 </form>
@@ -461,6 +565,57 @@
     let selectPendenteCancelamento = null;
     let statusAnteriorCancelamento = '';
     let resolveStatusPromise = null;
+    let confirmacaoSessaoId = null;
+
+    // Global wrapper: tenta delegar ao método Alpine, senão faz o envio direto.
+    function enviarEmailConfirmacao(sessaoId) {
+        try {
+            const root = document.querySelector('[x-data]');
+            if (root && root.__x && root.__x.$data && typeof root.__x.$data.enviarEmailConfirmacao === 'function') {
+                return root.__x.$data.enviarEmailConfirmacao(sessaoId);
+            }
+        } catch (e) {
+            // segue para fallback
+        }
+
+        const url = `/agenda/enviar-confirmacao-email/${sessaoId}/`;
+        const btn = document.getElementById('confirmar-acao');
+        const originalText = btn ? btn.innerText : null;
+        if (btn) {
+            btn.disabled = true;
+            btn.innerText = 'Enviando...';
+        }
+
+        console.log('enviarEmailConfirmacao (fallback) ->', sessaoId, url);
+        return fetch(url, {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+                'X-CSRFToken': getCookie('csrftoken')
+            },
+            body: JSON.stringify({})
+        })
+        .then((resp) => resp.json())
+        .then((data) => {
+            console.log('fetch response json (fallback)', data);
+            if (data.success) {
+                // Sucesso: fecha o modal sem exibir mensagem ao usuário
+                closeConfirmarModal();
+            } else {
+                alert('Erro ao enviar e-mail: ' + (data.error || 'Erro desconhecido'));
+            }
+        })
+        .catch((err) => {
+            console.error('fetch error (fallback)', err);
+            alert('Erro de comunicação ao enviar e-mail.');
+        })
+        .finally(() => {
+            if (btn) {
+                btn.disabled = false;
+                if (originalText) btn.innerText = originalText;
+            }
+        });
+    }
 
     async function atualizarStatusInline(selectElement) {
         const sessaoId = selectElement.getAttribute('data-sessao-id');
@@ -530,6 +685,12 @@
         }
     }
 
+    function closeConfirmarModal() {
+        const modal = document.getElementById('modal-confirmar');
+        modal.classList.add('hidden');
+        confirmacaoSessaoId = null;
+    }
+
     function setCancelarEm(valor) {
         document.getElementById('cancelar-em').value = valor;
     }
@@ -585,9 +746,57 @@
         resolveStatusPromise = null;
     });
 
+    document.getElementById('form-confirmar').addEventListener('submit', async function(e) {
+        e.preventDefault();
+        const sessaoId = confirmacaoSessaoId || document.getElementById('confirmar-sessao-id').value;
+        const acao = document.querySelector('input[name="confirmar_acao"]:checked')?.value;
+
+        if (!sessaoId) {
+            alert('Não foi possível concluir a ação. Tente novamente.');
+            return;
+        }
+
+        document.getElementById('modal-confirmar').classList.add('hidden');
+
+        if (acao === 'email') {
+            enviarEmailConfirmacao(sessaoId);
+            confirmacaoSessaoId = null;
+            return;
+        }
+
+        try {
+            const response = await fetch(`/agenda/atualizar-status/${sessaoId}/`, {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'X-CSRFToken': getCookie('csrftoken')
+                },
+                body: JSON.stringify({ status: 'confirmada' })
+            });
+
+            const data = await response.json();
+
+            if (data.success) {
+                location.reload();
+            } else {
+                alert('Erro ao confirmar o agendamento: ' + data.error);
+            }
+        } catch (err) {
+            alert('Erro de comunicação com o servidor.');
+        }
+
+        confirmacaoSessaoId = null;
+    });
+
     document.getElementById('modal-cancelar').addEventListener('click', function(e) {
         if (e.target === this) {
             closeCancelarModal();
+        }
+    });
+
+    document.getElementById('modal-confirmar').addEventListener('click', function(e) {
+        if (e.target === this) {
+            closeConfirmarModal();
         }
     });
 
@@ -633,5 +842,99 @@
             // silencioso
         }
     });
+
+    // Polling: atualiza os status das sessões visíveis sem precisar de refresh.
+    async function atualizarStatusVisiveis() {
+        try {
+            const selects = Array.from(document.querySelectorAll('select[data-sessao-id]'));
+            const ids = selects.map(s => s.getAttribute('data-sessao-id')).filter(Boolean);
+            if (!ids.length) return;
+            const url = `/agenda/api/status-sessoes/?ids=${ids.join(',')}`;
+            const resp = await fetch(url, { credentials: 'same-origin' });
+            if (!resp.ok) return;
+            const data = await resp.json();
+            const mapping = data.ids || {};
+
+            selects.forEach((sel) => {
+                const sid = sel.getAttribute('data-sessao-id');
+                const entry = mapping[sid];
+                if (!entry) return;
+                const novo = entry.status;
+
+                // Atualiza select, garantindo que exista option 'confirmada' quando necessário
+                if (novo === 'confirmada') {
+                    let opt = sel.querySelector('option[value="confirmada"]');
+                    if (!opt) {
+                        opt = document.createElement('option');
+                        opt.value = 'confirmada';
+                        opt.text = 'Confirmada';
+                        opt.disabled = true;
+                        // prepend para aparecer primeiro
+                        sel.prepend(opt);
+                    }
+                    sel.value = 'confirmada';
+                } else {
+                    // tenta simplesmente setar o value
+                    try { sel.value = novo; } catch (e) { /* silencioso */ }
+                }
+
+                // Atualiza visual da linha (cores e texto) para refletir novo status sem depender do Alpine
+                const row = sel.closest('[x-data]');
+                if (row) {
+                    try {
+                        if (row.__x && row.__x.$data && row.__x.$data.currentStatus !== undefined) {
+                            row.__x.$data.currentStatus = novo;
+                        }
+                    } catch (err) {
+                        // silencioso
+                    }
+
+                    // Remove classes de background anteriores
+                    row.classList.remove('bg-amber-50/40','bg-sky-50/40','bg-rose-50/40','opacity-60','bg-emerald-50/40','bg-slate-50/60');
+                    // Aplica nova classe
+                    if (novo === 'pendente') row.classList.add('bg-amber-50/40');
+                    else if (novo === 'confirmada') row.classList.add('bg-sky-50/40');
+                    else if (novo === 'cancelada') { row.classList.add('bg-rose-50/40','opacity-60'); }
+                    else if (novo === 'realizada') row.classList.add('bg-emerald-50/40');
+                    else if (novo === 'falta') row.classList.add('bg-slate-50/60');
+
+                    // Atualiza estilo do nome (line-through para cancelada/falta)
+                    const nomeP = row.querySelector('p.text-base.font-bold');
+                    if (nomeP) {
+                        if (novo === 'cancelada' || novo === 'falta') {
+                            nomeP.classList.remove('text-slate-900');
+                            nomeP.classList.add('text-slate-400','line-through','decoration-slate-300');
+                        } else {
+                            nomeP.classList.remove('text-slate-400','line-through','decoration-slate-300');
+                            nomeP.classList.add('text-slate-900');
+                        }
+                    }
+                    const confirmInfo = row.querySelector('[data-confirm-info]');
+                    if (confirmInfo) {
+                        if (entry.confirmado_por && entry.confirmado_em) {
+                            const formatted = new Date(entry.confirmado_em).toLocaleString('pt-BR', {
+                                day: '2-digit', month: '2-digit', hour: '2-digit', minute: '2-digit'
+                            }).replace(',', '');
+                            confirmInfo.textContent = `Confirmado por ${entry.confirmado_por.charAt(0).toUpperCase() + entry.confirmado_por.slice(1)} em ${formatted}`;
+                        } else {
+                            confirmInfo.textContent = '';
+                        }
+                    }
+
+                    const confirmButton = row.querySelector('[data-confirmar-botao]');
+                    if (confirmButton) {
+                        confirmButton.style.display = novo === 'pendente' ? '' : 'none';
+                    }
+                }
+            });
+        } catch (err) {
+            // silencioso
+        }
+    }
+
+    // Inicia polling periódico a cada 10 segundos
+    setInterval(atualizarStatusVisiveis, 10000);
+    // Faz uma primeira chamada após carregamento para captar confirmações recentes
+    setTimeout(atualizarStatusVisiveis, 2000);
 </script>
 {% endblock %}
