@@ -145,6 +145,7 @@ class CadastroPacienteForm(forms.ModelForm):
             "data_nascimento",
             "contato_emergencia_nome",
             "contato_emergencia_telefone",
+            "aceita_lembrete_email",
         ]
         widgets = {
             "nome_completo": forms.TextInput(attrs={"placeholder": "Nome completo do paciente"}),
@@ -153,14 +154,20 @@ class CadastroPacienteForm(forms.ModelForm):
             "data_nascimento": forms.DateInput(attrs={"type": "date"}, format="%Y-%m-%d"),
             "contato_emergencia_nome": forms.TextInput(attrs={"placeholder": "Nome do contato"}),
             "contato_emergencia_telefone": forms.TextInput(attrs={"placeholder": "Telefone de emergência"}),
+            "aceita_lembrete_email": forms.CheckboxInput(),
         }
 
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
         for field in self.fields.values():
-            field.widget.attrs.update({
-                "class": "w-full rounded-xl border border-slate-200 bg-white px-4 py-3 text-[14px] text-slate-900 outline-none transition placeholder:text-slate-400 focus:border-primary focus:ring-4 focus:ring-primary/10"
-            })
+            if field.widget.input_type == "checkbox":
+                field.widget.attrs.update({
+                    "class": "h-4 w-4 rounded border-slate-300 text-primary focus:ring-primary"
+                })
+            else:
+                field.widget.attrs.update({
+                    "class": "w-full rounded-xl border border-slate-200 bg-white px-4 py-3 text-[14px] text-slate-900 outline-none transition placeholder:text-slate-400 focus:border-primary focus:ring-4 focus:ring-primary/10"
+                })
 
     def clean_email(self):
         email = self.cleaned_data.get("email")
