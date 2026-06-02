@@ -128,12 +128,17 @@ LOGIN_REDIRECT_URL = 'dashboard'
 LOGIN_URL = 'login'
 
 
-# EMAIL CONFIGURATION (ANYMAIL + BREVO)
-EMAIL_BACKEND = 'anymail.backends.brevo.EmailBackend'
-EMAIL_USE_TLS = False
-EMAIL_HOST_USER = os.getenv('EMAIL_USER')
-EMAIL_HOST_PASSWORD = os.getenv('EMAIL_PASSWORD')
-DEFAULT_FROM_EMAIL = f"Equipe Psico+ <{os.getenv('EMAIL_USER')}>"
+# ==============================================================================
+# EMAIL CONFIGURATION (Dinamizado para Dev e Produção)
+# ==============================================================================
+if DEBUG:
+    # Em desenvolvimento, exibe o e-mail diretamente no terminal do VS Code/Terminal
+    EMAIL_BACKEND = 'django.core.mail.backends.console.EmailBackend'
+    DEFAULT_FROM_EMAIL = 'Equipe Psico+ <teste@psicoplus.com>'
+else:
+    # Em produção (Render), usa a API do Brevo
+    EMAIL_BACKEND = 'anymail.backends.brevo.EmailBackend'
+    DEFAULT_FROM_EMAIL = f"Equipe Psico+ <{os.getenv('EMAIL_USER')}>"
 
 ANYMAIL = {
     "BREVO_API_KEY": os.getenv("BREVO_API_KEY"),
