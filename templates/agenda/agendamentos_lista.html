@@ -352,10 +352,21 @@
                 <input type="hidden" name="return_to" value="{{ return_to }}">
                 <input type="hidden" name="aplicar_em" :value="aplicarEm">
 
+                {% if form.non_field_errors %}
+                    <div class="rounded-2xl border border-rose-200 bg-rose-50 p-4 mb-4">
+                        {% for error in form.non_field_errors %}
+                            <p class="text-sm text-rose-700 font-semibold">⚠️ {{ error }}</p>
+                        {% endfor %}
+                    </div>
+                {% endif %}
+
                 <div>
                     <label class="mb-1.5 block text-xs font-bold uppercase tracking-wider text-slate-500">Paciente</label>
                     <div>
                         {{ form.paciente }}
+                        {% if form.paciente.errors %}
+                            <p class="mt-1 text-xs text-rose-600">{{ form.paciente.errors.0 }}</p>
+                        {% endif %}
                     </div>
                 </div>
 
@@ -364,12 +375,18 @@
                         <label class="mb-1.5 block text-xs font-bold uppercase tracking-wider text-slate-500">Data</label>
                         <div>
                             {{ form.data }}
+                            {% if form.data.errors %}
+                                <p class="mt-1 text-xs text-rose-600">{{ form.data.errors.0 }}</p>
+                            {% endif %}
                         </div>
                     </div>
                     <div>
                         <label class="mb-1.5 block text-xs font-bold uppercase tracking-wider text-slate-500">Horário de Início</label>
                         <div>
                             {{ form.horario_inicio }}
+                            {% if form.horario_inicio.errors %}
+                                <p class="mt-1 text-xs text-rose-600">{{ form.horario_inicio.errors.0 }}</p>
+                            {% endif %}
                         </div>
                     </div>
                 </div>
@@ -379,12 +396,18 @@
                         <label class="mb-1.5 block text-xs font-bold uppercase tracking-wider text-slate-500">Duração (min)</label>
                         <div>
                             {{ form.duracao_minutos }}
+                            {% if form.duracao_minutos.errors %}
+                                <p class="mt-1 text-xs text-rose-600">{{ form.duracao_minutos.errors.0 }}</p>
+                            {% endif %}
                         </div>
                     </div>
                     <div>
                         <label class="mb-1.5 block text-xs font-bold uppercase tracking-wider text-slate-500">Valor (R$)</label>
                         <div>
                             <input type="number" name="valor" x-ref="valor" step="0.01" min="0" value="{{ form.valor.value|default_if_none:'' }}" :readonly="atendidoPorPlano || isentoPagamento" class="w-full rounded-xl border border-slate-200 bg-white px-4 py-3 text-sm text-slate-900 transition focus:border-primary focus:ring-primary read-only:bg-slate-100 read-only:text-slate-500 read-only:cursor-not-allowed" />
+                            {% if form.valor.errors %}
+                                <p class="mt-1 text-xs text-rose-600">{{ form.valor.errors.0 }}</p>
+                            {% endif %}
                         </div>
                     </div>
                 </div>
@@ -401,6 +424,9 @@
                             <input type="checkbox" name="isento_pagamento" x-model="isentoPagamento" @change="atualizarValorPagamento()" class="h-4 w-4 rounded border-slate-300 text-primary focus:ring-primary" />
                             <span class="text-sm text-slate-700">Isento de Pagamento</span>
                         </label>
+                        {% if form.atendido_por_plano.errors or form.isento_pagamento.errors %}
+                            <p class="mt-1 text-xs text-rose-600">{{ form.atendido_por_plano.errors.0|default:form.isento_pagamento.errors.0 }}</p>
+                        {% endif %}
                     </div>
                 </div>
 
@@ -414,6 +440,9 @@
                         <div>
                             <label class="mb-1.5 block text-xs font-bold uppercase tracking-wider text-slate-500">Número de Repetições</label>
                             {{ form.repeticoes }}
+                            {% if form.repeticoes.errors %}
+                                <p class="mt-1 text-xs text-rose-600">{{ form.repeticoes.errors.0 }}</p>
+                            {% endif %}
                             <p class="mt-2 text-xs text-slate-500" x-text="previewRecorrencia()"></p>
                         </div>
                     </template>
@@ -576,5 +605,33 @@
         }
         return cookieValue;
     }
+
+    // Fallback: se o servidor retornou erros no formulário dentro do modal,
+    // garante que o modal fique visível mesmo que o estado do Alpine não tenha sido aplicado.
+    document.addEventListener('DOMContentLoaded', function() {
+        try {
+            const agendamentoModal = document.querySelector('div[x-show="showModal"]');
+            if (!agendamentoModal) return;
+
+            const hasNonField = agendamentoModal.querySelector('.rounded-2xl.border.border-rose-200');
+            const hasFieldErrors = agendamentoModal.querySelector('.text-rose-600');
+            if (hasNonField || hasFieldErrors) {
+                // Mostra o modal (layout flex) como fallback
+                agendamentoModal.style.display = 'flex';
+
+                // Tenta também atualizar o estado do Alpine (se disponível)
+                try {
+                    const root = document.querySelector('[x-data]');
+                    if (root && root.__x && root.__x.$data) {
+                        root.__x.$data.showModal = true;
+                    }
+                } catch (e) {
+                    // silencioso — não quebra a página
+                }
+            }
+        } catch (err) {
+            // silencioso
+        }
+    });
 </script>
 {% endblock %}
