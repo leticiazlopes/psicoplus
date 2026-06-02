@@ -54,6 +54,24 @@ class MeuPerfilUpdateView(LoginRequiredMixin, SuccessMessageMixin, UpdateView):
     success_url = reverse_lazy("pacientes_lista")
     success_message = "Seu perfil foi atualizado com sucesso!"
 
+    def dispatch(self, request, *args, **kwargs):
+        if request.user.is_authenticated and request.user.perfil == Usuario.Perfil.PACIENTE:
+            if request.method != "GET":
+                return redirect("meu_perfil")
+
+            paciente = get_object_or_404(
+                Paciente.objects.select_related("usuario", "psicologo__usuario"),
+                usuario=request.user,
+            )
+            context = {
+                "perfil_tipo": "paciente",
+                "paciente": paciente,
+                "usuario_logado": request.user,
+            }
+            return render(request, self.template_name, context)
+
+        return super().dispatch(request, *args, **kwargs)
+
     def get_object(self, queryset=None):
         return get_object_or_404(Psicologo, usuario=self.request.user)
 
@@ -70,9 +88,11 @@ class LoginUsuarioView(LoginView):
 
     def get_success_url(self):
         user = self.request.user
-        if user.perfil == Usuario.Perfil.PSICOLOGO:
-            return reverse_lazy("dashboard")
-        return reverse_lazy("dashboard")
+
+        if user.perfil == Usuario.Perfil.PACIENTE:
+            return reverse_lazy("dashboard_paciente")
+
+        return reverse_lazy("pacientes_lista")
         
 @method_decorator(require_POST, name='dispatch')
 class LogoutUsuarioView(LogoutView):
@@ -350,3 +370,64 @@ def validar_codigo_e_salvar(request):
             messages.error(request, "Código de verificação incorreto.")
 
     return render(request, "auth/password_reset_confirm.html")
+
+   
+from django.http import JsonResponse, HttpResponseForbidden
+from django.contrib.auth.decorators import login_required
+
+@login_required
+def api_paciente_home(request):
+    """
+    [US-10] Endpoint GET /api/paciente/home/
+    Subtask: Endpoint acessível APENAS para usuários com tipo=paciente
+    """
+    if request.user.perfil != Usuario.Perfil.PACIENTE:
+        return JsonResponse({"error": "Acesso proibido. Endpoint restrito a pacientes."}, status=403)
+        
+    paciente_perfil = getattr(request.user, "paciente", None)
+    if not paciente_perfil:
+        return JsonResponse({"error": "Perfil de paciente não encontrado."}, status=404)
+
+    agora = timezone.now()
+    proxima_sessao = Sessao.objects.filter(
+        paciente=paciente_perfil,
+        data__gte=agora.date(),
+    ).exclude(
+        status=Sessao.Status.CANCELADA
+    ).order_by("data", "horario_inicio").first()
+
+    if proxima_sessao and proxima_sessao.data == agora.date():
+        if proxima_sessao.horario_inicio < agora.time():
+            proxima_sessao = Sessao.objects.filter(
+                paciente=paciente_perfil,
+                data__gt=agora.date()
+            ).exclude(status=Sessao.Status.CANCELADA).order_by("data", "horario_inicio").first()
+
+    if proxima_sessao:
+        dados_sessao = {
+            "tem_sessao": True,
+            "data": proxima_sessao.data.strftime("%d/%m/%Y"),
+            "horario": proxima_sessao.horario_inicio.strftime("%H:%M"),
+            "status": proxima_sessao.get_status_display(),
+            "plano": proxima_sessao.atendido_por_plano
+        }
+    else:
+        dados_sessao = {
+            "tem_sessao": False
+        }
+
+    return JsonResponse(dados_sessao)
+
+
+@login_required
+def dashboard_paciente_page(request):
+    if request.user.perfil != Usuario.Perfil.PACIENTE:
+        return HttpResponseForbidden("Você não tem permissão para acessar esta área.")
+        
+    return render(request, "accounts/dashboard_paciente.html")
+
+@login_required
+def inicio_view(request):
+    if request.user.perfil == Usuario.Perfil.PACIENTE:
+        return redirect("dashboard_paciente")
+    return render(request, "agenda/agendamentos_lista.html")
