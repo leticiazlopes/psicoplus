@@ -1,0 +1,88 @@
+{% extends 'shared/base.html' %}
+
+{% block page_title %}Minha Área Restrita{% endblock %}
+
+{% block content %}
+<div class="space-y-6">
+    <div class="text-sm text-slate-500 -mt-2 mb-4">
+        Aqui está o panorama geral do seu acompanhamento terapêutico.
+    </div>
+
+    <div class="grid gap-6 grid-cols-1 md:grid-cols-3">
+        <div class="rounded-[22px] border border-borderSoft bg-white p-6 shadow-soft md:col-span-1">
+            <p class="text-[11px] font-bold uppercase tracking-wider text-textMuted">Sua próxima consulta</p>
+            
+            <div id="sessao-loading" class="animate-pulse space-y-3 mt-4">
+                <div class="h-6 bg-slate-100 rounded w-2/3"></div>
+                <div class="h-4 bg-slate-100 rounded w-1/2"></div>
+            </div>
+
+            <div id="sessao-conteudo" class="hidden">
+            </div>
+        </div>
+
+        <div class="md:col-span-2 space-y-4">
+            <div class="rounded-[22px] border border-borderSoft bg-white p-6 shadow-soft">
+                <h3 class="text-sm font-bold text-textMain mb-4">Ações Rápidas</h3>
+                
+                <a href="#" class="flex items-center justify-between p-4 rounded-xl border border-slate-100 hover:border-primary/20 bg-gradient-to-r from-bgSoft to-white transition group">
+                    <div class="flex items-center space-x-3">
+                        <div class="p-2.5 rounded-lg bg-primarySoft text-primary">
+                            <i class="fa-solid fa-book-journal-whills text-sm"></i>
+                        </div>
+                        <div>
+                            <p class="text-sm font-bold text-textMain">Diário de Pensamentos</p>
+                            <p class="text-xs text-textMuted">Registre suas reflexões de forma segura para a próxima sessão</p>
+                        </div>
+                    </div>
+                    <i class="fa-solid fa-chevron-right text-xs text-slate-300 group-hover:text-primary transition"></i>
+                </a>
+            </div>
+        </div>
+
+    </div>
+</div>
+
+<script>
+    document.addEventListener("DOMContentLoaded", function() {
+        fetch("{% url 'api_paciente_home' %}")
+            .then(response => {
+                if (!response.ok) {
+                    throw new Error("Não autorizado");
+                }
+                return response.json();
+            })
+            .then(data => {
+                const loadingEl = document.getElementById("sessao-loading");
+                const conteudoEl = document.getElementById("sessao-conteudo");
+                
+                loadingEl.classList.add("hidden");
+                conteudoEl.classList.remove("hidden");
+
+                if (data.tem_sessao) {
+                    conteudoEl.innerHTML = `
+                        <h3 class="mt-3 text-xl font-black text-textMain">${data.data}</h3>
+                        <p class="text-xs text-textMuted mt-1">
+                            <i class="fa-regular fa-clock text-primary mr-1"></i> Horário: <strong>${data.horario}</strong>
+                        </p>
+                        <p class="text-xs text-textMuted mt-0.5">
+                            <i class="fa-solid fa-handshake text-slate-400 mr-1"></i> Tipo: ${data.plano ? 'Plano de Saúde' : 'Particular'}
+                        </p>
+                        <span class="mt-4 inline-flex rounded-full px-2.5 py-0.5 text-[9px] font-bold uppercase tracking-wide bg-primarySoft text-primary">
+                            ${data.status}
+                        </span>
+                    `;
+                } else {
+                    conteudoEl.innerHTML = `
+                        <div class="text-center py-6 text-textMuted text-xs">
+                            <i class="fa-regular fa-calendar-check text-2xl mb-2 block text-primary/40"></i>
+                            <span class="font-medium block text-textMain mb-1">Tudo em dia!</span>
+                            Você não tem nenhuma sessão agendada no momento.
+                        </div>
+                    `;
+                }
+            })
+            .catch(error => console.error("Erro na API de pacientes:", error));
+    });
+</script>
+{% endblock %}

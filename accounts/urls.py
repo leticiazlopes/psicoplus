@@ -32,5 +32,7 @@ urlpatterns = [
     path("pacientes/<uuid:pk>/editar/", views.PacienteUpdateView.as_view(), name="editar_paciente"),
     path("esqueci-senha/", views.esqueci_senha_request, name="esqueci_senha"),
     path("validar-codigo/", views.validar_codigo_e_salvar, name="validar_codigo"),
-    path("definir-senha/<str:uid>/<str:token>/", views.DefinirSenhaPacienteView.as_view(), name="definir_senha_paciente")
+    path("definir-senha/<str:uid>/<str:token>/", views.DefinirSenhaPacienteView.as_view(), name="definir_senha_paciente"),
+    path("paciente/dashboard/", views.dashboard_paciente_page, name="dashboard_paciente"),
+    path("api/paciente/home/", views.api_paciente_home, name="api_paciente_home"),
     ]   
