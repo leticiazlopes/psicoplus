@@ -136,15 +136,24 @@ if DEBUG:
     EMAIL_BACKEND = 'django.core.mail.backends.console.EmailBackend'
     DEFAULT_FROM_EMAIL = 'Equipe Psico+ <teste@psicoplus.com>'
 else:
-    # Em produção (Render), usa a API do Brevo
+    # Em produção (Render), usa a API do Brevo de forma estrita
     EMAIL_BACKEND = 'anymail.backends.brevo.EmailBackend'
-    DEFAULT_FROM_EMAIL = f"Equipe Psico+ <{os.getenv('EMAIL_USER')}>"
+    
+    # Resgate seguro com fallback caso a variável do Render suma por um instante
+    EMAIL_REMOCAO_ERRO = os.getenv('EMAIL_USER', 'suportepsicoplus@gmail.com')
+    DEFAULT_FROM_EMAIL = f"Equipe Psico+ <{EMAIL_REMOCAO_ERRO}>"
 
-ANYMAIL = {
-    "BREVO_API_KEY": os.getenv("BREVO_API_KEY"),
-}
+    # O dicionário ANYMAIL deve existir EXCLUSIVAMENTE em produção
+    ANYMAIL = {
+        "BREVO_API_KEY": os.getenv("BREVO_API_KEY"),
+    }
 
-# SECURITY SECURITY
+# CONFIGURAÇÕES DE SEGURANÇA ADICIONAIS PARA PRODUÇÃO
+if not DEBUG:
+    CSRF_COOKIE_SECURE = True
+    SESSION_COOKIE_SECURE = True
+    SECURE_PROXY_SSL_HEADER = ('HTTP_X_FORWARDED_PROTO', 'https')
+
 CSRF_TRUSTED_ORIGINS = [
     'https://psicoplus.onrender.com',
 ]
