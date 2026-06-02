@@ -92,7 +92,7 @@ class LoginUsuarioView(LoginView):
         if user.perfil == Usuario.Perfil.PACIENTE:
             return reverse_lazy("dashboard_paciente")
 
-        return reverse_lazy("pacientes_lista")
+        return reverse_lazy("dashboard")
         
 @method_decorator(require_POST, name='dispatch')
 class LogoutUsuarioView(LogoutView):
