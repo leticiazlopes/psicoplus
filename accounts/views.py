@@ -13,10 +13,12 @@ import random
 import datetime
 from django.utils import timezone
 from django.core.mail import send_mail
-
-
-
-
+from django.utils.http import urlsafe_base64_decode
+from django.utils.encoding import force_str
+from django.contrib.auth.tokens import default_token_generator
+from django.views.generic import FormView
+from django.urls import reverse_lazy
+from django.contrib import messages
 class PsicologoListView(LoginRequiredMixin, ListView):
     template_name = "accounts/psicologos_lista.html"
     model = Psicologo
@@ -100,12 +102,25 @@ class DefinirSenhaPacienteView(FormView):
     form_class = DefinirSenhaPacienteForm
     success_url = reverse_lazy("login")
     usuario = None
+    _token_valido_cache = False  # Cache interno para o estado do token
 
     def dispatch(self, request, *args, **kwargs):
-        self.usuario = Usuario.objects.filter(
-            token_definicao_senha=self.kwargs["token"],
-            perfil=Usuario.Perfil.PACIENTE,
-        ).first()
+        uidb64 = self.kwargs.get("uid")
+        token = self.kwargs.get("token")
+        
+        try:
+            # 1. Decodifica o UID com segurança para obter a chave primária real (UUID ou ID)
+            uid = force_str(urlsafe_base64_decode(uidb64))
+            self.usuario = Usuario.objects.filter(pk=uid, perfil=Usuario.Perfil.PACIENTE).first()
+        except (TypeError, ValueError, OverflowError, Usuario.DoesNotExist):
+            self.usuario = None
+
+        # 2. Valida o token gerado pelo generator oficial do Django
+        if self.usuario and default_token_generator.check_token(self.usuario, token):
+            self._token_valido_cache = True
+        else:
+            self._token_valido_cache = False
+
         return super().dispatch(request, *args, **kwargs)
 
     def get_form_kwargs(self):
@@ -122,19 +137,12 @@ class DefinirSenhaPacienteView(FormView):
 
     @property
     def token_valido(self):
-        return bool(self.usuario and self.usuario.token_definicao_senha_esta_valido())
+        return self._token_valido_cache
 
     @property
     def mensagem_token(self):
-        if not self.usuario:
-            return "Este link de definição de senha é inválido."
-
-        if self.usuario.token_definicao_senha_usado_em:
-            return "Este link já foi utilizado para definir a senha."
-
-        if not self.usuario.token_definicao_senha_expira_em or timezone.now() > self.usuario.token_definicao_senha_expira_em:
-            return "Este link expirou. Solicite um novo acesso ao seu psicólogo."
-
+        if not self.usuario or not self._token_valido_cache:
+            return "Este link de definição de senha é inválido ou já expirou (prazo de 48 horas)."
         return ""
 
     def get(self, request, *args, **kwargs):
@@ -154,8 +162,15 @@ class DefinirSenhaPacienteView(FormView):
         return super().get_form(form_class)
 
     def form_valid(self, form):
-        form.save()
-        messages.success(self.request, "Senha definida com sucesso! Agora voce ja pode fazer login.")
+        # Altera a senha usando o método correto de hash do Django
+        nova_senha = form.cleaned_data.get('nova_senha') or self.request.POST.get('senha')
+        if nova_senha:
+            self.usuario.set_password(nova_senha)
+            self.usuario.save()
+            messages.success(self.request, "Senha definida com sucesso! Agora você já pode fazer login.")
+        else:
+            form.save()
+            messages.success(self.request, "Senha definida com sucesso! Agora você já pode fazer login.")
         return super().form_valid(form)
 
 class PacienteListView(LoginRequiredMixin, ListView):
