@@ -377,46 +377,39 @@ from django.contrib.auth.decorators import login_required
 
 @login_required
 def api_paciente_home(request):
-    """
-    [US-10] Endpoint GET /api/paciente/home/
-    Subtask: Endpoint acessível APENAS para usuários com tipo=paciente
-    """
     if request.user.perfil != Usuario.Perfil.PACIENTE:
-        return JsonResponse({"error": "Acesso proibido. Endpoint restrito a pacientes."}, status=403)
+        return JsonResponse({"error": "Acesso proibido."}, status=403)
         
     paciente_perfil = getattr(request.user, "paciente", None)
     if not paciente_perfil:
-        return JsonResponse({"error": "Perfil de paciente não encontrado."}, status=404)
+        return JsonResponse({"error": "Perfil não encontrado."}, status=404)
 
     agora = timezone.now()
-    proxima_sessao = Sessao.objects.filter(
+    
+    sessoes_queryset = Sessao.objects.filter(
         paciente=paciente_perfil,
         data__gte=agora.date(),
     ).exclude(
         status=Sessao.Status.CANCELADA
-    ).order_by("data", "horario_inicio").first()
+    ).order_by("data", "horario_inicio")
 
-    if proxima_sessao and proxima_sessao.data == agora.date():
-        if proxima_sessao.horario_inicio < agora.time():
-            proxima_sessao = Sessao.objects.filter(
-                paciente=paciente_perfil,
-                data__gt=agora.date()
-            ).exclude(status=Sessao.Status.CANCELADA).order_by("data", "horario_inicio").first()
+    lista_sessoes = []
+    for sessao in sessoes_queryset:
+        if sessao.data == agora.date() and sessao.horario_inicio < agora.time():
+            continue
+            
+        lista_sessoes.append({
+            "data": sessao.data.strftime("%d/%m/%Y"),
+            "horario": sessao.horario_inicio.strftime("%H:%M"),
+            "status": sessao.get_status_display(),
+            "atendido_por_plano": sessao.atendido_por_plano,
+            "isento_pagamento": sessao.isento_pagamento
+        })
 
-    if proxima_sessao:
-        dados_sessao = {
-            "tem_sessao": True,
-            "data": proxima_sessao.data.strftime("%d/%m/%Y"),
-            "horario": proxima_sessao.horario_inicio.strftime("%H:%M"),
-            "status": proxima_sessao.get_status_display(),
-            "plano": proxima_sessao.atendido_por_plano
-        }
-    else:
-        dados_sessao = {
-            "tem_sessao": False
-        }
-
-    return JsonResponse(dados_sessao)
+    return JsonResponse({
+        "tem_sessao": len(lista_sessoes) > 0,
+        "sessoes": lista_sessoes
+    })
 
 
 @login_required
