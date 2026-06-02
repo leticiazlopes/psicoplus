@@ -54,21 +54,33 @@ class MeuPerfilUpdateView(LoginRequiredMixin, SuccessMessageMixin, UpdateView):
     success_url = reverse_lazy("pacientes_lista")
     success_message = "Seu perfil foi atualizado com sucesso!"
 
+    def _render_perfil_paciente(self, request, paciente, form=None):
+        if form is None:
+            form = CadastroPacienteForm(instance=paciente)
+
+        context = {
+            "perfil_tipo": "paciente",
+            "paciente": paciente,
+            "usuario_logado": request.user,
+            "form": form,
+        }
+        return render(request, self.template_name, context)
+
     def dispatch(self, request, *args, **kwargs):
         if request.user.is_authenticated and request.user.perfil == Usuario.Perfil.PACIENTE:
-            if request.method != "GET":
-                return redirect("meu_perfil")
-
             paciente = get_object_or_404(
                 Paciente.objects.select_related("usuario", "psicologo__usuario"),
                 usuario=request.user,
             )
-            context = {
-                "perfil_tipo": "paciente",
-                "paciente": paciente,
-                "usuario_logado": request.user,
-            }
-            return render(request, self.template_name, context)
+            if request.method == "POST":
+                form = CadastroPacienteForm(request.POST, instance=paciente)
+                if form.is_valid():
+                    form.save()
+                    messages.success(request, "Seu perfil foi atualizado com sucesso!")
+                    return redirect("meu_perfil")
+                return self._render_perfil_paciente(request, paciente, form)
+
+            return self._render_perfil_paciente(request, paciente)
 
         return super().dispatch(request, *args, **kwargs)
 
