@@ -7,7 +7,7 @@ from django.urls import reverse
 from accounts.models import Paciente, Psicologo, Sessao, Usuario
 
 from .models import Prontuario
-from .services import decrypt_value
+from .services import decrypt_value, encrypt_value, serialize_prontuario
 
 
 class CriarProntuarioApiTests(TestCase):
@@ -166,3 +166,23 @@ class CriarProntuarioApiTests(TestCase):
         response = self.client.delete(reverse("criar_prontuario_api"))
 
         self.assertEqual(response.status_code, 405)
+
+    def test_serialize_prontuario_descriptografa_campos_da_resposta(self):
+        prontuario = Prontuario.objects.create(
+            sessao=self.sessao_realizada,
+            psicologo=self.psicologo,
+            paciente=self.paciente,
+            texto=encrypt_value("Texto protegido"),
+            riscos_identificados=encrypt_value("Risco protegido"),
+            plano_terapeutico=encrypt_value("Plano protegido"),
+        )
+        prontuario.refresh_from_db()
+
+        serialized = serialize_prontuario(prontuario)
+
+        self.assertEqual(serialized["texto"], "Texto protegido")
+        self.assertEqual(serialized["riscos_identificados"], "Risco protegido")
+        self.assertEqual(serialized["plano_terapeutico"], "Plano protegido")
+
+    def test_decrypt_value_mantem_texto_legado_sem_quebrar(self):
+        self.assertEqual(decrypt_value("Texto legado"), "Texto legado")

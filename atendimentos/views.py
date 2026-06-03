@@ -8,7 +8,7 @@ from django.views.decorators.http import require_POST
 from accounts.models import Sessao
 
 from .models import Prontuario
-from .services import encrypt_prontuario_payload
+from .services import encrypt_prontuario_payload, serialize_prontuario
 
 
 @login_required
@@ -85,19 +85,7 @@ def criar_prontuario_api(request):
     return JsonResponse(
         {
             "success": True,
-            "prontuario": {
-                "id": str(prontuario.id),
-                "sessao_id": str(sessao.id),
-                "psicologo_id": str(prontuario.psicologo_id),
-                "paciente_id": str(sessao.paciente_id),
-                "texto": texto,
-                "humor_paciente": prontuario.humor_paciente,
-                "riscos_identificados": riscos_identificados,
-                "plano_terapeutico": plano_terapeutico,
-                "criptografado": prontuario.criptografado,
-                "data_sessao": sessao.data.isoformat(),
-                "status_sessao": sessao.status,
-            },
+            "prontuario": serialize_prontuario(prontuario),
         },
         status=201,
     )

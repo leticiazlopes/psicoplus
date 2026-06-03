@@ -2,6 +2,7 @@ import base64
 import hashlib
 
 from cryptography.fernet import Fernet
+from cryptography.fernet import InvalidToken
 from django.conf import settings
 
 
@@ -25,7 +26,11 @@ def decrypt_value(value):
     if not value:
         return value
 
-    return _get_fernet().decrypt(value.encode("utf-8")).decode("utf-8")
+    try:
+        return _get_fernet().decrypt(value.encode("utf-8")).decode("utf-8")
+    except InvalidToken:
+        # Mantém compatibilidade com registros legados ainda salvos em texto puro.
+        return value
 
 
 def encrypt_prontuario_payload(payload):
@@ -35,3 +40,19 @@ def encrypt_prontuario_payload(payload):
         encrypted[field] = encrypt_value(encrypted.get(field))
 
     return encrypted
+
+
+def serialize_prontuario(prontuario):
+    return {
+        "id": str(prontuario.id),
+        "sessao_id": str(prontuario.sessao_id),
+        "psicologo_id": str(prontuario.psicologo_id),
+        "paciente_id": str(prontuario.paciente_id),
+        "texto": decrypt_value(prontuario.texto),
+        "humor_paciente": prontuario.humor_paciente,
+        "riscos_identificados": decrypt_value(prontuario.riscos_identificados),
+        "plano_terapeutico": decrypt_value(prontuario.plano_terapeutico),
+        "criptografado": prontuario.criptografado,
+        "data_sessao": prontuario.sessao.data.isoformat(),
+        "status_sessao": prontuario.sessao.status,
+    }
