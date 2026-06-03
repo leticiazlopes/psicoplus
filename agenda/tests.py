@@ -17,6 +17,7 @@ class SessaoFormTests(TestCase):
             username="psico1@teste.com",
             email="psico1@teste.com",
             password="senha123",
+            perfil=Usuario.Perfil.PSICOLOGO,
         )
         self.psicologo = Psicologo.objects.create(usuario=self.user, crp="12345")
         self.paciente = Paciente.objects.create(
