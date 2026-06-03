@@ -7,6 +7,7 @@ from django.urls import reverse
 from accounts.models import Paciente, Psicologo, Sessao, Usuario
 
 from .models import Prontuario
+from .services import decrypt_value
 
 
 class CriarProntuarioApiTests(TestCase):
@@ -53,16 +54,19 @@ class CriarProntuarioApiTests(TestCase):
 
     def test_cria_prontuario_para_sessao_realizada(self):
         self.client.force_login(self.user)
+        texto_original = "Paciente relata ansiedade antes das consultas."
+        riscos_originais = "Sem risco imediato identificado."
+        plano_original = "Manter acompanhamento semanal."
 
         response = self.client.post(
             reverse("criar_prontuario_api"),
             data=json.dumps(
                 {
                     "sessao_id": str(self.sessao_realizada.id),
-                    "texto": "Paciente relata ansiedade antes das consultas.",
+                    "texto": texto_original,
                     "humor_paciente": 7,
-                    "riscos_identificados": "Sem risco imediato identificado.",
-                    "plano_terapeutico": "Manter acompanhamento semanal.",
+                    "riscos_identificados": riscos_originais,
+                    "plano_terapeutico": plano_original,
                 }
             ),
             content_type="application/json",
@@ -74,12 +78,17 @@ class CriarProntuarioApiTests(TestCase):
         self.assertEqual(payload["prontuario"]["sessao_id"], str(self.sessao_realizada.id))
         self.assertEqual(payload["prontuario"]["status_sessao"], Sessao.Status.REALIZADA)
         self.assertEqual(payload["prontuario"]["humor_paciente"], 7)
-        self.assertTrue(
-            Prontuario.objects.filter(
-                sessao=self.sessao_realizada,
-                texto="Paciente relata ansiedade antes das consultas.",
-            ).exists()
-        )
+        self.assertEqual(payload["prontuario"]["texto"], texto_original)
+        self.assertEqual(payload["prontuario"]["riscos_identificados"], riscos_originais)
+        self.assertEqual(payload["prontuario"]["plano_terapeutico"], plano_original)
+
+        prontuario = Prontuario.objects.get(sessao=self.sessao_realizada)
+        self.assertNotEqual(prontuario.texto, texto_original)
+        self.assertNotEqual(prontuario.riscos_identificados, riscos_originais)
+        self.assertNotEqual(prontuario.plano_terapeutico, plano_original)
+        self.assertEqual(decrypt_value(prontuario.texto), texto_original)
+        self.assertEqual(decrypt_value(prontuario.riscos_identificados), riscos_originais)
+        self.assertEqual(decrypt_value(prontuario.plano_terapeutico), plano_original)
 
     def test_bloqueia_criacao_quando_sessao_nao_esta_realizada(self):
         self.client.force_login(self.user)

@@ -8,6 +8,7 @@ from django.views.decorators.http import require_POST
 from accounts.models import Sessao
 
 from .models import Prontuario
+from .services import encrypt_prontuario_payload
 
 
 @login_required
@@ -63,14 +64,22 @@ def criar_prontuario_api(request):
     if not texto:
         return JsonResponse({"success": False, "error": "texto é obrigatório."}, status=400)
 
+    encrypted_payload = encrypt_prontuario_payload(
+        {
+            "texto": texto,
+            "riscos_identificados": riscos_identificados,
+            "plano_terapeutico": plano_terapeutico,
+        }
+    )
+
     prontuario = Prontuario.objects.create(
         sessao=sessao,
         psicologo=psicologo,
         paciente=sessao.paciente,
-        texto=texto,
+        texto=encrypted_payload["texto"],
         humor_paciente=humor_paciente,
-        riscos_identificados=riscos_identificados,
-        plano_terapeutico=plano_terapeutico,
+        riscos_identificados=encrypted_payload["riscos_identificados"],
+        plano_terapeutico=encrypted_payload["plano_terapeutico"],
     )
 
     return JsonResponse(
@@ -81,10 +90,10 @@ def criar_prontuario_api(request):
                 "sessao_id": str(sessao.id),
                 "psicologo_id": str(prontuario.psicologo_id),
                 "paciente_id": str(sessao.paciente_id),
-                "texto": prontuario.texto,
+                "texto": texto,
                 "humor_paciente": prontuario.humor_paciente,
-                "riscos_identificados": prontuario.riscos_identificados,
-                "plano_terapeutico": prontuario.plano_terapeutico,
+                "riscos_identificados": riscos_identificados,
+                "plano_terapeutico": plano_terapeutico,
                 "criptografado": prontuario.criptografado,
                 "data_sessao": sessao.data.isoformat(),
                 "status_sessao": sessao.status,
