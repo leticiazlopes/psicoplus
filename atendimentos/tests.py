@@ -150,3 +150,10 @@ class CriarProntuarioApiTests(TestCase):
             "Você não tem permissão para registrar evolução nesta sessão.",
         )
         self.assertFalse(Prontuario.objects.filter(texto="Tentativa sem permissão.").exists())
+
+    def test_delete_no_endpoint_de_prontuario_nao_esta_exposto(self):
+        self.client.force_login(self.user)
+
+        response = self.client.delete(reverse("criar_prontuario_api"))
+
+        self.assertEqual(response.status_code, 405)
