@@ -111,6 +111,37 @@ class PacienteViewTests(TestCase):
         self.assertIn("Ver completo", template_content)
         self.assertIn("truncatechars:110", template_content)
 
+    def test_perfil_do_paciente_exibe_data_previa_e_expansao_no_historico(self):
+        texto_longo = (
+            "Paciente relata melhora gradual do sono, redução da ansiedade antecipatória "
+            "e maior adesão às estratégias combinadas nas últimas semanas de acompanhamento."
+        )
+        sessao = Sessao.objects.create(
+            psicologo=self.psicologo,
+            paciente=self.paciente,
+            data="2026-06-03",
+            horario_inicio="14:00",
+            duracao_minutos=50,
+            valor="120.00",
+            status=Sessao.Status.REALIZADA,
+        )
+        Prontuario.objects.create(
+            sessao=sessao,
+            psicologo=self.psicologo,
+            paciente=self.paciente,
+            texto=encrypt_value(texto_longo),
+            riscos_identificados=encrypt_value("Sem riscos"),
+            plano_terapeutico=encrypt_value("Manter acompanhamento"),
+        )
+
+        self.client.force_login(self.user)
+        response = self.client.get(reverse('paciente_perfil', kwargs={'pk': self.paciente.pk}))
+
+        self.assertEqual(response.status_code, 200)
+        self.assertContains(response, "03/06/2026 às 14:00")
+        self.assertContains(response, "Ver completo")
+        self.assertContains(response, "Paciente relata melhora gradual do sono")
+
     # --- TESTES DE CADASTRO E UPDATE ---
 
     def test_cadastro_paciente_post_completo(self):
