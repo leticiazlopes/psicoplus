@@ -155,22 +155,69 @@
                     <p class="text-xs font-bold uppercase tracking-[0.18em] text-slate-400">Histórico clínico</p>
                     <h3 class="mt-2 text-lg font-black text-slate-900">Evoluções do paciente</h3>
                 </div>
-                <span class="rounded-full bg-slate-100 px-3 py-1 text-[11px] font-bold uppercase tracking-[0.16em] text-slate-500">
+                <span data-historico-contador class="rounded-full bg-slate-100 px-3 py-1 text-[11px] font-bold uppercase tracking-[0.16em] text-slate-500">
                     {{ historico_prontuarios|length }} registro{{ historico_prontuarios|length|pluralize }}
                 </span>
             </div>
 
-            <div class="mt-5 space-y-3">
+            <form method="get" class="mt-5 grid gap-3 rounded-2xl border border-slate-100 bg-slate-50/70 p-4 md:grid-cols-[minmax(0,1fr)_minmax(0,1fr)_auto] md:items-end">
+                <div>
+                    <label for="id_filtro_data_inicio" class="mb-2 block text-xs font-bold uppercase tracking-[0.16em] text-slate-500">
+                        Data início
+                    </label>
+                    <input id="id_filtro_data_inicio"
+                           type="date"
+                           name="data_inicio"
+                           value="{{ filtro_data_inicio }}"
+                           class="w-full rounded-xl border border-slate-200 bg-white px-4 py-3 text-sm text-slate-900 outline-none transition focus:border-violet-300 focus:ring-4 focus:ring-violet-100">
+                </div>
+                <div>
+                    <label for="id_filtro_data_fim" class="mb-2 block text-xs font-bold uppercase tracking-[0.16em] text-slate-500">
+                        Data fim
+                    </label>
+                    <input id="id_filtro_data_fim"
+                           type="date"
+                           name="data_fim"
+                           value="{{ filtro_data_fim }}"
+                           class="w-full rounded-xl border border-slate-200 bg-white px-4 py-3 text-sm text-slate-900 outline-none transition focus:border-violet-300 focus:ring-4 focus:ring-violet-100">
+                </div>
+                <div class="flex gap-2 md:justify-end">
+                    <a href="{% url 'atendimento_detalhe' sessao_selecionada.id %}"
+                       class="inline-flex items-center justify-center rounded-xl border border-slate-200 bg-white px-4 py-3 text-sm font-semibold text-slate-600 transition hover:bg-slate-100">
+                        Limpar
+                    </a>
+                    <button type="submit"
+                            class="inline-flex items-center justify-center rounded-xl bg-violet-600 px-4 py-3 text-sm font-bold text-white transition hover:bg-violet-700">
+                        Filtrar
+                    </button>
+                </div>
+            </form>
+
+            {% if erro_filtro_periodo %}
+                <div class="mt-4 rounded-2xl border border-rose-200 bg-rose-50 px-4 py-3 text-sm font-semibold text-rose-700">
+                    {{ erro_filtro_periodo }}
+                </div>
+            {% endif %}
+
+            <div id="historico-prontuarios-lista" class="mt-5 space-y-3">
                 {% for prontuario in historico_prontuarios %}
                     <details class="group rounded-2xl border border-slate-100 bg-slate-50/70 p-4">
                         <summary class="flex cursor-pointer list-none flex-wrap items-start justify-between gap-3">
                             <div class="min-w-0">
                                 <p class="text-sm font-bold text-slate-900">
-                                    {{ prontuario.data_sessao|date:"d/m/Y" }} • {{ prontuario.status_sessao|title }}
+                                    {{ prontuario.data_sessao_formatada }} às {{ prontuario.horario_sessao }} • {{ prontuario.status_sessao|title }}
                                 </p>
                                 <p class="mt-1 text-sm text-slate-500">
                                     {{ prontuario.texto|truncatechars:110 }}
                                 </p>
+                                <div class="mt-2 flex flex-wrap items-center gap-2 text-[11px] font-semibold text-slate-400">
+                                    <span>{{ prontuario.duracao_minutos }} min</span>
+                                    {% if prontuario.serie_id %}
+                                        <span class="rounded-full bg-violet-100 px-2 py-1 text-violet-700">
+                                            Série {{ prontuario.posicao_na_serie }}/{{ prontuario.total_sessoes_serie }}
+                                        </span>
+                                    {% endif %}
+                                </div>
                             </div>
                             <span class="inline-flex items-center gap-2 rounded-full bg-white px-3 py-1 text-[11px] font-bold uppercase tracking-[0.16em] text-slate-500 transition group-open:bg-violet-100 group-open:text-violet-700">
                                 <i class="fa-solid fa-chevron-down text-[10px] transition group-open:rotate-180"></i>
@@ -194,7 +241,7 @@
                         </div>
                     </details>
                 {% empty %}
-                    <div class="rounded-2xl border border-dashed border-slate-200 bg-slate-50/60 px-4 py-8 text-center">
+                    <div id="historico-prontuarios-vazio" class="rounded-2xl border border-dashed border-slate-200 bg-slate-50/60 px-4 py-8 text-center">
                         <p class="text-sm font-semibold text-slate-600">Ainda não há evoluções registradas para este paciente.</p>
                         <p class="mt-1 text-xs text-slate-400">Quando você salvar a primeira evolução, ela passa a aparecer aqui.</p>
                     </div>
@@ -218,6 +265,79 @@
 
     const prontuarioForm = document.getElementById('prontuario-form');
     const prontuarioFeedback = document.getElementById('prontuario-feedback');
+    const historicoLista = document.getElementById('historico-prontuarios-lista');
+    const historicoVazio = document.getElementById('historico-prontuarios-vazio');
+    const historicoBadge = document.querySelector('[data-historico-contador]') || null;
+
+    function escapeHtml(value) {
+        return (value || '').replaceAll('&', '&amp;').replaceAll('<', '&lt;').replaceAll('>', '&gt;').replaceAll('"', '&quot;');
+    }
+
+    function formatarData(dataFormatada, dataIso) {
+        if (dataFormatada) {
+            return dataFormatada;
+        }
+
+        if (!dataIso) {
+            return '';
+        }
+
+        const [ano, mes, dia] = dataIso.split('-');
+        return `${dia}/${mes}/${ano}`;
+    }
+
+    function capitalizarStatus(status) {
+        if (!status) {
+            return '';
+        }
+        return status.charAt(0).toUpperCase() + status.slice(1);
+    }
+
+    function renderProntuarioHistorico(prontuario) {
+        const detalhe = document.createElement('details');
+        detalhe.className = 'group rounded-2xl border border-slate-100 bg-slate-50/70 p-4';
+
+        const serieHtml = prontuario.serie_id
+            ? `<span class="rounded-full bg-violet-100 px-2 py-1 text-violet-700">Série ${prontuario.posicao_na_serie}/${prontuario.total_sessoes_serie}</span>`
+            : '';
+
+        detalhe.innerHTML = `
+            <summary class="flex cursor-pointer list-none flex-wrap items-start justify-between gap-3">
+                <div class="min-w-0">
+                    <p class="text-sm font-bold text-slate-900">
+                        ${formatarData(prontuario.data_sessao_formatada, prontuario.data_sessao)} às ${escapeHtml(prontuario.horario_sessao)} • ${capitalizarStatus(prontuario.status_sessao)}
+                    </p>
+                    <p class="mt-1 text-sm text-slate-500">
+                        ${escapeHtml(prontuario.texto.length > 110 ? prontuario.texto.slice(0, 107) + '...' : prontuario.texto)}
+                    </p>
+                    <div class="mt-2 flex flex-wrap items-center gap-2 text-[11px] font-semibold text-slate-400">
+                        <span>${prontuario.duracao_minutos} min</span>
+                        ${serieHtml}
+                    </div>
+                </div>
+                <span class="inline-flex items-center gap-2 rounded-full bg-white px-3 py-1 text-[11px] font-bold uppercase tracking-[0.16em] text-slate-500 transition group-open:bg-violet-100 group-open:text-violet-700">
+                    <i class="fa-solid fa-chevron-down text-[10px] transition group-open:rotate-180"></i>
+                    Ver completo
+                </span>
+            </summary>
+            <div class="mt-4 space-y-4 border-t border-slate-100 pt-4 text-sm text-slate-700">
+                <div>
+                    <p class="text-[11px] font-bold uppercase tracking-[0.16em] text-slate-400">Queixa / Evolução</p>
+                    <p class="mt-2 leading-6">${escapeHtml(prontuario.texto)}</p>
+                </div>
+                <div>
+                    <p class="text-[11px] font-bold uppercase tracking-[0.16em] text-slate-400">Observações clínicas / Riscos</p>
+                    <p class="mt-2 leading-6">${escapeHtml(prontuario.riscos_identificados || 'Nenhuma observação registrada.')}</p>
+                </div>
+                <div>
+                    <p class="text-[11px] font-bold uppercase tracking-[0.16em] text-slate-400">Plano terapêutico</p>
+                    <p class="mt-2 leading-6">${escapeHtml(prontuario.plano_terapeutico || 'Nenhum plano terapêutico registrado.')}</p>
+                </div>
+            </div>
+        `;
+
+        return detalhe;
+    }
 
     function mostrarFeedbackProntuario(tipo, mensagem) {
         if (!prontuarioFeedback) {
@@ -289,6 +409,17 @@
                 prontuarioForm.querySelector('[name="texto"]').value = data.prontuario.texto || '';
                 prontuarioForm.querySelector('[name="riscos_identificados"]').value = data.prontuario.riscos_identificados || '';
                 prontuarioForm.querySelector('[name="plano_terapeutico"]').value = data.prontuario.plano_terapeutico || '';
+
+                if (historicoVazio) {
+                    historicoVazio.remove();
+                }
+                if (historicoLista) {
+                    historicoLista.prepend(renderProntuarioHistorico(data.prontuario));
+                }
+                if (historicoBadge) {
+                    const totalAtual = historicoLista ? historicoLista.querySelectorAll('details').length : 0;
+                    historicoBadge.textContent = `${totalAtual} registro${totalAtual === 1 ? '' : 's'}`;
+                }
 
                 prontuarioForm.querySelectorAll('textarea').forEach((campo) => {
                     campo.setAttribute('readonly', 'readonly');

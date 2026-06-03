@@ -54,5 +54,13 @@ def serialize_prontuario(prontuario):
         "plano_terapeutico": decrypt_value(prontuario.plano_terapeutico),
         "criptografado": prontuario.criptografado,
         "data_sessao": prontuario.sessao.data.isoformat(),
+        "data_sessao_formatada": prontuario.sessao.data.strftime("%d/%m/%Y"),
+        "horario_sessao": prontuario.sessao.horario_inicio.strftime("%H:%M"),
+        "duracao_minutos": prontuario.sessao.duracao_minutos,
         "status_sessao": prontuario.sessao.status,
+        "serie_id": str(prontuario.sessao.serie_id) if prontuario.sessao.serie_id else None,
+        "posicao_na_serie": prontuario.sessao.posicao_na_serie,
+        "total_sessoes_serie": (
+            prontuario.sessao.serie.sessoes.count() if prontuario.sessao.serie_id else None
+        ),
     }

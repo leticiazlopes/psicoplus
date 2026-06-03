@@ -55,6 +55,12 @@ def atendimento_detalhe_view(request, sessao_id):
     except AttributeError:
         psicologo = None
 
+    data_inicio_param = request.GET.get("data_inicio", "").strip()
+    data_fim_param = request.GET.get("data_fim", "").strip()
+    data_inicio = parse_date(data_inicio_param) if data_inicio_param else None
+    data_fim = parse_date(data_fim_param) if data_fim_param else None
+    erro_filtro_periodo = None
+
     sessao_selecionada = get_object_or_404(
         Sessao.objects.select_related("paciente", "psicologo"),
         id=sessao_id,
@@ -65,13 +71,27 @@ def atendimento_detalhe_view(request, sessao_id):
         .filter(sessao=sessao_selecionada)
         .first()
     )
+    historico_queryset = (
+        Prontuario.objects.select_related("sessao", "paciente", "psicologo")
+        .filter(paciente=sessao_selecionada.paciente, psicologo=psicologo)
+        .order_by("-sessao__data", "-criado_em")
+    )
+
+    if data_inicio_param and not data_inicio:
+        erro_filtro_periodo = "Data inicial inválida. Use o formato YYYY-MM-DD."
+    elif data_fim_param and not data_fim:
+        erro_filtro_periodo = "Data final inválida. Use o formato YYYY-MM-DD."
+    elif data_inicio and data_fim and data_inicio > data_fim:
+        erro_filtro_periodo = "A data inicial não pode ser maior que a data final."
+    else:
+        if data_inicio:
+            historico_queryset = historico_queryset.filter(sessao__data__gte=data_inicio)
+        if data_fim:
+            historico_queryset = historico_queryset.filter(sessao__data__lte=data_fim)
+
     historico_prontuarios = [
         serialize_prontuario(prontuario)
-        for prontuario in (
-            Prontuario.objects.select_related("sessao", "paciente", "psicologo")
-            .filter(paciente=sessao_selecionada.paciente, psicologo=psicologo)
-            .order_by("-sessao__data", "-criado_em")
-        )
+        for prontuario in historico_queryset
     ]
     pode_registrar_evolucao = (
         sessao_selecionada.status == Sessao.Status.REALIZADA and prontuario_existente is None
@@ -86,6 +106,9 @@ def atendimento_detalhe_view(request, sessao_id):
                 serialize_prontuario(prontuario_existente) if prontuario_existente else None
             ),
             "historico_prontuarios": historico_prontuarios,
+            "filtro_data_inicio": data_inicio_param,
+            "filtro_data_fim": data_fim_param,
+            "erro_filtro_periodo": erro_filtro_periodo,
             "pode_registrar_evolucao": pode_registrar_evolucao,
         },
     )

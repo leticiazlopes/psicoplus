@@ -424,13 +424,87 @@ class CriarProntuarioApiTests(TestCase):
         self.assertEqual(len(context["historico_prontuarios"]), 1)
         self.assertEqual(context["historico_prontuarios"][0]["id"], str(prontuario.id))
         self.assertEqual(context["historico_prontuarios"][0]["texto"], "Texto do historico")
+        self.assertEqual(context["historico_prontuarios"][0]["data_sessao_formatada"], "02/06/2026")
+        self.assertEqual(context["historico_prontuarios"][0]["horario_sessao"], "10:00")
+        self.assertEqual(context["historico_prontuarios"][0]["duracao_minutos"], 50)
 
         template_path = Path(__file__).resolve().parent.parent / "templates" / "atendimentos" / "detalhe.html"
         template_content = template_path.read_text(encoding="utf-8")
         self.assertIn("Detalhe do atendimento", template_content)
         self.assertIn("Data da sessão", template_content)
         self.assertIn("Histórico clínico", template_content)
+        self.assertIn("Data início", template_content)
+        self.assertIn("Data fim", template_content)
+        self.assertIn("horario_sessao", template_content)
+        self.assertIn("Série", template_content)
         self.assertIn("Ver completo", template_content)
         self.assertIn("Queixa / Texto da evolução", template_content)
         self.assertIn("Observações clínicas / Riscos identificados", template_content)
         self.assertIn("Plano terapêutico", template_content)
+
+    def test_tela_de_detalhe_filtra_historico_por_periodo(self):
+        sessao_antiga = Sessao.objects.create(
+            psicologo=self.psicologo,
+            paciente=self.paciente,
+            data="2026-05-20",
+            horario_inicio="09:00",
+            duracao_minutos=50,
+            valor=Decimal("150.00"),
+            status=Sessao.Status.REALIZADA,
+        )
+        sessao_recente = Sessao.objects.create(
+            psicologo=self.psicologo,
+            paciente=self.paciente,
+            data="2026-06-20",
+            horario_inicio="09:00",
+            duracao_minutos=50,
+            valor=Decimal("150.00"),
+            status=Sessao.Status.REALIZADA,
+        )
+        Prontuario.objects.create(
+            sessao=sessao_antiga,
+            psicologo=self.psicologo,
+            paciente=self.paciente,
+            texto=encrypt_value("Texto antigo"),
+            riscos_identificados=encrypt_value("Risco antigo"),
+            plano_terapeutico=encrypt_value("Plano antigo"),
+        )
+        prontuario_recente = Prontuario.objects.create(
+            sessao=sessao_recente,
+            psicologo=self.psicologo,
+            paciente=self.paciente,
+            texto=encrypt_value("Texto recente"),
+            riscos_identificados=encrypt_value("Risco recente"),
+            plano_terapeutico=encrypt_value("Plano recente"),
+        )
+
+        request = self.factory.get(
+            reverse("atendimento_detalhe", kwargs={"sessao_id": self.sessao_realizada.id}),
+            {"data_inicio": "2026-06-01", "data_fim": "2026-06-30"},
+        )
+        request.user = self.user
+
+        with patch("atendimentos.views.render") as mock_render:
+            atendimento_detalhe_view(request, self.sessao_realizada.id)
+
+        _, template_name, context = mock_render.call_args[0]
+        self.assertEqual(template_name, "atendimentos/detalhe.html")
+        self.assertEqual(len(context["historico_prontuarios"]), 1)
+        self.assertEqual(context["historico_prontuarios"][0]["id"], str(prontuario_recente.id))
+        self.assertEqual(context["filtro_data_inicio"], "2026-06-01")
+        self.assertEqual(context["filtro_data_fim"], "2026-06-30")
+        self.assertIsNone(context["erro_filtro_periodo"])
+
+    def test_tela_de_detalhe_informa_erro_quando_periodo_e_invalido(self):
+        request = self.factory.get(
+            reverse("atendimento_detalhe", kwargs={"sessao_id": self.sessao_realizada.id}),
+            {"data_inicio": "2026-06-30", "data_fim": "2026-06-01"},
+        )
+        request.user = self.user
+
+        with patch("atendimentos.views.render") as mock_render:
+            atendimento_detalhe_view(request, self.sessao_realizada.id)
+
+        _, template_name, context = mock_render.call_args[0]
+        self.assertEqual(template_name, "atendimentos/detalhe.html")
+        self.assertEqual(context["erro_filtro_periodo"], "A data inicial não pode ser maior que a data final.")
