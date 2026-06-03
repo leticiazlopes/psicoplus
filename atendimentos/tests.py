@@ -254,3 +254,125 @@ class CriarProntuarioApiTests(TestCase):
             response.json()["error"],
             "Você não tem permissão para editar esta evolução.",
         )
+
+    def test_lista_prontuarios_do_paciente_ordenados_do_mais_recente_para_o_mais_antigo(self):
+        sessao_antiga = Sessao.objects.create(
+            psicologo=self.psicologo,
+            paciente=self.paciente,
+            data="2026-05-20",
+            horario_inicio="09:00",
+            duracao_minutos=50,
+            valor=Decimal("150.00"),
+            status=Sessao.Status.REALIZADA,
+        )
+        sessao_recente = Sessao.objects.create(
+            psicologo=self.psicologo,
+            paciente=self.paciente,
+            data="2026-06-15",
+            horario_inicio="09:00",
+            duracao_minutos=50,
+            valor=Decimal("150.00"),
+            status=Sessao.Status.REALIZADA,
+        )
+        prontuario_antigo = Prontuario.objects.create(
+            sessao=sessao_antiga,
+            psicologo=self.psicologo,
+            paciente=self.paciente,
+            texto=encrypt_value("Texto antigo"),
+            riscos_identificados=encrypt_value("Risco antigo"),
+            plano_terapeutico=encrypt_value("Plano antigo"),
+        )
+        prontuario_recente = Prontuario.objects.create(
+            sessao=sessao_recente,
+            psicologo=self.psicologo,
+            paciente=self.paciente,
+            texto=encrypt_value("Texto recente"),
+            riscos_identificados=encrypt_value("Risco recente"),
+            plano_terapeutico=encrypt_value("Plano recente"),
+        )
+        self.client.force_login(self.user)
+
+        response = self.client.get(
+            reverse("listar_prontuarios_paciente_api", kwargs={"paciente_id": self.paciente.id})
+        )
+
+        self.assertEqual(response.status_code, 200)
+        payload = response.json()
+        self.assertTrue(payload["success"])
+        self.assertEqual(len(payload["prontuarios"]), 2)
+        self.assertEqual(payload["prontuarios"][0]["id"], str(prontuario_recente.id))
+        self.assertEqual(payload["prontuarios"][1]["id"], str(prontuario_antigo.id))
+
+    def test_lista_prontuarios_filtra_por_periodo(self):
+        sessao_fora_periodo = Sessao.objects.create(
+            psicologo=self.psicologo,
+            paciente=self.paciente,
+            data="2026-05-10",
+            horario_inicio="09:00",
+            duracao_minutos=50,
+            valor=Decimal("150.00"),
+            status=Sessao.Status.REALIZADA,
+        )
+        sessao_dentro_periodo = Sessao.objects.create(
+            psicologo=self.psicologo,
+            paciente=self.paciente,
+            data="2026-06-10",
+            horario_inicio="09:00",
+            duracao_minutos=50,
+            valor=Decimal("150.00"),
+            status=Sessao.Status.REALIZADA,
+        )
+        Prontuario.objects.create(
+            sessao=sessao_fora_periodo,
+            psicologo=self.psicologo,
+            paciente=self.paciente,
+            texto=encrypt_value("Texto fora"),
+            riscos_identificados=encrypt_value("Risco fora"),
+            plano_terapeutico=encrypt_value("Plano fora"),
+        )
+        prontuario_dentro = Prontuario.objects.create(
+            sessao=sessao_dentro_periodo,
+            psicologo=self.psicologo,
+            paciente=self.paciente,
+            texto=encrypt_value("Texto dentro"),
+            riscos_identificados=encrypt_value("Risco dentro"),
+            plano_terapeutico=encrypt_value("Plano dentro"),
+        )
+        self.client.force_login(self.user)
+
+        response = self.client.get(
+            reverse("listar_prontuarios_paciente_api", kwargs={"paciente_id": self.paciente.id}),
+            {"data_inicio": "2026-06-01", "data_fim": "2026-06-30"},
+        )
+
+        self.assertEqual(response.status_code, 200)
+        prontuarios = response.json()["prontuarios"]
+        self.assertEqual(len(prontuarios), 1)
+        self.assertEqual(prontuarios[0]["id"], str(prontuario_dentro.id))
+
+    def test_get_prontuarios_retorna_403_para_outro_psicologo(self):
+        self.client.force_login(self.outro_user)
+
+        response = self.client.get(
+            reverse("listar_prontuarios_paciente_api", kwargs={"paciente_id": self.paciente.id})
+        )
+
+        self.assertEqual(response.status_code, 403)
+        self.assertEqual(
+            response.json()["error"],
+            "Você não tem permissão para acessar os prontuários deste paciente.",
+        )
+
+    def test_get_prontuarios_retorna_400_para_periodo_invalido(self):
+        self.client.force_login(self.user)
+
+        response = self.client.get(
+            reverse("listar_prontuarios_paciente_api", kwargs={"paciente_id": self.paciente.id}),
+            {"data_inicio": "2026-06-30", "data_fim": "2026-06-01"},
+        )
+
+        self.assertEqual(response.status_code, 400)
+        self.assertEqual(
+            response.json()["error"],
+            "data_inicio não pode ser maior que data_fim.",
+        )

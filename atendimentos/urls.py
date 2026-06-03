@@ -6,4 +6,5 @@ urlpatterns = [
     path("atendimentos/", views.atendimentos_view, name="atendimentos_lista"),
     path("api/prontuarios/", views.criar_prontuario_api, name="criar_prontuario_api"),
     path("api/prontuarios/<uuid:prontuario_id>/", views.editar_prontuario_api, name="editar_prontuario_api"),
+    path("api/pacientes/<uuid:paciente_id>/prontuarios/", views.listar_prontuarios_paciente_api, name="listar_prontuarios_paciente_api"),
 ]

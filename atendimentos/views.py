@@ -3,9 +3,10 @@ import json
 from django.contrib.auth.decorators import login_required
 from django.http import JsonResponse
 from django.shortcuts import get_object_or_404, render
+from django.utils.dateparse import parse_date
 from django.views.decorators.http import require_http_methods, require_POST
 
-from accounts.models import Sessao
+from accounts.models import Paciente, Sessao
 
 from .models import Prontuario
 from .services import encrypt_prontuario_payload, serialize_prontuario
@@ -141,5 +142,53 @@ def editar_prontuario_api(request, prontuario_id):
         {
             "success": True,
             "prontuario": serialize_prontuario(prontuario),
+        }
+    )
+
+
+@login_required
+def listar_prontuarios_paciente_api(request, paciente_id):
+    try:
+        psicologo = request.user.psicologo
+    except AttributeError:
+        return JsonResponse({"success": False, "error": "Usuário não possui perfil de psicólogo."}, status=403)
+
+    paciente = get_object_or_404(Paciente, id=paciente_id)
+    if paciente.psicologo_id != psicologo.id:
+        return JsonResponse(
+            {"success": False, "error": "Você não tem permissão para acessar os prontuários deste paciente."},
+            status=403,
+        )
+
+    data_inicio_param = request.GET.get("data_inicio")
+    data_fim_param = request.GET.get("data_fim")
+    data_inicio = parse_date(data_inicio_param) if data_inicio_param else None
+    data_fim = parse_date(data_fim_param) if data_fim_param else None
+
+    if data_inicio_param and not data_inicio:
+        return JsonResponse({"success": False, "error": "data_inicio inválida. Use o formato YYYY-MM-DD."}, status=400)
+
+    if data_fim_param and not data_fim:
+        return JsonResponse({"success": False, "error": "data_fim inválida. Use o formato YYYY-MM-DD."}, status=400)
+
+    if data_inicio and data_fim and data_inicio > data_fim:
+        return JsonResponse({"success": False, "error": "data_inicio não pode ser maior que data_fim."}, status=400)
+
+    prontuarios = Prontuario.objects.select_related("sessao", "paciente", "psicologo").filter(
+        paciente=paciente,
+        psicologo=psicologo,
+    )
+
+    if data_inicio:
+        prontuarios = prontuarios.filter(sessao__data__gte=data_inicio)
+    if data_fim:
+        prontuarios = prontuarios.filter(sessao__data__lte=data_fim)
+
+    prontuarios = prontuarios.order_by("-sessao__data", "-criado_em")
+
+    return JsonResponse(
+        {
+            "success": True,
+            "prontuarios": [serialize_prontuario(prontuario) for prontuario in prontuarios],
         }
     )
