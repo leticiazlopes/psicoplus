@@ -442,6 +442,26 @@ class CriarProntuarioApiTests(TestCase):
         self.assertIn("Observações clínicas / Riscos identificados", template_content)
         self.assertIn("Plano terapêutico", template_content)
 
+    def test_tela_de_detalhe_exibe_data_da_sessao_preenchida_e_nao_editavel(self):
+        request = self.factory.get(
+            reverse("atendimento_detalhe", kwargs={"sessao_id": self.sessao_realizada.id})
+        )
+        request.user = self.user
+
+        with patch("atendimentos.views.render") as mock_render:
+            atendimento_detalhe_view(request, self.sessao_realizada.id)
+
+        _, template_name, context = mock_render.call_args[0]
+        self.assertEqual(template_name, "atendimentos/detalhe.html")
+        self.assertEqual(context["sessao_selecionada"], self.sessao_realizada)
+        self.assertEqual(context["sessao_selecionada"].data.strftime("%d/%m/%Y"), "02/06/2026")
+
+        template_path = Path(__file__).resolve().parent.parent / "templates" / "atendimentos" / "detalhe.html"
+        template_content = template_path.read_text(encoding="utf-8")
+        self.assertIn("Data da sessão", template_content)
+        self.assertIn("value=\"{{ sessao_selecionada.data|date:'d/m/Y' }}\"", template_content)
+        self.assertIn("readonly", template_content)
+
     def test_tela_de_detalhe_filtra_historico_por_periodo(self):
         sessao_antiga = Sessao.objects.create(
             psicologo=self.psicologo,
