@@ -67,14 +67,26 @@ TEMPLATES = [
 WSGI_APPLICATION = 'psicoplus.wsgi.application'
 
 
-# DATABASE
-DATABASES = {
-    'default': dj_database_url.config(
-        default=f"sqlite:///{os.path.join(BASE_DIR, 'db.sqlite3')}",
-        conn_max_age=600,
-        ssl_require=True if os.environ.get('DATABASE_URL') else False
-    )
-}
+# DATABASE CONFIGURATION
+DATABASE_URL = os.environ.get('DATABASE_URL')
+
+if DATABASE_URL:
+    # Se existe DATABASE_URL (Produção no Render / Postgres)
+    DATABASES = {
+        'default': dj_database_url.config(
+            default=DATABASE_URL,
+            conn_max_age=600,
+            ssl_require=True
+        )
+    }
+else:
+    # Fallback estrito para SQLite (Desenvolvimento local e CI/CD)
+    DATABASES = {
+        'default': {
+            'ENGINE': 'django.db.backends.sqlite3',
+            'NAME': BASE_DIR / 'db.sqlite3',
+        }
+    }
 
 
 # PASSWORD VALIDATION
@@ -156,4 +168,6 @@ if not DEBUG:
 
 CSRF_TRUSTED_ORIGINS = [
     'https://psicoplus.onrender.com',
+    'http://localhost:8000',
+    'http://127.0.0.1:8000',
 ]
