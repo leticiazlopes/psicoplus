@@ -14,7 +14,81 @@ from .services import encrypt_prontuario_payload, serialize_prontuario
 
 @login_required
 def atendimentos_view(request):
-    return render(request, "atendimentos/lista.html")
+    sessoes_realizadas = []
+
+    try:
+        psicologo = request.user.psicologo
+    except AttributeError:
+        psicologo = None
+
+    if psicologo:
+        sessoes_queryset = (
+            Sessao.objects.select_related("paciente")
+            .filter(psicologo=psicologo, status=Sessao.Status.REALIZADA)
+            .order_by("-data", "-horario_inicio")
+        )
+        prontuarios_por_sessao = {
+            prontuario.sessao_id
+            for prontuario in Prontuario.objects.filter(sessao__in=sessoes_queryset).only("sessao_id")
+        }
+        sessoes_realizadas = [
+            {
+                "sessao": sessao,
+                "tem_prontuario": sessao.id in prontuarios_por_sessao,
+            }
+            for sessao in sessoes_queryset[:12]
+        ]
+
+    return render(
+        request,
+        "atendimentos/lista.html",
+        {
+            "sessoes_realizadas": sessoes_realizadas,
+        },
+    )
+
+
+@login_required
+def atendimento_detalhe_view(request, sessao_id):
+    try:
+        psicologo = request.user.psicologo
+    except AttributeError:
+        psicologo = None
+
+    sessao_selecionada = get_object_or_404(
+        Sessao.objects.select_related("paciente", "psicologo"),
+        id=sessao_id,
+        psicologo=psicologo,
+    )
+    prontuario_existente = (
+        Prontuario.objects.select_related("sessao", "paciente", "psicologo")
+        .filter(sessao=sessao_selecionada)
+        .first()
+    )
+    historico_prontuarios = [
+        serialize_prontuario(prontuario)
+        for prontuario in (
+            Prontuario.objects.select_related("sessao", "paciente", "psicologo")
+            .filter(paciente=sessao_selecionada.paciente, psicologo=psicologo)
+            .order_by("-sessao__data", "-criado_em")
+        )
+    ]
+    pode_registrar_evolucao = (
+        sessao_selecionada.status == Sessao.Status.REALIZADA and prontuario_existente is None
+    )
+
+    return render(
+        request,
+        "atendimentos/detalhe.html",
+        {
+            "sessao_selecionada": sessao_selecionada,
+            "prontuario_existente": (
+                serialize_prontuario(prontuario_existente) if prontuario_existente else None
+            ),
+            "historico_prontuarios": historico_prontuarios,
+            "pode_registrar_evolucao": pode_registrar_evolucao,
+        },
+    )
 
 
 @login_required

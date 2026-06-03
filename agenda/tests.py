@@ -151,13 +151,14 @@ class SessaoFormTests(TestCase):
 
 
 class AgendaTemplateTests(SimpleTestCase):
-    def test_template_exibe_botao_registrar_evolucao_apenas_para_status_realizada(self):
+    def test_template_exibe_botao_abrir_atendimento_apenas_para_status_realizada(self):
         template_path = Path(__file__).resolve().parent.parent / "templates" / "agenda" / "agendamentos_lista.html"
         template_content = template_path.read_text(encoding="utf-8")
 
         self.assertIn('data-registrar-evolucao-botao', template_content)
         self.assertIn('x-show="currentStatus === \'realizada\'"', template_content)
-        self.assertIn('Registrar evolução', template_content)
+        self.assertIn('Abrir atendimento', template_content)
+        self.assertIn("{% url 'atendimento_detalhe' sessao.id %}", template_content)
 
 
 class SessaoViewsTests(TestCase):

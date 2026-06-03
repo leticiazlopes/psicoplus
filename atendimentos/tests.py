@@ -1,12 +1,15 @@
 import json
 from decimal import Decimal
+from pathlib import Path
+from unittest.mock import patch
 
-from django.test import TestCase
+from django.test import RequestFactory, TestCase
 from django.urls import reverse
 
 from accounts.models import Paciente, Psicologo, Sessao, Usuario
 
 from .models import Prontuario
+from .views import atendimento_detalhe_view, atendimentos_view
 from .services import decrypt_value, encrypt_value, serialize_prontuario
 
 
@@ -51,6 +54,7 @@ class CriarProntuarioApiTests(TestCase):
             perfil=Usuario.Perfil.PSICOLOGO,
         )
         self.outro_psicologo = Psicologo.objects.create(usuario=self.outro_user, crp="54321")
+        self.factory = RequestFactory()
 
     def test_cria_prontuario_para_sessao_realizada(self):
         self.client.force_login(self.user)
@@ -376,3 +380,57 @@ class CriarProntuarioApiTests(TestCase):
             response.json()["error"],
             "data_inicio não pode ser maior que data_fim.",
         )
+
+    def test_tela_de_atendimentos_exibe_lista_de_sessoes_realizadas(self):
+        request = self.factory.get(reverse("atendimentos_lista"))
+        request.user = self.user
+
+        with patch("atendimentos.views.render") as mock_render:
+            atendimentos_view(request)
+
+        self.assertTrue(mock_render.called)
+        _, template_name, context = mock_render.call_args[0]
+        self.assertEqual(template_name, "atendimentos/lista.html")
+        self.assertEqual(len(context["sessoes_realizadas"]), 1)
+        self.assertEqual(context["sessoes_realizadas"][0]["sessao"], self.sessao_realizada)
+        self.assertFalse(context["sessoes_realizadas"][0]["tem_prontuario"])
+
+        template_path = Path(__file__).resolve().parent.parent / "templates" / "atendimentos" / "lista.html"
+        template_content = template_path.read_text(encoding="utf-8")
+        self.assertIn("Sessões realizadas", template_content)
+        self.assertIn("Abrir detalhe", template_content)
+        self.assertIn("Lista de atendimentos", template_content)
+
+    def test_tela_de_detalhe_de_atendimento_exibe_formulario_e_historico(self):
+        prontuario = Prontuario.objects.create(
+            sessao=self.sessao_realizada,
+            psicologo=self.psicologo,
+            paciente=self.paciente,
+            texto=encrypt_value("Texto do historico"),
+            riscos_identificados=encrypt_value("Risco do historico"),
+            plano_terapeutico=encrypt_value("Plano do historico"),
+        )
+        request = self.factory.get(reverse("atendimento_detalhe", kwargs={"sessao_id": self.sessao_realizada.id}))
+        request.user = self.user
+
+        with patch("atendimentos.views.render") as mock_render:
+            atendimento_detalhe_view(request, self.sessao_realizada.id)
+
+        self.assertTrue(mock_render.called)
+        _, template_name, context = mock_render.call_args[0]
+        self.assertEqual(template_name, "atendimentos/detalhe.html")
+        self.assertEqual(context["sessao_selecionada"], self.sessao_realizada)
+        self.assertFalse(context["pode_registrar_evolucao"])
+        self.assertEqual(len(context["historico_prontuarios"]), 1)
+        self.assertEqual(context["historico_prontuarios"][0]["id"], str(prontuario.id))
+        self.assertEqual(context["historico_prontuarios"][0]["texto"], "Texto do historico")
+
+        template_path = Path(__file__).resolve().parent.parent / "templates" / "atendimentos" / "detalhe.html"
+        template_content = template_path.read_text(encoding="utf-8")
+        self.assertIn("Detalhe do atendimento", template_content)
+        self.assertIn("Data da sessão", template_content)
+        self.assertIn("Histórico clínico", template_content)
+        self.assertIn("Ver completo", template_content)
+        self.assertIn("Queixa / Texto da evolução", template_content)
+        self.assertIn("Observações clínicas / Riscos identificados", template_content)
+        self.assertIn("Plano terapêutico", template_content)
