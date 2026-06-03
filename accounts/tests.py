@@ -3,7 +3,8 @@ from django.urls import resolve, reverse
 from datetime import timedelta
 from django.utils import timezone
 from .forms import CadastroPacienteForm
-from .models import Usuario, Psicologo, Paciente
+from .models import Usuario, Psicologo, Paciente, Sessao
+from datetime import timedelta
 
 class PacienteViewTests(TestCase):
     def setUp(self):
@@ -246,4 +247,246 @@ class PacienteViewTests(TestCase):
         self.assertEqual(response.status_code, 302)
         self.assertIn(reverse('login'), response.url)
         
-    
+class AccountsViewsAdicionaisTests(TestCase):
+    def setUp(self):
+        self.user = Usuario.objects.create_user(
+            username='psico@views.com',
+            email='psico@views.com',
+            password='senha123',
+            perfil=Usuario.Perfil.PSICOLOGO
+        )
+        self.psicologo = Psicologo.objects.create(usuario=self.user, crp="99999")
+        self.client.force_login(self.user)
+
+    # --- PSICÓLOGO LIST VIEW ---
+
+    def test_psicologos_lista_retorna_200(self):
+        response = self.client.get(reverse('psicologos'))
+        self.assertEqual(response.status_code, 200)
+        self.assertIn('psicologos_ativos', response.context)
+        self.assertIn('psicologos_inativos', response.context)
+
+    # --- MEU PERFIL — FLUXO DO PACIENTE ---
+
+    def test_meu_perfil_paciente_get_retorna_200(self):
+        user_paciente = Usuario.objects.create_user(
+            username='pac@perfil.com',
+            email='pac@perfil.com',
+            password='senha123',
+            perfil=Usuario.Perfil.PACIENTE
+        )
+        paciente = Paciente.objects.create(
+            nome_completo="Paciente Perfil",
+            psicologo=self.psicologo,
+            ativo=True,
+            usuario=user_paciente
+        )
+        self.client.force_login(user_paciente)
+        response = self.client.get(reverse('meu_perfil'))
+        self.assertEqual(response.status_code, 200)
+        self.assertEqual(response.context['perfil_tipo'], 'paciente')
+
+    def test_meu_perfil_paciente_post_valido_redireciona(self):
+        user_paciente = Usuario.objects.create_user(
+            username='pac2@perfil.com',
+            email='pac2@perfil.com',
+            password='senha123',
+            perfil=Usuario.Perfil.PACIENTE
+        )
+        paciente = Paciente.objects.create(
+            nome_completo="Paciente Perfil 2",
+            psicologo=self.psicologo,
+            ativo=True,
+            usuario=user_paciente
+        )
+        self.client.force_login(user_paciente)
+        response = self.client.post(reverse('meu_perfil'), data={
+            'nome_completo': 'Nome Atualizado',
+            'email': 'pac2@perfil.com',
+        })
+        self.assertRedirects(response, reverse('meu_perfil'), fetch_redirect_response=False)
+
+    def test_meu_perfil_paciente_post_invalido_retorna_200(self):
+        user_paciente = Usuario.objects.create_user(
+            username='pac3@perfil.com',
+            email='pac3@perfil.com',
+            password='senha123',
+            perfil=Usuario.Perfil.PACIENTE
+        )
+        paciente = Paciente.objects.create(
+            nome_completo="Paciente Perfil 3",
+            psicologo=self.psicologo,
+            ativo=True,
+            usuario=user_paciente
+        )
+        self.client.force_login(user_paciente)
+        response = self.client.post(reverse('meu_perfil'), data={
+            'nome_completo': '',
+            'email': 'email-invalido',
+        })
+        self.assertEqual(response.status_code, 200)
+
+    # --- DEFINIR SENHA — TOKEN INVÁLIDO ---
+
+    def test_definir_senha_token_invalido_retorna_200_com_erro(self):
+        response = self.client.get(
+            reverse('definir_senha_paciente', kwargs={'token': '00000000-0000-0000-0000-000000000000'})
+        )
+        self.assertEqual(response.status_code, 200)
+        self.assertFalse(response.context['token_valido'])
+
+    def test_definir_senha_token_expirado_post_nao_salva(self):
+        user_paciente = Usuario.objects.create_user(
+            username='pac_exp@teste.com',
+            email='pac_exp@teste.com',
+            password='senha123',
+            perfil=Usuario.Perfil.PACIENTE
+        )
+        user_paciente.gerar_token_definicao_senha()
+        user_paciente.token_definicao_senha_expira_em = timezone.now() - timedelta(minutes=1)
+        user_paciente.save()
+
+        self.client.logout()
+        response = self.client.post(
+            reverse('definir_senha_paciente', kwargs={'token': user_paciente.token_definicao_senha}),
+            data={'new_password1': 'NovaSenha@123', 'new_password2': 'NovaSenha@123'}
+        )
+        self.assertEqual(response.status_code, 200)
+        self.assertFalse(response.context['token_valido'])
+
+    # --- ESQUECI SENHA ---
+
+    def test_esqueci_senha_get_retorna_200(self):
+        self.client.logout()
+        response = self.client.get(reverse('esqueci_senha'))
+        self.assertEqual(response.status_code, 200)
+
+    def test_esqueci_senha_post_email_existente_redireciona(self):
+        self.client.logout()
+        response = self.client.post(reverse('esqueci_senha'), data={'email': 'psico@views.com'})
+        self.assertRedirects(response, reverse('validar_codigo'), fetch_redirect_response=False)
+
+    def test_esqueci_senha_post_email_inexistente_ainda_redireciona(self):
+        self.client.logout()
+        response = self.client.post(reverse('esqueci_senha'), data={'email': 'naoexiste@teste.com'})
+        self.assertRedirects(response, reverse('validar_codigo'), fetch_redirect_response=False)
+
+    # --- VALIDAR CÓDIGO ---
+
+    def test_validar_codigo_sem_sessao_redireciona(self):
+        self.client.logout()
+        response = self.client.get(reverse('validar_codigo'))
+        self.assertRedirects(response, reverse('esqueci_senha'), fetch_redirect_response=False)
+
+    def test_validar_codigo_correto_altera_senha(self):
+        self.client.logout()
+        self.user.codigo_recuperacao = '123456'
+        self.user.codigo_expiracao = timezone.now() + timedelta(minutes=15)
+        self.user.save()
+
+        session = self.client.session
+        session['email_recuperacao'] = 'psico@views.com'
+        session.save()
+
+        response = self.client.post(reverse('validar_codigo'), data={
+            'codigo': '123456',
+            'nova_senha': 'NovaSenha@123'
+        })
+        self.assertRedirects(response, reverse('login'), fetch_redirect_response=False)
+        self.user.refresh_from_db()
+        self.assertTrue(self.user.check_password('NovaSenha@123'))
+
+    def test_validar_codigo_expirado_exibe_erro(self):
+        self.client.logout()
+        self.user.codigo_recuperacao = '654321'
+        self.user.codigo_expiracao = timezone.now() - timedelta(minutes=1)
+        self.user.save()
+
+        session = self.client.session
+        session['email_recuperacao'] = 'psico@views.com'
+        session.save()
+
+        response = self.client.post(reverse('validar_codigo'), data={
+            'codigo': '654321',
+            'nova_senha': 'NovaSenha@123'
+        })
+        self.assertEqual(response.status_code, 200)
+        messages_list = list(response.context['messages'])
+        self.assertTrue(any('expirou' in str(m) for m in messages_list))
+
+    def test_validar_codigo_incorreto_exibe_erro(self):
+        self.client.logout()
+        self.user.codigo_recuperacao = '111111'
+        self.user.codigo_expiracao = timezone.now() + timedelta(minutes=15)
+        self.user.save()
+
+        session = self.client.session
+        session['email_recuperacao'] = 'psico@views.com'
+        session.save()
+
+        response = self.client.post(reverse('validar_codigo'), data={
+            'codigo': '999999',
+            'nova_senha': 'NovaSenha@123'
+        })
+        self.assertEqual(response.status_code, 200)
+        messages_list = list(response.context['messages'])
+        self.assertTrue(any('incorreto' in str(m) for m in messages_list))
+
+    # --- DASHBOARD PACIENTE ---
+
+    def test_dashboard_paciente_acesso_negado_para_psicologo(self):
+        response = self.client.get(reverse('dashboard_paciente'))
+        self.assertEqual(response.status_code, 403)
+
+    def test_dashboard_paciente_acesso_permitido_para_paciente(self):
+        user_paciente = Usuario.objects.create_user(
+            username='pac_dash@teste.com',
+            email='pac_dash@teste.com',
+            password='senha123',
+            perfil=Usuario.Perfil.PACIENTE
+        )
+        Paciente.objects.create(
+            nome_completo="Paciente Dashboard",
+            psicologo=self.psicologo,
+            ativo=True,
+            usuario=user_paciente
+        )
+        self.client.force_login(user_paciente)
+        response = self.client.get(reverse('dashboard_paciente'))
+        self.assertEqual(response.status_code, 200)
+
+    # --- API PACIENTE HOME ---
+
+    def test_api_paciente_home_acesso_negado_para_psicologo(self):
+        response = self.client.get(reverse('api_paciente_home'))
+        self.assertEqual(response.status_code, 403)
+
+    def test_api_paciente_home_retorna_sessoes_do_paciente(self):
+        import datetime
+        user_paciente = Usuario.objects.create_user(
+            username='pac_api@teste.com',
+            email='pac_api@teste.com',
+            password='senha123',
+            perfil=Usuario.Perfil.PACIENTE
+        )
+        paciente = Paciente.objects.create(
+            nome_completo="Paciente API",
+            psicologo=self.psicologo,
+            ativo=True,
+            usuario=user_paciente
+        )
+        Sessao.objects.create(
+            psicologo=self.psicologo,
+            paciente=paciente,
+            data=timezone.localdate() + datetime.timedelta(days=1),
+            horario_inicio=datetime.time(10, 0),
+            duracao_minutos=50,
+            valor='150.00',
+            status=Sessao.Status.PENDENTE,
+        )
+        self.client.force_login(user_paciente)
+        response = self.client.get(reverse('api_paciente_home'))
+        self.assertEqual(response.status_code, 200)
+        data = response.json()
+        self.assertTrue(data['tem_sessao'])
+        self.assertEqual(len(data['sessoes']), 1)

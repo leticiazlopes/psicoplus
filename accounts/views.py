@@ -13,9 +13,6 @@ import random
 import datetime
 from django.utils import timezone
 from django.core.mail import send_mail
-from django.utils.http import urlsafe_base64_decode
-from django.utils.encoding import force_str
-from django.contrib.auth.tokens import default_token_generator
 from django.views.generic import FormView
 from django.urls import reverse_lazy
 from django.contrib import messages
@@ -137,20 +134,16 @@ class DefinirSenhaPacienteView(FormView):
     _token_valido_cache = False  # Cache interno para o estado do token
 
     def dispatch(self, request, *args, **kwargs):
-        uidb64 = self.kwargs.get("uid")
         token = self.kwargs.get("token")
-        
-        try:
-            # 1. Decodifica o UID com segurança para obter a chave primária real (UUID ou ID)
-            uid = force_str(urlsafe_base64_decode(uidb64))
-            self.usuario = Usuario.objects.filter(pk=uid, perfil=Usuario.Perfil.PACIENTE).first()
-        except (TypeError, ValueError, OverflowError, Usuario.DoesNotExist):
-            self.usuario = None
 
-        # 2. Valida o token gerado pelo generator oficial do Django
-        if self.usuario and default_token_generator.check_token(self.usuario, token):
-            self._token_valido_cache = True
-        else:
+        try:
+            self.usuario = Usuario.objects.get(
+                token_definicao_senha=token,
+                perfil=Usuario.Perfil.PACIENTE
+            )
+            self._token_valido_cache = self.usuario.token_definicao_senha_esta_valido()
+        except Usuario.DoesNotExist:
+            self.usuario = None
             self._token_valido_cache = False
 
         return super().dispatch(request, *args, **kwargs)
@@ -352,7 +345,7 @@ def validar_codigo_e_salvar(request):
     
     
     if not email:
-        return redirect('esqueci_senha_request')
+        return redirect('esqueci_senha')
 
     if request.method == "POST":
         codigo_digitado = request.POST.get("codigo")

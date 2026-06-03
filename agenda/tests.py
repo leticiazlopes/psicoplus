@@ -464,3 +464,409 @@ class SerieSessaoTests(TestCase):
                 duracao_minutos=50,
                 valor="120.00",
             )
+
+class SessaoConfirmacaoPublicaTests(TestCase):
+    """Testes para o fluxo de confirmação pública de sessões."""
+    
+    def setUp(self):
+        self.user = Usuario.objects.create_user(
+            username="psico2@teste.com",
+            email="psico2@teste.com",
+            password="senha123",
+            perfil=Usuario.Perfil.PSICOLOGO,
+        )
+        self.psicologo = Psicologo.objects.create(usuario=self.user, crp="12345")
+        self.paciente = Paciente.objects.create(
+            nome_completo="Paciente Confirmação",
+            psicologo=self.psicologo,
+            email="paciente_confirm@teste.com",
+            ativo=True,
+        )
+
+    def test_confirmacao_publica_com_token_valido(self):
+        """Testa GET na página de confirmação pública com token válido."""
+        sessao = Sessao.objects.create(
+            psicologo=self.psicologo,
+            paciente=self.paciente,
+            data=datetime.date.today() + datetime.timedelta(days=3),
+            horario_inicio=datetime.time(15, 0),
+            duracao_minutos=50,
+            valor="150.00",
+            status=Sessao.Status.PENDENTE,
+        )
+        token = sessao.token_confirmacao
+        url = reverse('visualizar_confirmacao_publica', kwargs={'token': token})
+        response = self.client.get(url)
+        
+        self.assertEqual(response.status_code, 200)
+        self.assertIn('token_valido', response.context)
+        self.assertTrue(response.context['token_valido'])
+
+    def test_confirmacao_publica_sessao_ja_confirmada(self):
+        """Testa GET quando sessão já está confirmada."""
+        sessao = Sessao.objects.create(
+            psicologo=self.psicologo,
+            paciente=self.paciente,
+            data=datetime.date.today() + datetime.timedelta(days=3),
+            horario_inicio=datetime.time(15, 0),
+            duracao_minutos=50,
+            valor="150.00",
+            status=Sessao.Status.CONFIRMADA,
+            confirmado_por='paciente',
+            confirmado_em=datetime.datetime.now(),
+        )
+        token = sessao.token_confirmacao
+        url = reverse('visualizar_confirmacao_publica', kwargs={'token': token})
+        response = self.client.get(url)
+        
+        self.assertEqual(response.status_code, 200)
+        self.assertFalse(response.context['token_valido'])
+        self.assertEqual(response.context['erro_codigo'], 'JA_CONFIRMADO')
+
+    def test_api_publica_confirmar_get_sessao_valida(self):
+        """Testa GET na API pública para retornar dados da sessão."""
+        sessao = Sessao.objects.create(
+            psicologo=self.psicologo,
+            paciente=self.paciente,
+            data=datetime.date.today() + datetime.timedelta(days=3),
+            horario_inicio=datetime.time(15, 0),
+            duracao_minutos=50,
+            valor="150.00",
+            status=Sessao.Status.PENDENTE,
+        )
+        token = sessao.token_confirmacao
+        url = reverse('api_publica_confirmar', kwargs={'token': token})
+        response = self.client.get(url)
+        
+        self.assertEqual(response.status_code, 200)
+        data = response.json()
+        self.assertEqual(data['paciente'], self.paciente.nome_completo)
+        self.assertIn('psicologo', data)
+        self.assertIn('data', data)
+        self.assertIn('horario_inicio', data)
+
+    def test_api_publica_confirmar_post_sucesso(self):
+        """Testa POST na API pública para confirmar presença."""
+        sessao = Sessao.objects.create(
+            psicologo=self.psicologo,
+            paciente=self.paciente,
+            data=datetime.date.today() + datetime.timedelta(days=3),
+            horario_inicio=datetime.time(15, 0),
+            duracao_minutos=50,
+            valor="150.00",
+            status=Sessao.Status.PENDENTE,
+        )
+        token = sessao.token_confirmacao
+        url = reverse('api_publica_confirmar', kwargs={'token': token})
+        response = self.client.post(url, content_type='application/json')
+        
+        self.assertEqual(response.status_code, 200)
+        data = response.json()
+        self.assertTrue(data['success'])
+        
+        sessao.refresh_from_db()
+        self.assertEqual(sessao.status, Sessao.Status.CONFIRMADA)
+        self.assertEqual(sessao.confirmado_por, 'paciente')
+        self.assertIsNotNone(sessao.confirmado_em)
+
+    def test_api_publica_confirmar_sessao_ja_confirmada(self):
+        """Testa erro quando tentando confirmar sessão já confirmada."""
+        sessao = Sessao.objects.create(
+            psicologo=self.psicologo,
+            paciente=self.paciente,
+            data=datetime.date.today() + datetime.timedelta(days=3),
+            horario_inicio=datetime.time(15, 0),
+            duracao_minutos=50,
+            valor="150.00",
+            status=Sessao.Status.CONFIRMADA,
+            confirmado_por='paciente',
+            confirmado_em=datetime.datetime.now(),
+        )
+        token = sessao.token_confirmacao
+        url = reverse('api_publica_confirmar', kwargs={'token': token})
+        response = self.client.post(url, content_type='application/json')
+        
+        self.assertEqual(response.status_code, 400)
+        data = response.json()
+        self.assertIn('error', data)
+
+    def test_atualizar_status_sessao_autenticado(self):
+        """Testa atualização de status via AJAX com psicólogo autenticado."""
+        self.client.force_login(self.user)
+        sessao = Sessao.objects.create(
+            psicologo=self.psicologo,
+            paciente=self.paciente,
+            data=datetime.date.today() + datetime.timedelta(days=3),
+            horario_inicio=datetime.time(15, 0),
+            duracao_minutos=50,
+            valor="150.00",
+            status=Sessao.Status.PENDENTE,
+        )
+        
+        url = reverse('atualizar_status_sessao', kwargs={'sessao_id': sessao.id})
+        response = self.client.post(
+            url,
+            data='{"status": "realizada"}',
+            content_type='application/json'
+        )
+        
+        self.assertEqual(response.status_code, 200)
+        data = response.json()
+        self.assertTrue(data['success'])
+        
+        sessao.refresh_from_db()
+        self.assertEqual(sessao.status, Sessao.Status.REALIZADA)
+
+    def test_api_status_sessoes_retorna_multiplas_sessoes(self):
+        """Testa API de polling que retorna status de múltiplas sessões."""
+        self.client.force_login(self.user)
+        
+        sessao1 = Sessao.objects.create(
+            psicologo=self.psicologo,
+            paciente=self.paciente,
+            data=datetime.date.today() + datetime.timedelta(days=1),
+            horario_inicio=datetime.time(10, 0),
+            duracao_minutos=50,
+            valor="150.00",
+            status=Sessao.Status.CONFIRMADA,
+            confirmado_por='paciente',
+            confirmado_em=datetime.datetime.now(),
+        )
+        sessao2 = Sessao.objects.create(
+            psicologo=self.psicologo,
+            paciente=self.paciente,
+            data=datetime.date.today() + datetime.timedelta(days=2),
+            horario_inicio=datetime.time(15, 0),
+            duracao_minutos=50,
+            valor="150.00",
+            status=Sessao.Status.PENDENTE,
+        )
+        
+        url = reverse('api_status_sessoes')
+        response = self.client.get(f'{url}?ids={sessao1.id},{sessao2.id}')
+        
+        self.assertEqual(response.status_code, 200)
+        data = response.json()
+        self.assertIn(str(sessao1.id), data['ids'])
+        self.assertIn(str(sessao2.id), data['ids'])
+        self.assertEqual(data['ids'][str(sessao1.id)]['status'], Sessao.Status.CONFIRMADA)
+        self.assertEqual(data['ids'][str(sessao2.id)]['status'], Sessao.Status.PENDENTE)
+        self.assertEqual(data['ids'][str(sessao1.id)]['confirmado_por'], 'paciente')
+# Adicionar no final do agenda/tests.py
+
+class AgendaViewsAdicionaisTests(TestCase):
+    def setUp(self):
+        self.user = Usuario.objects.create_user(
+            username="psico4@teste.com",
+            email="psico4@teste.com",
+            password="senha123",
+            perfil=Usuario.Perfil.PSICOLOGO,
+        )
+        self.psicologo = Psicologo.objects.create(usuario=self.user, crp="11111")
+        self.paciente = Paciente.objects.create(
+            nome_completo="Paciente Quatro",
+            psicologo=self.psicologo,
+            email="paciente4@teste.com",
+            ativo=True,
+        )
+        self.sessao = Sessao.objects.create(
+            psicologo=self.psicologo,
+            paciente=self.paciente,
+            data=datetime.date.today() + datetime.timedelta(days=2),
+            horario_inicio=datetime.time(10, 0),
+            duracao_minutos=50,
+            valor="150.00",
+            status=Sessao.Status.PENDENTE,
+        )
+        self.client.force_login(self.user)
+
+    # --- AGENDA SEM PERFIL DE PSICÓLOGO ---
+
+    def test_agendamentos_view_sem_perfil_psicologo_redireciona(self):
+        user_sem_perfil = Usuario.objects.create_user(
+            username="sem@perfil.com",
+            email="sem@perfil.com",
+            password="123",
+            perfil=Usuario.Perfil.PSICOLOGO,
+        )
+        self.client.force_login(user_sem_perfil)
+        response = self.client.get(reverse("agenda_lista"))
+        self.assertRedirects(response, reverse("dashboard"), fetch_redirect_response=False)
+
+    def test_cancelar_sessao_sem_perfil_psicologo_redireciona(self):
+        user_sem_perfil = Usuario.objects.create_user(
+            username="sem2@perfil.com",
+            email="sem2@perfil.com",
+            password="123",
+            perfil=Usuario.Perfil.PSICOLOGO,
+        )
+        self.client.force_login(user_sem_perfil)
+        response = self.client.post(
+            reverse("cancelar_sessao", args=[self.sessao.id]),
+            data={"cancelar_em": "sessao"},
+        )
+        self.assertRedirects(response, reverse("dashboard"), fetch_redirect_response=False)
+
+    # --- EDITAR SESSÃO ---
+
+    def test_editar_sessao_get_redireciona_para_agenda(self):
+        response = self.client.get(
+            reverse("editar_sessao", args=[self.sessao.id])
+        )
+        self.assertRedirects(response, reverse("agenda_lista"), fetch_redirect_response=False)
+
+    def test_editar_sessao_post_valido_salva_alteracoes(self):
+        novo_horario = "11:00"
+        response = self.client.post(
+            reverse("editar_sessao", args=[self.sessao.id]),
+            data={
+                "paciente": str(self.paciente.pk),
+                "data": self.sessao.data.isoformat(),
+                "horario_inicio": novo_horario,
+                "duracao_minutos": 50,
+                "valor": "150.00",
+                "aplicar_em": "sessao",
+            },
+        )
+        self.sessao.refresh_from_db()
+        self.assertEqual(str(self.sessao.horario_inicio)[:5], novo_horario)
+
+    def test_editar_sessao_post_invalido_retorna_200(self):
+        response = self.client.post(
+            reverse("editar_sessao", args=[self.sessao.id]),
+            data={"paciente": "", "data": "", "horario_inicio": ""},
+        )
+        self.assertEqual(response.status_code, 200)
+
+    def test_editar_sessao_sem_perfil_psicologo_redireciona(self):
+        user_sem_perfil = Usuario.objects.create_user(
+            username="sem3@perfil.com",
+            email="sem3@perfil.com",
+            password="123",
+            perfil=Usuario.Perfil.PSICOLOGO,
+        )
+        self.client.force_login(user_sem_perfil)
+        response = self.client.post(
+            reverse("editar_sessao", args=[self.sessao.id]),
+            data={},
+        )
+        self.assertRedirects(response, reverse("dashboard"), fetch_redirect_response=False)
+
+    # --- CONFIRMAR PELO PSICÓLOGO ---
+
+    def test_confirmar_sessao_psicologo_sucesso(self):
+        response = self.client.post(
+            reverse("confirmar_sessao_psicologo", kwargs={'sessao_id': self.sessao.id})
+        )
+        ...
+
+    def test_confirmar_sessao_psicologo_ja_confirmada_retorna_erro(self):
+        self.sessao.status = Sessao.Status.CONFIRMADA
+        self.sessao.save()
+        response = self.client.post(
+            reverse("confirmar_sessao_psicologo", kwargs={'sessao_id': self.sessao.id})
+        )
+        ...
+
+    def test_confirmar_sessao_psicologo_sem_perfil_retorna_403(self):
+        user_sem_perfil = Usuario.objects.create_user(
+            username="sem4@perfil.com",
+            email="sem4@perfil.com",
+            password="123",
+            perfil=Usuario.Perfil.PSICOLOGO,
+        )
+        self.client.force_login(user_sem_perfil)
+        response = self.client.post(
+            reverse("confirmar_sessao_psicologo", kwargs={'sessao_id': self.sessao.id})
+        )
+        ...
+
+    # --- ATUALIZAR STATUS ---
+
+    def test_atualizar_status_status_invalido_retorna_400(self):
+        response = self.client.post(
+            reverse("atualizar_status_sessao", args=[self.sessao.id]),
+            data='{"status": "status_invalido"}',
+            content_type="application/json",
+        )
+        self.assertEqual(response.status_code, 400)
+
+    def test_atualizar_status_sem_perfil_retorna_403(self):
+        user_sem_perfil = Usuario.objects.create_user(
+            username="sem5@perfil.com",
+            email="sem5@perfil.com",
+            password="123",
+            perfil=Usuario.Perfil.PSICOLOGO,
+        )
+        self.client.force_login(user_sem_perfil)
+        response = self.client.post(
+            reverse("atualizar_status_sessao", args=[self.sessao.id]),
+            data='{"status": "realizada"}',
+            content_type="application/json",
+        )
+        self.assertEqual(response.status_code, 403)
+
+    # --- API STATUS SEM IDS ---
+
+    def test_api_status_sessoes_sem_ids_retorna_vazio(self):
+        response = self.client.get(reverse("api_status_sessoes"))
+        self.assertEqual(response.status_code, 200)
+        data = response.json()
+        self.assertEqual(data["ids"], {})
+
+    # --- CONFIRMAÇÃO PÚBLICA EXPIRADA ---
+
+    def test_confirmacao_publica_link_expirado(self):
+        sessao_passada = Sessao.objects.create(
+            psicologo=self.psicologo,
+            paciente=self.paciente,
+            data=datetime.date.today() - datetime.timedelta(days=1),
+            horario_inicio=datetime.time(10, 0),
+            duracao_minutos=50,
+            valor="150.00",
+            status=Sessao.Status.PENDENTE,
+        )
+        token = sessao_passada.token_confirmacao
+        url = reverse("visualizar_confirmacao_publica", kwargs={"token": token})
+        response = self.client.get(url)
+        self.assertEqual(response.status_code, 200)
+        self.assertFalse(response.context["token_valido"])
+        self.assertEqual(response.context["erro_codigo"], "EXPIRADO")
+
+    def test_api_publica_confirmar_link_expirado_retorna_400(self):
+        sessao_passada = Sessao.objects.create(
+            psicologo=self.psicologo,
+            paciente=self.paciente,
+            data=datetime.date.today() - datetime.timedelta(days=1),
+            horario_inicio=datetime.time(10, 0),
+            duracao_minutos=50,
+            valor="150.00",
+            status=Sessao.Status.PENDENTE,
+        )
+        token = sessao_passada.token_confirmacao
+        url = reverse("api_publica_confirmar", kwargs={"token": token})
+        response = self.client.post(url, content_type="application/json")
+        self.assertEqual(response.status_code, 400)
+        data = response.json()
+        self.assertIn("error", data)
+
+    def test_enviar_confirmacao_email_paciente_sem_email_retorna_400(self):
+        paciente_sem_email = Paciente.objects.create(
+            nome_completo="Sem Email",
+            psicologo=self.psicologo,
+            ativo=True,
+        )
+        sessao = Sessao.objects.create(
+            psicologo=self.psicologo,
+            paciente=paciente_sem_email,
+            data=datetime.date.today() + datetime.timedelta(days=1),
+            horario_inicio=datetime.time(10, 0),
+            duracao_minutos=50,
+            valor="150.00",
+        )
+        response = self.client.post(
+            reverse("enviar_confirmacao_email", args=[sessao.id])
+        )
+        self.assertEqual(response.status_code, 400)
+        data = response.json()
+        self.assertFalse(data["success"])
