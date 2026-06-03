@@ -32,7 +32,13 @@ def criar_prontuario_api(request):
     if not sessao_id:
         return JsonResponse({"success": False, "error": "sessao_id é obrigatório."}, status=400)
 
-    sessao = get_object_or_404(Sessao, id=sessao_id, psicologo=psicologo)
+    sessao = get_object_or_404(Sessao, id=sessao_id)
+
+    if sessao.psicologo_id != psicologo.id:
+        return JsonResponse(
+            {"success": False, "error": "Você não tem permissão para registrar evolução nesta sessão."},
+            status=403,
+        )
 
     if sessao.status != Sessao.Status.REALIZADA:
         return JsonResponse(

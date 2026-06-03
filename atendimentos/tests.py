@@ -42,6 +42,14 @@ class CriarProntuarioApiTests(TestCase):
             valor=Decimal("150.00"),
             status=Sessao.Status.PENDENTE,
         )
+        self.outro_user = Usuario.objects.create_user(
+            username="outro_psico@teste.com",
+            email="outro_psico@teste.com",
+            password="senha123",
+            nome="Outro Psicólogo",
+            perfil=Usuario.Perfil.PSICOLOGO,
+        )
+        self.outro_psicologo = Psicologo.objects.create(usuario=self.outro_user, crp="54321")
 
     def test_cria_prontuario_para_sessao_realizada(self):
         self.client.force_login(self.user)
@@ -121,3 +129,24 @@ class CriarProntuarioApiTests(TestCase):
             response.json()["error"],
             "Já existe uma evolução registrada para esta sessão.",
         )
+
+    def test_retorna_403_quando_sessao_pertence_a_outro_psicologo(self):
+        self.client.force_login(self.outro_user)
+
+        response = self.client.post(
+            reverse("criar_prontuario_api"),
+            data=json.dumps(
+                {
+                    "sessao_id": str(self.sessao_realizada.id),
+                    "texto": "Tentativa sem permissão.",
+                }
+            ),
+            content_type="application/json",
+        )
+
+        self.assertEqual(response.status_code, 403)
+        self.assertEqual(
+            response.json()["error"],
+            "Você não tem permissão para registrar evolução nesta sessão.",
+        )
+        self.assertFalse(Prontuario.objects.filter(texto="Tentativa sem permissão.").exists())
