@@ -1,4 +1,4 @@
-from django.views.generic import CreateView, FormView, ListView, UpdateView
+from django.views.generic import CreateView, DetailView, FormView, ListView, UpdateView
 from django.contrib.auth.views import LoginView, LogoutView
 from django.urls import reverse_lazy
 from django.contrib import messages
@@ -6,6 +6,8 @@ from django.contrib.auth.mixins import LoginRequiredMixin
 from django.shortcuts import get_object_or_404, redirect, render
 from .forms import CadastroPacienteForm, CadastroPsicologoForm, DefinirSenhaPacienteForm, LoginUsuarioForm, MeuPerfilForm
 from .models import Usuario, Psicologo, Paciente, Sessao
+from atendimentos.models import Prontuario
+from atendimentos.services import serialize_prontuario
 from django.views.decorators.http import require_POST
 from django.utils.decorators import method_decorator
 from django.contrib.messages.views import SuccessMessageMixin
@@ -246,6 +248,32 @@ class PacienteUpdateView(LoginRequiredMixin, UpdateView):
     def form_valid(self, form):
         messages.success(self.request, "Alterações salvas com sucesso!")
         return super().form_valid(form)
+
+
+class PacienteDetailView(LoginRequiredMixin, DetailView):
+    model = Paciente
+    template_name = "accounts/paciente_perfil.html"
+    context_object_name = "paciente"
+
+    def get_queryset(self):
+        return Paciente.objects.select_related("psicologo__usuario").filter(
+            psicologo=self.request.user.psicologo
+        )
+
+    def get_context_data(self, **kwargs):
+        context = super().get_context_data(**kwargs)
+        paciente = self.object
+        historico_prontuarios = [
+            serialize_prontuario(prontuario)
+            for prontuario in (
+                Prontuario.objects.select_related("sessao", "paciente", "psicologo", "sessao__serie")
+                .filter(paciente=paciente, psicologo=self.request.user.psicologo)
+                .order_by("-sessao__data", "-criado_em")
+            )
+        ]
+        context["historico_prontuarios"] = historico_prontuarios
+        context["total_evolucoes"] = len(historico_prontuarios)
+        return context
 
 def inativar_paciente(request, pk):
     paciente = get_object_or_404(Paciente, pk=pk, psicologo=request.user.psicologo)

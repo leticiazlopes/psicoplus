@@ -1,3 +1,5 @@
+from pathlib import Path
+
 from django.test import TestCase
 from django.urls import resolve, reverse
 from datetime import timedelta
@@ -5,6 +7,8 @@ from django.utils import timezone
 from .forms import CadastroPacienteForm
 from .models import Usuario, Psicologo, Paciente, Sessao
 from datetime import timedelta
+from atendimentos.models import Prontuario
+from atendimentos.services import encrypt_value
 
 class PacienteViewTests(TestCase):
     def setUp(self):
@@ -59,6 +63,53 @@ class PacienteViewTests(TestCase):
         # Aqui depende da sua implementação: 
         # Pode retornar 404 (objeto não encontrado no queryset filtrado) ou 403 (Proibido)
         self.assertIn(response.status_code, [404, 403])
+
+    def test_psicologo_pode_ver_perfil_do_proprio_paciente_com_historico(self):
+        sessao = Sessao.objects.create(
+            psicologo=self.psicologo,
+            paciente=self.paciente,
+            data="2026-06-03",
+            horario_inicio="14:00",
+            duracao_minutos=50,
+            valor="120.00",
+            status=Sessao.Status.REALIZADA,
+        )
+        prontuario = Prontuario.objects.create(
+            sessao=sessao,
+            psicologo=self.psicologo,
+            paciente=self.paciente,
+            texto=encrypt_value("Paciente apresentou melhora"),
+            riscos_identificados=encrypt_value("Sem riscos"),
+            plano_terapeutico=encrypt_value("Manter acompanhamento"),
+        )
+
+        self.client.force_login(self.user)
+        response = self.client.get(reverse('paciente_perfil', kwargs={'pk': self.paciente.pk}))
+
+        self.assertEqual(response.status_code, 200)
+        self.assertEqual(response.context['paciente'], self.paciente)
+        self.assertEqual(response.context['total_evolucoes'], 1)
+        self.assertEqual(response.context['historico_prontuarios'][0]['id'], str(prontuario.id))
+        self.assertContains(response, "Paciente apresentou melhora")
+
+    def test_psicologo_nao_pode_ver_perfil_de_paciente_de_outro(self):
+        outro_user = Usuario.objects.create_user(username='hacker2@t.com', email='hacker2@t.com', password='123')
+        outro_psico = Psicologo.objects.create(usuario=outro_user, crp="11111")
+        paciente_alheio = Paciente.objects.create(nome_completo="Paciente Privado", psicologo=outro_psico)
+
+        self.client.force_login(self.user)
+        response = self.client.get(reverse('paciente_perfil', kwargs={'pk': paciente_alheio.pk}))
+
+        self.assertEqual(response.status_code, 404)
+
+    def test_template_paciente_perfil_exibe_historico_clinico_expandivel(self):
+        template_path = Path(__file__).resolve().parent.parent / "templates" / "accounts" / "paciente_perfil.html"
+        template_content = template_path.read_text(encoding="utf-8")
+
+        self.assertIn("Histórico clínico", template_content)
+        self.assertIn("Evoluções do paciente", template_content)
+        self.assertIn("Ver completo", template_content)
+        self.assertIn("truncatechars:110", template_content)
 
     # --- TESTES DE CADASTRO E UPDATE ---
 

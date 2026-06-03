@@ -129,6 +129,11 @@
                     </div>
 
                     <div class="flex items-center justify-end gap-2">
+                        <a href="{% url 'paciente_perfil' paciente.pk %}" 
+                            class="flex h-9 w-9 items-center justify-center rounded-lg border border-slate-200 text-slate-400 transition hover:border-sky-200 hover:bg-sky-50 hover:text-sky-600" 
+                            title="Ver perfil">
+                            <i class="fa-solid fa-user text-[14px]"></i>
+                        </a>
                         <a href="{% url 'editar_paciente' paciente.pk %}" 
                             class="flex h-9 w-9 items-center justify-center rounded-lg border border-slate-200 text-slate-400 transition hover:border-primary/30 hover:bg-primarySoft hover:text-primary" 
                             title="Editar">
