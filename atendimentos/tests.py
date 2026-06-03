@@ -186,3 +186,71 @@ class CriarProntuarioApiTests(TestCase):
 
     def test_decrypt_value_mantem_texto_legado_sem_quebrar(self):
         self.assertEqual(decrypt_value("Texto legado"), "Texto legado")
+
+    def test_edita_prontuario_existente_com_put(self):
+        prontuario = Prontuario.objects.create(
+            sessao=self.sessao_realizada,
+            psicologo=self.psicologo,
+            paciente=self.paciente,
+            texto=encrypt_value("Texto original"),
+            humor_paciente=5,
+            riscos_identificados=encrypt_value("Risco original"),
+            plano_terapeutico=encrypt_value("Plano original"),
+        )
+        self.client.force_login(self.user)
+
+        response = self.client.put(
+            reverse("editar_prontuario_api", kwargs={"prontuario_id": prontuario.id}),
+            data=json.dumps(
+                {
+                    "texto": "Texto atualizado",
+                    "humor_paciente": 9,
+                    "riscos_identificados": "Risco atualizado",
+                    "plano_terapeutico": "Plano atualizado",
+                }
+            ),
+            content_type="application/json",
+        )
+
+        self.assertEqual(response.status_code, 200)
+        payload = response.json()
+        self.assertTrue(payload["success"])
+        self.assertEqual(payload["prontuario"]["texto"], "Texto atualizado")
+        self.assertEqual(payload["prontuario"]["humor_paciente"], 9)
+        self.assertEqual(payload["prontuario"]["riscos_identificados"], "Risco atualizado")
+        self.assertEqual(payload["prontuario"]["plano_terapeutico"], "Plano atualizado")
+
+        prontuario.refresh_from_db()
+        self.assertEqual(decrypt_value(prontuario.texto), "Texto atualizado")
+        self.assertEqual(decrypt_value(prontuario.riscos_identificados), "Risco atualizado")
+        self.assertEqual(decrypt_value(prontuario.plano_terapeutico), "Plano atualizado")
+
+    def test_put_retorna_403_quando_prontuario_pertence_a_outro_psicologo(self):
+        prontuario = Prontuario.objects.create(
+            sessao=self.sessao_realizada,
+            psicologo=self.psicologo,
+            paciente=self.paciente,
+            texto=encrypt_value("Texto protegido"),
+            riscos_identificados=encrypt_value("Risco protegido"),
+            plano_terapeutico=encrypt_value("Plano protegido"),
+        )
+        self.client.force_login(self.outro_user)
+
+        response = self.client.put(
+            reverse("editar_prontuario_api", kwargs={"prontuario_id": prontuario.id}),
+            data=json.dumps(
+                {
+                    "texto": "Tentativa sem permissão",
+                    "humor_paciente": 2,
+                    "riscos_identificados": "Nenhum",
+                    "plano_terapeutico": "Nenhum",
+                }
+            ),
+            content_type="application/json",
+        )
+
+        self.assertEqual(response.status_code, 403)
+        self.assertEqual(
+            response.json()["error"],
+            "Você não tem permissão para editar esta evolução.",
+        )
