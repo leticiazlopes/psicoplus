@@ -271,6 +271,14 @@
                         <i class="fa-solid fa-pen text-xs"></i>
                     </button>
 
+                    <a href="{% url 'atendimentos_lista' %}?sessao_id={{ sessao.id }}"
+                       data-registrar-evolucao-botao
+                       x-show="currentStatus === 'realizada'"
+                       class="rounded-full bg-violet-600 px-3 py-1.5 text-[10px] font-bold uppercase tracking-wide text-white shadow-sm shadow-violet-500/20 hover:bg-violet-700 transition flex items-center gap-2">
+                        <i class="fa-solid fa-notes-medical"></i>
+                        Registrar evolução
+                    </a>
+
                 </div>
             </div>
             {% empty %}
@@ -924,6 +932,11 @@
                     const confirmButton = row.querySelector('[data-confirmar-botao]');
                     if (confirmButton) {
                         confirmButton.style.display = novo === 'pendente' ? '' : 'none';
+                    }
+
+                    const registrarEvolucaoButton = row.querySelector('[data-registrar-evolucao-botao]');
+                    if (registrarEvolucaoButton) {
+                        registrarEvolucaoButton.style.display = novo === 'realizada' ? '' : 'none';
                     }
                 }
             });
