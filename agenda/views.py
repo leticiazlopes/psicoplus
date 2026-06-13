@@ -26,6 +26,7 @@ from django.contrib import messages
 import logging
 from django.core.mail import send_mail, BadHeaderError
 from django.conf import settings
+from atendimentos.models import Prontuario
 
 logger = logging.getLogger(__name__)
 
@@ -204,6 +205,13 @@ def _render_agendamentos(request, psicologo_perfil, form):
         data=data_referencia,
     ).order_by("horario_inicio")
 
+    prontuarios_existentes = set(
+        Prontuario.objects.filter(psicologo=psicologo_perfil).values_list("sessao_id", flat=True)
+    )
+
+    agendamentos_do_dia = list(agendamentos_do_dia)
+    for sessao in agendamentos_do_dia:
+        sessao.tem_prontuario = sessao.id in prontuarios_existentes
     inicio_semana = data_referencia
     fim_semana = inicio_semana + datetime.timedelta(days=6)
     agendamentos_da_semana = (

@@ -238,22 +238,35 @@
 
                 <div class="flex items-center gap-3">
                     <div class="relative inline-block w-36">
-                            <select class="w-full appearance-none rounded-xl border border-slate-200 bg-white px-2.5 py-2 pr-8 text-[10px] font-bold uppercase tracking-wider text-slate-700 shadow-sm cursor-pointer transition hover:bg-slate-50 focus:border-primary focus:ring-2 focus:ring-primary/30 focus:ring-offset-1 focus:outline-none"
-                                data-sessao-id="{{ sessao.id }}"
-                                :data-status-atual="currentStatus"
-                                @change="atualizarStatusInline($el).then(novoStatus => { if (novoStatus) currentStatus = novoStatus; })">
-                                {% if sessao.status == 'confirmada' %}
-                                    <option value="confirmada" selected disabled>Confirmada</option>
-                                {% endif %}
+                        <select class="w-full appearance-none rounded-xl border border-slate-200 bg-white px-2.5 py-2 pr-8 text-[10px] font-bold uppercase tracking-wider text-slate-700 shadow-sm transition focus:border-primary focus:ring-2 focus:ring-primary/30 focus:ring-offset-1 focus:outline-none {% if sessao.tem_prontuario %}bg-slate-50 text-slate-400 border-slate-100 cursor-not-allowed pointer-events-none{% else %}cursor-pointer hover:bg-slate-50{% endif %}"
+                            data-sessao-id="{{ sessao.id }}"
+                            :data-status-atual="currentStatus"
+                            {% if sessao.tem_prontuario %}
+                                disabled
+                            {% else %}
+                                @change="atualizarStatusInline($el).then(novoStatus => { if (novoStatus) currentStatus = novoStatus; })"
+                            {% endif %}>
+                            
+                            {% if sessao.status == 'confirmada' %}
+                                <option value="confirmada" selected disabled>Confirmada</option>
+                            {% endif %}
+                            
+                            {% if sessao.tem_prontuario %}
+                                <option value="realizada" selected>Realizada</option>
+                            {% else %}
                                 <option value="pendente" {% if sessao.status == 'pendente' %}selected{% endif %}>Pendente</option>
                                 <option value="realizada" {% if sessao.status == 'realizada' %}selected{% endif %}>Realizada</option>
                                 <option value="cancelada" {% if sessao.status == 'cancelada' %}selected{% endif %}>Cancelada</option>
                                 <option value="falta" {% if sessao.status == 'falta' %}selected{% endif %}>Falta</option>
-                            </select>
-                            <div class="pointer-events-none absolute inset-y-0 right-0 flex items-center pr-2.5 text-slate-400">
-                                <i class="fa-solid fa-chevron-down text-[10px]"></i>
-                            </div>
+                            {% endif %}
+                        </select>
+                        
+                        {% if not sessao.tem_prontuario %}
+                        <div class="pointer-events-none absolute inset-y-0 right-0 flex items-center pr-2.5 text-slate-400">
+                            <i class="fa-solid fa-chevron-down text-[10px]"></i>
                         </div>
+                        {% endif %}
+                    </div>
 
                     <button type="button"
                             data-confirmar-botao
@@ -278,7 +291,6 @@
                         <i class="fa-solid fa-notes-medical"></i>
                         Abrir atendimento
                     </a>
-
                 </div>
             </div>
             {% empty %}
