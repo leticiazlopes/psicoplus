@@ -54,7 +54,7 @@ def dashboard_view(request):
         proximas_sessoes = (
             Sessao.objects.filter(
                 psicologo=psicologo_logado,
-                data__gte=hoje,
+                data=hoje,
             )
             .select_related("paciente")
             .order_by("data", "horario_inicio")[:5]
