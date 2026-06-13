@@ -5,6 +5,7 @@ from django.contrib.auth.models import AbstractUser
 from django.utils import timezone
 from django.db.models.signals import post_save
 from django.dispatch import receiver
+from django_cryptography.fields import encrypt
 
 
 class Usuario(AbstractUser):
@@ -262,3 +263,32 @@ def registrar_historico_status(sender, instance, created, **kwargs):
                 status_anterior=original.status,
                 status_novo=instance.status
             )
+
+class DiarioPensamento(models.Model):
+    id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
+    
+    paciente = models.ForeignKey(
+        Paciente,
+        on_delete=models.CASCADE,
+        related_name="diarios"
+    )
+    
+    situacao = encrypt(models.TextField(verbose_name="Situação"))
+    emocao_principal = models.CharField(max_length=100, verbose_name="Emoção Principal", blank=True, null=True)
+    
+    intensidade = models.PositiveIntegerField(
+        verbose_name="Intensidade",
+        choices=[(i, str(i)) for i in range(1, 6)]  
+    )
+    
+    observacoes_livres = encrypt(models.TextField(blank=True, null=True, verbose_name="Observações Livres"))
+    
+    criado_em = models.DateTimeField(auto_now_add=True)
+
+    class Meta:
+        ordering = ["-criado_em"]
+        verbose_name = "Diário de Pensamento"
+        verbose_name_plural = "Diário de Pensamentos"
+
+    def __str__(self):
+        return f"Registro de {self.paciente.nome_completo} em {self.criado_em.strftime('%d/%m/%Y %H:%M')}"

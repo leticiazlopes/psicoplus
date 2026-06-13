@@ -18,6 +18,9 @@ from django.core.mail import send_mail
 from django.views.generic import FormView
 from django.urls import reverse_lazy
 from django.contrib import messages
+from .forms import DiarioPensamentoForm
+from .models import DiarioPensamento
+
 class PsicologoListView(LoginRequiredMixin, ListView):
     template_name = "accounts/psicologos_lista.html"
     model = Psicologo
@@ -273,6 +276,7 @@ class PacienteDetailView(LoginRequiredMixin, DetailView):
         ]
         context["historico_prontuarios"] = historico_prontuarios
         context["total_evolucoes"] = len(historico_prontuarios)
+        context["historico_diarios"] = DiarioPensamento.objects.filter(paciente=paciente).order_by("-criado_em")
         return context
 
 def inativar_paciente(request, pk):
@@ -450,7 +454,52 @@ def dashboard_paciente_page(request):
     if request.user.perfil != Usuario.Perfil.PACIENTE:
         return HttpResponseForbidden("Você não tem permissão para acessar esta área.")
         
-    return render(request, "accounts/dashboard_paciente.html")
+    paciente_perfil = getattr(request.user, "paciente", None)
+    if not paciente_perfil:
+        return render(request, "accounts/dashboard_paciente.html", {"error": "Perfil não encontrado."})
+
+    hoje = timezone.now().date()
+
+    proximos_encontros = Sessao.objects.filter(
+        paciente=paciente_perfil,
+        data__gte=hoje
+    ).exclude(
+        status=Sessao.Status.CANCELADA
+    ).order_by("data", "horario_inicio")[:3]
+
+    context = {
+        "proximos_encontros": proximos_encontros,
+    }
+    return render(request, "accounts/dashboard_paciente.html", context)
+
+
+@login_required
+def diario_paciente_view(request):
+    """Nova View: Processa o envio e lista os registros na aba Diário"""
+    if request.user.perfil != Usuario.Perfil.PACIENTE:
+        return redirect("dashboard_paciente")
+        
+    paciente_perfil = getattr(request.user, "paciente", None)
+
+    if request.method == "POST":
+        form = DiarioPensamentoForm(request.POST)
+        if form.is_valid():
+            diario = form.save(commit=False)
+            diario.paciente = paciente_perfil
+            diario.save()
+            messages.success(request, "Pensamento registrado no seu diário com sucesso!")
+            return redirect("diario_paciente")
+    else:
+        form = DiarioPensamentoForm()
+
+    historico_diarios = DiarioPensamento.objects.filter(paciente=paciente_perfil).order_by("-criado_em")
+
+    context = {
+        "form": form,
+        "historico_diarios": historico_diarios,
+    }
+    return render(request, "accounts/diario_paciente.html", context)
+
 
 @login_required
 def inicio_view(request):

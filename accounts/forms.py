@@ -292,3 +292,43 @@ class DefinirSenhaPacienteForm(SetPasswordForm):
             user.save()
 
         return user
+    
+    from django import forms
+from .models import DiarioPensamento
+
+class DiarioPensamentoForm(forms.ModelForm):
+    class Meta:
+        model = DiarioPensamento
+        fields = ['situacao', 'emocao_principal', 'intensidade', 'observacoes_livres']
+        
+    def __init__(self, *xargs, **kwargs):
+        super().__init__(*xargs, **kwargs)
+        classes_input = "w-full rounded-xl border border-slate-200 bg-white px-3 py-2.5 text-sm text-slate-700 shadow-sm transition focus:border-primary focus:ring-2 focus:ring-primary/30 focus:outline-none"
+        
+        self.fields['situacao'].widget = forms.Textarea(attrs={
+            'class': classes_input,
+            'rows': 3,
+            'placeholder': 'O que aconteceu?'
+        })
+        self.fields['emocao_principal'] = forms.CharField(
+            required=False,
+            widget=forms.TextInput(attrs={
+                'class': classes_input,
+                'placeholder': 'Ex: Ansiedade, Raiva... (Opcional)'
+            })
+        )
+        self.fields['intensidade'].widget = forms.Select(
+            choices=[
+                (1, "1 - Muito Leve"),
+                (2, "2 - Leve"),
+                (3, "3 - Moderada"),
+                (4, "4 - Intensa"),
+                (5, "5 - Muito Intensa"),
+            ],
+            attrs={'class': classes_input}
+        )
+        self.fields['observacoes_livres'].widget = forms.Textarea(attrs={
+            'class': classes_input,
+            'rows': 3,
+            'placeholder': 'Como reagiu ao que aconteceu? (Opcional)'
+        })
