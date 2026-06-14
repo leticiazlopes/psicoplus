@@ -6,7 +6,7 @@ from django.shortcuts import get_object_or_404, render
 from django.utils.dateparse import parse_date
 from django.views.decorators.http import require_http_methods, require_POST
 
-from accounts.models import Paciente, Sessao
+from accounts.models import Paciente, Sessao, DiarioPensamento
 
 from .models import Prontuario
 from .services import encrypt_prontuario_payload, serialize_prontuario
@@ -96,6 +96,9 @@ def atendimento_detalhe_view(request, sessao_id):
     pode_registrar_evolucao = (
         sessao_selecionada.status == Sessao.Status.REALIZADA and prontuario_existente is None
     )
+    historico_diarios = DiarioPensamento.objects.filter(
+        paciente=sessao_selecionada.paciente
+    ).order_by("-criado_em")
 
     return render(
         request,
@@ -110,6 +113,7 @@ def atendimento_detalhe_view(request, sessao_id):
             "filtro_data_fim": data_fim_param,
             "erro_filtro_periodo": erro_filtro_periodo,
             "pode_registrar_evolucao": pode_registrar_evolucao,
+            "historico_diarios": historico_diarios,
         },
     )
 
