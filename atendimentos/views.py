@@ -10,7 +10,8 @@ from accounts.models import Paciente, Sessao, DiarioPensamento
 
 from .models import Prontuario
 from .services import encrypt_prontuario_payload, serialize_prontuario
-
+from datetime import datetime
+from django.utils.timezone import make_aware
 
 @login_required
 def atendimentos_view(request):
@@ -96,9 +97,36 @@ def atendimento_detalhe_view(request, sessao_id):
     pode_registrar_evolucao = (
         sessao_selecionada.status == Sessao.Status.REALIZADA and prontuario_existente is None
     )
-    historico_diarios = DiarioPensamento.objects.filter(
-        paciente=sessao_selecionada.paciente
-    ).order_by("-criado_em")
+    momento_sessao_atual = datetime.combine(sessao_selecionada.data, sessao_selecionada.horario_inicio)
+    if not momento_sessao_atual.tzinfo:
+        momento_sessao_atual = make_aware(momento_sessao_atual)
+
+    sessao_anterior = (
+        Sessao.objects.filter(
+            paciente=sessao_selecionada.paciente,
+            status=Sessao.Status.REALIZADA
+        )
+        .filter(data__lt=sessao_selecionada.data)
+        .order_by("-data", "-horario_inicio")
+        .first()
+    )
+
+    diarios_queryset = DiarioPensamento.objects.filter(paciente=sessao_selecionada.paciente)
+
+    if sessao_anterior:
+        momento_sessao_anterior = datetime.combine(sessao_anterior.data, sessao_anterior.horario_inicio)
+        if not momento_sessao_anterior.tzinfo:
+            momento_sessao_anterior = make_aware(momento_sessao_anterior)
+        
+        historico_diarios = diarios_queryset.filter(
+            criado_em__gt=momento_sessao_anterior,
+            criado_em__lte=momento_sessao_atual
+        ).order_by("-criado_em")
+        
+    else:
+        historico_diarios = diarios_queryset.filter(
+            criado_em__lte=momento_sessao_atual
+        ).order_by("-criado_em")
 
     return render(
         request,
