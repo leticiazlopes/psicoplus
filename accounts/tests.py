@@ -5,10 +5,11 @@ from django.urls import resolve, reverse
 from datetime import timedelta
 from django.utils import timezone
 from .forms import CadastroPacienteForm
-from .models import Usuario, Psicologo, Paciente, Sessao
+from .models import Usuario, Psicologo, Paciente, Sessao, DiarioPensamento
 from datetime import timedelta
 from atendimentos.models import Prontuario
 from atendimentos.services import encrypt_value
+from django.contrib.messages import get_messages
 
 class PacienteViewTests(TestCase):
     def setUp(self):
@@ -572,3 +573,86 @@ class AccountsViewsAdicionaisTests(TestCase):
         data = response.json()
         self.assertTrue(data['tem_sessao'])
         self.assertEqual(len(data['sessoes']), 1)
+        
+#-- DIÁRIO DO PENSAMENTO --
+class DiarioPacienteViewTests(TestCase):
+    def setUp(self):
+        self.user_psicologo = Usuario.objects.create_user(
+            username="psico_teste",
+            email="psico@teste.com",
+            password="senha_segura_123",
+            perfil=Usuario.Perfil.PSICOLOGO
+        )
+        self.psicologo = Psicologo.objects.create(usuario=self.user_psicologo)
+
+        self.user_paciente = Usuario.objects.create_user(
+            username="paciente_teste",
+            email="paciente@teste.com",
+            password="senha_segura_123",
+            perfil=Usuario.Perfil.PACIENTE
+        )
+        self.paciente = Paciente.objects.create(
+            usuario=self.user_paciente,
+            nome_completo="Lívia Aquino Bezerra",
+            email="paciente@teste.com",
+            psicologo=self.psicologo 
+        )
+
+        self.url_diario = reverse("diario_paciente")
+
+    def test_paciente_envia_registro_do_diario_com_sucesso(self):
+        """Garante que o paciente consegue submeter um novo pensamento e salvar no banco"""
+        self.client.force_login(self.user_paciente)
+        
+        payload = {
+            "situacao": "Discussão com familiares no almoço",
+            "emocao_principal": "Frustração",
+            "intensidade": 4,
+            "observacoes_livres": "Consegui respirar fundo antes de responder."
+        }
+        
+        response = self.client.post(self.url_diario, data=payload)
+
+        self.assertRedirects(response, self.url_diario)
+        
+        self.assertEqual(DiarioPensamento.objects.count(), 1)
+        novo_registro = DiarioPensamento.objects.first()
+        self.assertEqual(novo_registro.paciente, self.paciente)
+        self.assertEqual(novo_registro.situacao, "Discussão com familiares no almoço")
+        self.assertEqual(novo_registro.intensidade, 4)
+
+        messages = [m.message for m in get_messages(response.wsgi_request)]
+        self.assertIn("Pensamento registrado no seu diário com sucesso!", messages)
+
+    def test_bloqueia_psicologo_de_acessar_rota_do_diario_do_paciente(self):
+        """Segurança: Garante que um psicólogo é redirecionado caso tente entrar ou postar na rota do paciente"""
+        self.client.force_login(self.user_psicologo)
+        
+        response_get = self.client.get(self.url_diario)
+        self.assertRedirects(response_get, reverse("dashboard_paciente"), target_status_code=403)
+        
+        response_post = self.client.post(self.url_diario, data={"situacao": "Invasão"})
+        self.assertRedirects(response_post, reverse("dashboard_paciente"), target_status_code=403)
+        self.assertEqual(DiarioPensamento.objects.count(), 0)
+
+    def test_tela_do_diario_lista_apenas_os_registros_do_proprio_paciente(self):
+        """Garante que o paciente vê o seu histórico em ordem cronológica reversa e não vê o diário de terceiros"""
+        outro_user = Usuario.objects.create_user(username="outro", email="o@t.com", password="123", perfil=Usuario.Perfil.PACIENTE)
+        outro_paciente = Paciente.objects.create(
+            usuario=outro_user, 
+            nome_completo="Outro", 
+            email="o@t.com",
+            psicologo=self.psicologo 
+        )
+        DiarioPensamento.objects.create(paciente=outro_paciente, situacao="Diário Secreto de Outro", intensidade=1)
+
+        DiarioPensamento.objects.create(paciente=self.paciente, situacao="Meu Diário Visível", intensidade=3)
+
+        self.client.force_login(self.user_paciente)
+        response = self.client.get(self.url_diario)
+        
+        self.assertEqual(response.status_code, 200)
+        self.assertIn("historico_diarios", response.context)
+        
+        self.assertEqual(len(response.context["historico_diarios"]), 1)
+        self.assertEqual(response.context["historico_diarios"][0].situacao, "Meu Diário Visível")

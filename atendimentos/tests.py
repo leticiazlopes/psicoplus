@@ -6,7 +6,7 @@ from unittest.mock import patch
 from django.test import RequestFactory, TestCase
 from django.urls import reverse
 
-from accounts.models import Paciente, Psicologo, Sessao, Usuario
+from accounts.models import Paciente, Psicologo, Sessao, Usuario, DiarioPensamento
 
 from .models import Prontuario
 from .views import atendimento_detalhe_view, atendimentos_view
@@ -528,3 +528,79 @@ class CriarProntuarioApiTests(TestCase):
         _, template_name, context = mock_render.call_args[0]
         self.assertEqual(template_name, "atendimentos/detalhe.html")
         self.assertEqual(context["erro_filtro_periodo"], "A data inicial não pode ser maior que a data final.")
+
+def test_diario_aparece_na_sessao_seguinte_dentro_da_janela_temporal(self):
+        """[US-13] Garante que as anotações do diário aparecem na sessão futura correta e não nas passadas"""
+        from django.utils.timezone import make_aware
+        from datetime import datetime
+
+        sessao_antiga = Sessao.objects.create(
+            psicologo=self.psicologo,
+            paciente=self.paciente,
+            data="2026-06-01",
+            horario_inicio="10:00",
+            duracao_minutos=50,
+            status=Sessao.Status.REALIZADA,
+        )
+
+        diario = DiarioPensamento.objects.create(
+            paciente=self.paciente,
+            situacao="Briguei com minha irmã e fiquei remoendo",
+            emocao_principal="tristeza e raiva",
+            intensidade=3
+        )
+        DiarioPensamento.objects.filter(id=diario.id).update(
+            criado_em=make_aware(datetime(2026, 6, 8, 16, 43))
+        )
+
+        request_antiga = self.factory.get(reverse("atendimento_detalhe", kwargs={"sessao_id": sessao_antiga.id}))
+        request_antiga.user = self.user
+        
+        with patch("atendimentos.views.render") as mock_render_antigo:
+            atendimento_detalhe_view(request_antiga, sessao_antiga.id)
+        
+        _, _, context_antigo = mock_render_antigo.call_args[0]
+        self.assertEqual(len(context_antigo["historico_diarios"]), 0)
+
+        request_atual = self.factory.get(reverse("atendimento_detalhe", kwargs={"sessao_id": self.sessao_realizada.id}))
+        request_atual.user = self.user
+        
+        with patch("atendimentos.views.render") as mock_render_atual:
+            atendimento_detalhe_view(request_atual, self.sessao_realizada.id)
+            
+        _, _, context_atual = mock_render_atual.call_args[0]
+        self.assertEqual(len(context_atual["historico_diarios"]), 1)
+        self.assertEqual(context_atual["historico_diarios"][0].situacao, "Briguei com minha irmã e fiquei remoendo")
+
+def test_tela_de_detalhe_retorna_contexto_vazio_quando_paciente_nao_tem_diario(self):
+        """[US-13] Garante que a listagem de diários vem vazia se o paciente nunca escreveu nada"""
+        request = self.factory.get(reverse("atendimento_detalhe", kwargs={"sessao_id": self.sessao_realizada.id}))
+        request.user = self.user
+
+        with patch("atendimentos.views.render") as mock_render:
+            atendimento_detalhe_view(request, self.sessao_realizada.id)
+
+        _, _, context = mock_render.call_args[0]
+        self.assertEqual(len(context["historico_diarios"]), 0)
+
+def test_confidencialidade_diario_de_outro_paciente_nao_aparece_no_atendimento(self):
+        """[US-13] Segurança: Garante que diários de outros pacientes são completamente ignorados"""
+        outro_paciente = Paciente.objects.create(
+            nome_completo="Outro Paciente Teste",
+            email="outro@teste.com",
+            psicologo=self.psicologo
+        )
+        DiarioPensamento.objects.create(
+            paciente=outro_paciente,
+            situacao="Anotação confidencial de outra pessoa",
+            intensidade=5
+        )
+
+        request = self.factory.get(reverse("atendimento_detalhe", kwargs={"sessao_id": self.sessao_realizada.id}))
+        request.user = self.user
+
+        with patch("atendimentos.views.render") as mock_render:
+            atendimento_detalhe_view(request, self.sessao_realizada.id)
+
+        _, _, context = mock_render.call_args[0]
+        self.assertEqual(len(context["historico_diarios"]), 0)
