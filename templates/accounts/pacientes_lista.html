@@ -86,7 +86,7 @@
                 <span class="font-bold text-slate-700">{% trans "Filtros aplicados:" %}</span>
                 {% if status_filtro == 'ativos' %}<span class="rounded-md bg-emerald-100 px-2 py-0.5 text-[11px] font-bold text-emerald-800">{% trans "Apenas Ativos" %}</span>{% endif %}
                 {% if status_filtro == 'inativos' %}<span class="rounded-md bg-amber-100 px-2 py-0.5 text-[11px] font-bold text-amber-800">{% trans "Apenas Inativos" %}</span>{% endif %}
-                {% if request.GET.search %}<span class="rounded-md bg-primarySoft px-2 py-0.5 text-[11px] font-bold text-primary">{% blocktrans %}Nome: "{{ request.GET.search }}"{% endblocktrans %}</span>{% endif %}
+                {% if request.GET.search %}<span class="rounded-md bg-primarySoft px-2 py-0.5 text-[11px] font-bold text-primary">{% blocktrans with search=request.GET.search %}Nome: "{{ search }}"{% endblocktrans %}</span>{% endif %}
             </div>
             <a href="{% url 'pacientes_lista' %}" class="inline-flex items-center gap-1.5 text-[12px] font-bold text-rose-600 hover:text-rose-700 transition">
                 <i class="fa-solid fa-xmark"></i>
@@ -176,40 +176,48 @@
         <div class="flex items-center justify-between border-t border-slate-100 bg-white/50 px-4 py-4 sm:px-6 mt-4 rounded-xl">
             <div class="flex flex-1 justify-between sm:hidden">
                 {% if page_obj.has_previous %}
-                    <a href="?page={{ page_obj.previous_page_number }}{% if status_filtro %}&status={{ status_filtro }}{% endif %}{% if search_query %}&search={{ search_query }}{% endif %}" class="relative inline-flex items-center rounded-xl border border-slate-200 bg-white px-4 py-2 text-[13px] font-semibold text-slate-600 hover:bg-slate-50 transition">{% trans "Anterior" %}</a>
+                    <a href="?page={{ page_obj.previous_page_number }}{% if status_filtro %}&status={{ status_filtro }}{% endif %}{% if request.GET.search %}&search={{ request.GET.search }}{% endif %}" class="relative inline-flex items-center rounded-xl border border-slate-200 bg-white px-4 py-2 text-[13px] font-semibold text-slate-600 hover:bg-slate-50 transition">
+                        {% trans "Anterior" %}
+                    </a>
                 {% endif %}
                 {% if page_obj.has_next %}
-                    <a href="?page={{ page_obj.next_page_number }}{% if status_filtro %}&status={{ status_filtro }}{% endif %}{% if search_query %}&search={{ search_query }}{% endif %}" class="relative ml-3 inline-flex items-center rounded-xl border border-slate-200 bg-white px-4 py-2 text-[13px] font-semibold text-slate-600 hover:bg-slate-50 transition">{% trans "Próxima" %}</a>
+                    <a href="?page={{ page_obj.next_page_number }}{% if status_filtro %}&status={{ status_filtro }}{% endif %}{% if request.GET.search %}&search={{ request.GET.search }}{% endif %}" class="relative ml-3 inline-flex items-center rounded-xl border border-slate-200 bg-white px-4 py-2 text-[13px] font-semibold text-slate-600 hover:bg-slate-50 transition">
+                        {% trans "Próxima" %}
+                    </a>
                 {% endif %}
             </div>
             
             <div class="hidden sm:flex sm:flex-1 sm:items-center sm:justify-between">
                 <div>
                     <p class="text-[13px] text-slate-500">
-                        {% blocktrans %}Mostrando <span class="font-bold text-slate-800">{{ page_obj.start_index }}</span> até <span class="font-bold text-slate-800">{{ page_obj.end_index }}</span> de <span class="font-bold text-slate-800">{{ page_obj.paginator.count }}</span> pacientes{% endblocktrans %}
+                        {% blocktrans with start=page_obj.start_index end=page_obj.end_index total=page_obj.paginator.count %}Mostrando {{ start }} até {{ end }} de {{ total }} pacientes{% endblocktrans %}
                     </p>
                 </div>
                 
                 <div>
-                    <nav class="isolate inline-flex -space-x-px gap-1.5" aria-label="Pagination">
+                    <nav class="inline-flex items-center gap-2" aria-label="Pagination">
                         {% if page_obj.has_previous %}
-                            <a href="?page={{ page_obj.previous_page_number }}{% if status_filtro %}&status={{ status_filtro }}{% endif %}{% if search_query %}&search={{ search_query }}{% endif %}" class="relative inline-flex items-center rounded-lg border border-slate-200 bg-white px-3 py-1.5 text-[13px] font-semibold text-slate-600 hover:bg-slate-50 transition">
+                            <a href="?page={{ page_obj.previous_page_number }}{% if status_filtro %}&status={{ status_filtro }}{% endif %}{% if request.GET.search %}&search={{ request.GET.search }}{% endif %}" class="relative inline-flex items-center rounded-lg border border-slate-200 bg-white px-3 py-1.5 text-[13px] font-semibold text-slate-600 hover:bg-slate-50 transition">
                                 {% trans "Anterior" %}
                             </a>
                         {% else %}
-                            <span class="relative inline-flex items-center rounded-lg border border-slate-100 bg-slate-50/50 px-3 py-1.5 text-[13px] font-semibold text-slate-300 cursor-not-allowed">{% trans "Anterior" %}</span>
+                            <span class="relative inline-flex items-center rounded-lg border border-slate-100 bg-slate-50/50 px-3 py-1.5 text-[13px] font-semibold text-slate-300 cursor-not-allowed">
+                                {% trans "Anterior" %}
+                            </span>
                         {% endif %}
 
-                        <span class="relative inline-flex items-center px-4 py-1.5 text-[13px] font-bold text-primary rounded-lg bg-primarySoft border border-primary/10">
-                            {% blocktrans %}Página {{ page_obj.number }} de {{ page_obj.paginator.num_pages }}{% endblocktrans %}
+                        <span class="relative inline-flex items-center px-4 py-1.5 text-[13px] font-bold text-primary rounded-lg bg-primarySoft border border-primary/10 whitespace-nowrap">
+                            {% blocktrans with current=page_obj.number total_pages=page_obj.paginator.num_pages %}Página {{ current }} de {{ total_pages }}{% endblocktrans %}
                         </span>
 
                         {% if page_obj.has_next %}
-                            <a href="?page={{ page_obj.next_page_number }}{% if status_filtro %}&status={{ status_filtro }}{% endif %}{% if search_query %}&search={{ search_query }}{% endif %}" class="relative inline-flex items-center rounded-lg border border-slate-200 bg-white px-3 py-1.5 text-[13px] font-semibold text-slate-600 hover:bg-slate-50 transition">
+                            <a href="?page={{ page_obj.next_page_number }}{% if status_filtro %}&status={{ status_filtro }}{% endif %}{% if request.GET.search %}&search={{ request.GET.search }}{% endif %}" class="relative inline-flex items-center rounded-lg border border-slate-200 bg-white px-3 py-1.5 text-[13px] font-semibold text-slate-600 hover:bg-slate-50 transition">
                                 {% trans "Próxima" %}
                             </a>
                         {% else %}
-                            <span class="relative inline-flex items-center rounded-lg border border-slate-100 bg-slate-50/50 px-3 py-1.5 text-[13px] font-semibold text-slate-300 cursor-not-allowed">{% trans "Próxima" %}</span>
+                            <span class="relative inline-flex items-center rounded-lg border border-slate-100 bg-slate-50/50 px-3 py-1.5 text-[13px] font-semibold text-slate-300 cursor-not-allowed">
+                                {% trans "Próxima" %}
+                            </span>
                         {% endif %}
                     </nav>
                 </div>
