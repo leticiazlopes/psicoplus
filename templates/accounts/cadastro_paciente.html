@@ -1,7 +1,8 @@
 {% extends "shared/base.html" %}
+{% load i18n %}
 
-{% block title %}Cadastrar Paciente | Psico+{% endblock %}
-{% block page_title %}Cadastro de Paciente{% endblock %}
+{% block title %}{% trans "Cadastrar Paciente" %} | Psico+{% endblock %}
+{% block page_title %}{% trans "Cadastro de Paciente" %}{% endblock %}
 
 {% block content %}
 <section class="space-y-6">
@@ -9,21 +10,21 @@
         <div class="flex flex-col gap-4 border-b border-slate-100 pb-5 lg:flex-row lg:items-start lg:justify-between">
             <div class="max-w-2xl">
                 <p class="text-[14px] leading-6 text-slate-500">
-                    Preencha os dados pessoais e contatos de emergência para cadastrar um novo paciente.
+                    {% trans "Preencha os dados pessoais e contatos de emergência para cadastrar um novo paciente." %}
                 </p>
             </div>
 
             <div class="flex flex-wrap gap-3">
                 <a href="{% url 'pacientes_lista' %}" class="inline-flex items-center justify-center rounded-xl border border-slate-200 bg-white px-4 py-2.5 text-[14px] font-semibold text-slate-600 transition hover:border-primary/20 hover:text-primary">
-                    Cancelar
+                    {% trans "Cancelar" %}
                 </a>
                 <button form="cadastro-paciente-form" type="submit" 
                     class="inline-flex items-center justify-center gap-2 rounded-xl bg-gradient-to-r from-primary to-primaryDark px-4 py-2.5 text-[14px] font-semibold text-white shadow-[0_14px_28px_rgba(109,74,255,0.22)] transition hover:translate-y-[-1px]">
                     <i class="fa-solid fa-floppy-disk text-[13px]"></i>
                     {% if object %}
-                    Salvar Alterações
+                    {% trans "Salvar Alterações" %}
                     {% else %}
-                    Salvar Paciente
+                    {% trans "Salvar Paciente" %}
                     {% endif %}
                 </button>
             </div>
@@ -46,14 +47,14 @@
                         <i class="fa-solid fa-user text-[15px]"></i>
                     </div>
                     <div>
-                        <h3 class="text-[16px] font-bold text-slate-900">Dados pessoais</h3>
-                        <p class="mt-1 text-[13px] text-slate-500">Informações básicas do paciente.</p>
+                        <h3 class="text-[16px] font-bold text-slate-900">{% trans "Dados pessoais" %}</h3>
+                        <p class="mt-1 text-[13px] text-slate-500">{% trans "Informações básicas do paciente." %}</p>
                     </div>
                 </div>
 
                 <div class="grid gap-4 md:grid-cols-2">
                     <div class="md:col-span-2">
-                        <label for="{{ form.nome_completo.id_for_label }}" class="mb-2 block text-[13px] font-bold text-slate-600">Nome completo</label>
+                        <label for="{{ form.nome_completo.id_for_label }}" class="mb-2 block text-[13px] font-bold text-slate-600">{% trans "Nome completo" %}</label>
                         {{ form.nome_completo }}
                         {% if form.nome_completo.errors %}
                         <div class="mt-2 space-y-1 text-[13px] text-rose-600">
@@ -63,7 +64,7 @@
                     </div>
 
                     <div>
-                        <label for="{{ form.email.id_for_label }}" class="mb-2 block text-[13px] font-bold text-slate-600">E-mail</label>
+                        <label for="{{ form.email.id_for_label }}" class="mb-2 block text-[13px] font-bold text-slate-600">{% trans "E-mail" %}</label>
                         {{ form.email }}
                         {% if form.email.errors %}
                         <div class="mt-2 space-y-1 text-[13px] text-rose-600">
@@ -73,12 +74,12 @@
                     </div>
 
                     <div>
-                        <label for="{{ form.data_nascimento.id_for_label }}" class="mb-2 block text-[13px] font-bold text-slate-600">Data de Nascimento</label>
+                        <label for="{{ form.data_nascimento.id_for_label }}" class="mb-2 block text-[13px] font-bold text-slate-600">{% trans "Data de Nascimento" %}</label>
                         {{ form.data_nascimento }}
                     </div>
 
                     <div>
-                        <label for="{{ form.telefone.id_for_label }}" class="mb-2 block text-[13px] font-bold text-slate-600">Telefone</label>
+                        <label for="{{ form.telefone.id_for_label }}" class="mb-2 block text-[13px] font-bold text-slate-600">{% trans "Telefone" %}</label>
                         {{ form.telefone }}
                     </div>
                 </div>
@@ -90,19 +91,19 @@
                         <i class="fa-solid fa-truck-medical text-[15px]"></i>
                     </div>
                     <div>
-                        <h3 class="text-[16px] font-bold text-slate-900">Contato de emergência</h3>
-                        <p class="mt-1 text-[13px] text-slate-500">Quem devemos avisar em caso de necessidade.</p>
+                        <h3 class="text-[16px] font-bold text-slate-900">{% trans "Contato de emergência" %}</h3>
+                        <p class="mt-1 text-[13px] text-slate-500">{% trans "Quem devemos avisar em caso de necessidade." %}</p>
                     </div>
                 </div>
 
                 <div class="grid gap-4 md:grid-cols-2">
                     <div>
-                        <label for="{{ form.contato_emergencia_nome.id_for_label }}" class="mb-2 block text-[13px] font-bold text-slate-600">Nome do Contato</label>
+                        <label for="{{ form.contato_emergencia_nome.id_for_label }}" class="mb-2 block text-[13px] font-bold text-slate-600">{% trans "Nome do Contato" %}</label>
                         {{ form.contato_emergencia_nome }}
                     </div>
 
                     <div>
-                        <label for="{{ form.contato_emergencia_telefone.id_for_label }}" class="mb-2 block text-[13px] font-bold text-slate-600">Telefone de Emergência</label>
+                        <label for="{{ form.contato_emergencia_telefone.id_for_label }}" class="mb-2 block text-[13px] font-bold text-slate-600">{% trans "Telefone de Emergência" %}</label>
                         {{ form.contato_emergencia_telefone }}
                     </div>
                 </div>

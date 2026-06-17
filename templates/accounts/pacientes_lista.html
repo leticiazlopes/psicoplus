@@ -1,7 +1,8 @@
 {% extends "shared/base.html" %}
+{% load i18n %}
 
-{% block title %}Pacientes | Psico+{% endblock %}
-{% block page_title %}Pacientes{% endblock %}
+{% block title %}{% trans "Pacientes" %} | Psico+{% endblock %}
+{% block page_title %}{% trans "Pacientes" %}{% endblock %}
 
 {% block content %}
 <section class="space-y-6">
@@ -14,18 +15,18 @@
             
             <span class="relative flex-1">
                 <i class="fa-solid fa-magnifying-glass absolute left-4 top-1/2 -translate-y-1/2 text-slate-400 text-[14px]"></i>
-                <input type="text" name="search" value="{{ request.GET.search|default:'' }}" placeholder="Buscar paciente por nome..." 
+                <input type="text" name="search" value="{{ request.GET.search|default:'' }}" placeholder="{% trans 'Buscar paciente por nome...' %}" 
                     class="w-full rounded-2xl border border-white/70 bg-white/88 py-3 pl-11 pr-4 text-[14px] shadow-soft backdrop-blur-xl outline-none transition focus:border-primary/30 focus:ring-4 focus:ring-primary/5">
             </span>
             <button type="submit" class="inline-flex items-center gap-2 rounded-xl bg-gradient-to-r from-primary to-primaryDark px-4 py-2.5 text-[14px] font-semibold text-white shadow-[0_8px_16px_rgba(109,74,255,0.18)] transition hover:translate-y-[-1px]">
                 <i class="fa-solid fa-filter text-[14px]"></i>
-                Buscar
+                {% trans "Buscar" %}
             </button>
         </form>
 
         <a href="{% url 'cadastro_paciente' %}" class="inline-flex items-center justify-center gap-2 rounded-xl bg-gradient-to-r from-primary to-primaryDark px-5 py-3 text-[14px] font-semibold text-white shadow-[0_14px_28px_rgba(109,74,255,0.22)] transition hover:translate-y-[-1px]">
             <i class="fa-solid fa-plus text-[12px]"></i>
-            Novo Paciente
+            {% trans "Novo Paciente" %}
         </a>
     </div>
 
@@ -39,11 +40,11 @@
                     <i class="fa-solid fa-user-group text-[15px]"></i>
                 </div>
                 <span class="rounded-full bg-primarySoft px-2.5 py-1 text-[10px] font-bold uppercase tracking-[0.16em] text-primary">
-                    Todos
+                    {% trans "Todos" %}
                 </span>
             </div>
             <p class="mt-4 text-[28px] font-black tracking-[-0.05em] text-slate-900">{{ total_pacientes }}</p>
-            <p class="mt-1 text-[13px] text-slate-500">Todos os seus registros.</p>
+            <p class="mt-1 text-[13px] text-slate-500">{% trans "Todos os seus registros." %}</p>
         </a>
 
         <a href="{% url 'pacientes_lista' %}?status=ativos" 
@@ -54,11 +55,11 @@
                     <i class="fa-solid fa-circle-check text-[15px]"></i>
                 </div>
                 <span class="rounded-full bg-emerald-50 px-2.5 py-1 text-[10px] font-bold uppercase tracking-[0.16em] text-emerald-700">
-                    Ativos
+                    {% trans "Ativos" %}
                 </span>
             </div>
             <p class="mt-4 text-[28px] font-black tracking-[-0.05em] text-slate-900">{{ total_ativos }}</p>
-            <p class="mt-1 text-[13px] text-slate-500">Em atendimento ativo.</p>
+            <p class="mt-1 text-[13px] text-slate-500">{% trans "Em atendimento ativo." %}</p>
         </a>
 
         <a href="{% url 'pacientes_lista' %}?status=inativos" 
@@ -69,11 +70,11 @@
                     <i class="fa-solid fa-clock text-[15px]"></i>
                 </div>
                 <span class="rounded-full bg-amber-50 px-2.5 py-1 text-[10px] font-bold uppercase tracking-[0.16em] text-amber-700">
-                    Inativos
+                    {% trans "Inativos" %}
                 </span>
             </div>
             <p class="mt-4 text-[28px] font-black tracking-[-0.05em] text-slate-900">{{ total_inativos }}</p>
-            <p class="mt-1 text-[13px] text-slate-500">Cadastros inativados.</p>
+            <p class="mt-1 text-[13px] text-slate-500">{% trans "Cadastros inativados." %}</p>
         </a>
     </div>
 
@@ -82,24 +83,24 @@
         {% if status_filtro or request.GET.search %}
         <div class="mb-4 flex items-center justify-between rounded-xl bg-slate-50 px-4 py-2.5 border border-slate-100">
             <div class="flex items-center gap-2 text-[13px] text-slate-600">
-                <span class="font-bold text-slate-700">Filtros aplicados:</span>
-                {% if status_filtro == 'ativos' %}<span class="rounded-md bg-emerald-100 px-2 py-0.5 text-[11px] font-bold text-emerald-800">Apenas Ativos</span>{% endif %}
-                {% if status_filtro == 'inativos' %}<span class="rounded-md bg-amber-100 px-2 py-0.5 text-[11px] font-bold text-amber-800">Apenas Inativos</span>{% endif %}
-                {% if request.GET.search %}<span class="rounded-md bg-primarySoft px-2 py-0.5 text-[11px] font-bold text-primary">Nome: "{{ request.GET.search }}"</span>{% endif %}
+                <span class="font-bold text-slate-700">{% trans "Filtros aplicados:" %}</span>
+                {% if status_filtro == 'ativos' %}<span class="rounded-md bg-emerald-100 px-2 py-0.5 text-[11px] font-bold text-emerald-800">{% trans "Apenas Ativos" %}</span>{% endif %}
+                {% if status_filtro == 'inativos' %}<span class="rounded-md bg-amber-100 px-2 py-0.5 text-[11px] font-bold text-amber-800">{% trans "Apenas Inativos" %}</span>{% endif %}
+                {% if request.GET.search %}<span class="rounded-md bg-primarySoft px-2 py-0.5 text-[11px] font-bold text-primary">{% blocktrans %}Nome: "{{ request.GET.search }}"{% endblocktrans %}</span>{% endif %}
             </div>
             <a href="{% url 'pacientes_lista' %}" class="inline-flex items-center gap-1.5 text-[12px] font-bold text-rose-600 hover:text-rose-700 transition">
                 <i class="fa-solid fa-xmark"></i>
-                Limpar Filtros
+                {% trans "Limpar Filtros" %}
             </a>
         </div>
         {% endif %}
 
         <div class="overflow-hidden rounded-[16px] border border-slate-200">
             <div class="hidden grid-cols-[minmax(0,1.5fr)_minmax(0,1fr)_minmax(0,1fr)_minmax(0,0.6fr)] gap-4 bg-slate-50/80 px-6 py-4 text-[12px] font-bold uppercase tracking-[0.18em] text-slate-400 lg:grid">
-                <span>Paciente</span>
-                <span>Contato / Emergência</span>
-                <span>Nascimento</span>
-                <span class="text-right">Ações</span>
+                <span>{% trans "Paciente" %}</span>
+                <span>{% trans "Contato / Emergência" %}</span>
+                <span>{% trans "Nascimento" %}</span>
+                <span class="text-right">{% trans "Ações" %}</span>
             </div>
 
             <div class="divide-y divide-slate-100 bg-white">
@@ -112,38 +113,44 @@
                         <div class="min-w-0">
                             <p class="truncate text-[14px] font-bold text-slate-900">{{ paciente.nome_completo }}</p>
                             {% if paciente.ativo %}
-                                <span class="text-[11px] font-medium text-emerald-600">Ativo</span>
+                                <span class="text-[11px] font-medium text-emerald-600">{% trans "Ativo" %}</span>
                             {% else %}
-                                <span class="text-[11px] font-medium text-amber-600">Inativo</span>
+                                <span class="text-[11px] font-medium text-amber-600">{% trans "Inativo" %}</span>
                             {% endif %}
                         </div>
                     </div>
 
                     <div class="text-[13px] text-slate-600">
                         <p class="font-semibold">{{ paciente.email }}</p>
-                        <p class="mt-1 text-slate-500">Emergência: {{ paciente.contato_emergencia_nome|default:"-" }}</p>
+                        <p class="mt-1 text-slate-500">{% trans "Emergência:" %} {{ paciente.contato_emergencia_nome|default:"-" }}</p>
                     </div>
 
                     <div class="text-[13px] text-slate-600">
-                        <p>{{ paciente.data_nascimento|date:"d/m/Y"|default:"Não informada" }}</p>
+                        <p>
+                            {% if paciente.data_nascimento %}
+                                {{ paciente.data_nascimento|date:"d/m/Y" }}
+                            {% else %}
+                                {% trans "Não informada" %}
+                            {% endif %}
+                        </p>
                     </div>
 
                     <div class="flex items-center justify-end gap-2">
                         <a href="{% url 'paciente_perfil' paciente.pk %}" 
                             class="flex h-9 w-9 items-center justify-center rounded-lg border border-slate-200 text-slate-400 transition hover:border-sky-200 hover:bg-sky-50 hover:text-sky-600" 
-                            title="Ver perfil">
+                            title="{% trans 'Ver perfil' %}">
                             <i class="fa-solid fa-user text-[14px]"></i>
                         </a>
                         <a href="{% url 'editar_paciente' paciente.pk %}" 
                             class="flex h-9 w-9 items-center justify-center rounded-lg border border-slate-200 text-slate-400 transition hover:border-primary/30 hover:bg-primarySoft hover:text-primary" 
-                            title="Editar">
+                            title="{% trans 'Editar' %}">
                             <i class="fa-solid fa-pen-to-square text-[14px]"></i>
                         </a>
                         {% if paciente.ativo %}
                             <button type="button"
                                 class="flex h-9 w-9 items-center justify-center rounded-lg border border-slate-200 text-slate-400 transition hover:border-rose-200 hover:bg-rose-50 hover:text-rose-600"
                                 onclick="openInativarModal('{% url 'inativar_paciente' paciente.pk %}')"
-                                title="Inativar">
+                                title="{% trans 'Inativar' %}">
                                 <i class="fa-solid fa-user-slash text-[14px]"></i>
                             </button>
                         {% else %}
@@ -151,16 +158,16 @@
                                 {% csrf_token %}
                                 <button type="submit" 
                                     class="flex items-center gap-2 rounded-lg border border-emerald-200 bg-emerald-50 px-3 py-1.5 text-[11px] font-bold text-emerald-700 transition hover:bg-emerald-100"
-                                    title="Reativar Paciente">
+                                    title="{% trans 'Reativar Paciente' %}">
                                     <i class="fa-solid fa-user-check"></i>
-                                    REATIVAR
+                                    {% trans "REATIVAR" %}
                                 </button>
                             </form>
                         {% endif %}
                     </div>
                 </div>
                 {% empty %}
-                <p class="px-5 py-10 text-center text-[14px] text-slate-500">Nenhum paciente encontrado.</p>
+                <p class="px-5 py-10 text-center text-[14px] text-slate-500">{% trans "Nenhum paciente encontrado." %}</p>
                 {% endfor %}
             </div>
         </div>
@@ -169,17 +176,17 @@
         <div class="flex items-center justify-between border-t border-slate-100 bg-white/50 px-4 py-4 sm:px-6 mt-4 rounded-xl">
             <div class="flex flex-1 justify-between sm:hidden">
                 {% if page_obj.has_previous %}
-                    <a href="?page={{ page_obj.previous_page_number }}{% if status_filtro %}&status={{ status_filtro }}{% endif %}{% if search_query %}&search={{ search_query }}{% endif %}" class="relative inline-flex items-center rounded-xl border border-slate-200 bg-white px-4 py-2 text-[13px] font-semibold text-slate-600 hover:bg-slate-50 transition">Anterior</a>
+                    <a href="?page={{ page_obj.previous_page_number }}{% if status_filtro %}&status={{ status_filtro }}{% endif %}{% if search_query %}&search={{ search_query }}{% endif %}" class="relative inline-flex items-center rounded-xl border border-slate-200 bg-white px-4 py-2 text-[13px] font-semibold text-slate-600 hover:bg-slate-50 transition">{% trans "Anterior" %}</a>
                 {% endif %}
                 {% if page_obj.has_next %}
-                    <a href="?page={{ page_obj.next_page_number }}{% if status_filtro %}&status={{ status_filtro }}{% endif %}{% if search_query %}&search={{ search_query }}{% endif %}" class="relative ml-3 inline-flex items-center rounded-xl border border-slate-200 bg-white px-4 py-2 text-[13px] font-semibold text-slate-600 hover:bg-slate-50 transition">Próxima</a>
+                    <a href="?page={{ page_obj.next_page_number }}{% if status_filtro %}&status={{ status_filtro }}{% endif %}{% if search_query %}&search={{ search_query }}{% endif %}" class="relative ml-3 inline-flex items-center rounded-xl border border-slate-200 bg-white px-4 py-2 text-[13px] font-semibold text-slate-600 hover:bg-slate-50 transition">{% trans "Próxima" %}</a>
                 {% endif %}
             </div>
             
             <div class="hidden sm:flex sm:flex-1 sm:items-center sm:justify-between">
                 <div>
                     <p class="text-[13px] text-slate-500">
-                        Mostrando <span class="font-bold text-slate-800">{{ page_obj.start_index }}</span> até <span class="font-bold text-slate-800">{{ page_obj.end_index }}</span> de <span class="font-bold text-slate-800">{{ page_obj.paginator.count }}</span> pacientes
+                        {% blocktrans %}Mostrando <span class="font-bold text-slate-800">{{ page_obj.start_index }}</span> até <span class="font-bold text-slate-800">{{ page_obj.end_index }}</span> de <span class="font-bold text-slate-800">{{ page_obj.paginator.count }}</span> pacientes{% endblocktrans %}
                     </p>
                 </div>
                 
@@ -187,22 +194,22 @@
                     <nav class="isolate inline-flex -space-x-px gap-1.5" aria-label="Pagination">
                         {% if page_obj.has_previous %}
                             <a href="?page={{ page_obj.previous_page_number }}{% if status_filtro %}&status={{ status_filtro }}{% endif %}{% if search_query %}&search={{ search_query }}{% endif %}" class="relative inline-flex items-center rounded-lg border border-slate-200 bg-white px-3 py-1.5 text-[13px] font-semibold text-slate-600 hover:bg-slate-50 transition">
-                                Anterior
+                                {% trans "Anterior" %}
                             </a>
                         {% else %}
-                            <span class="relative inline-flex items-center rounded-lg border border-slate-100 bg-slate-50/50 px-3 py-1.5 text-[13px] font-semibold text-slate-300 cursor-not-allowed">Anterior</span>
+                            <span class="relative inline-flex items-center rounded-lg border border-slate-100 bg-slate-50/50 px-3 py-1.5 text-[13px] font-semibold text-slate-300 cursor-not-allowed">{% trans "Anterior" %}</span>
                         {% endif %}
 
                         <span class="relative inline-flex items-center px-4 py-1.5 text-[13px] font-bold text-primary rounded-lg bg-primarySoft border border-primary/10">
-                            Página {{ page_obj.number }} de {{ page_obj.paginator.num_pages }}
+                            {% blocktrans %}Página {{ page_obj.number }} de {{ page_obj.paginator.num_pages }}{% endblocktrans %}
                         </span>
 
                         {% if page_obj.has_next %}
                             <a href="?page={{ page_obj.next_page_number }}{% if status_filtro %}&status={{ status_filtro }}{% endif %}{% if search_query %}&search={{ search_query }}{% endif %}" class="relative inline-flex items-center rounded-lg border border-slate-200 bg-white px-3 py-1.5 text-[13px] font-semibold text-slate-600 hover:bg-slate-50 transition">
-                                Próxima
+                                {% trans "Próxima" %}
                             </a>
                         {% else %}
-                            <span class="relative inline-flex items-center rounded-lg border border-slate-100 bg-slate-50/50 px-3 py-1.5 text-[13px] font-semibold text-slate-300 cursor-not-allowed">Próxima</span>
+                            <span class="relative inline-flex items-center rounded-lg border border-slate-100 bg-slate-50/50 px-3 py-1.5 text-[13px] font-semibold text-slate-300 cursor-not-allowed">{% trans "Próxima" %}</span>
                         {% endif %}
                     </nav>
                 </div>

@@ -1,14 +1,18 @@
 {% extends 'shared/base.html' %}
+{% load i18n %}
+
+{% block title %}{% trans "Dashboard" %} | Psico+{% endblock %}
+{% block page_title %}{% trans "Dashboard" %}{% endblock %}
 
 {% block content %}
 <div class="min-h-screen bg-slate-50/50 p-4 sm:p-6 lg:p-8">
     
     <div class="mb-8">
         <h1 class="text-2xl font-black tracking-[-0.03em] text-slate-900 sm:text-3xl">
-            Olá, {{ request.user.nome }}
+            {% blocktrans with nome=request.user.nome %}Olá, {{ nome }}{% endblocktrans %}
         </h1>
         <p class="mt-1 text-sm text-slate-500">
-            Aqui está o panorama geral da sua clínica para o dia de hoje.
+            {% trans "Aqui está o panorama geral da sua clínica para o dia de hoje." %}
         </p>
     </div>
 
@@ -17,7 +21,7 @@
         <div class="relative overflow-hidden rounded-[22px] border border-slate-200/70 bg-white p-6 shadow-[0_12px_24px_rgba(15,23,42,0.04)] transition hover:shadow-[0_16px_32px_rgba(15,23,42,0.08)]">
             <div class="flex items-center justify-between">
                 <div>
-                    <p class="text-[12px] font-bold uppercase tracking-wider text-slate-400">Sessões Hoje</p>
+                    <p class="text-[12px] font-bold uppercase tracking-wider text-slate-400">{% trans "Sessões Hoje" %}</p>
                     <h3 class="mt-2 text-3xl font-black tracking-tight text-slate-900">{{ sessoes_hoje }}</h3>
                 </div>
                 <div class="flex h-12 w-12 items-center justify-center rounded-xl bg-primarySoft text-primary shadow-sm">
@@ -30,7 +34,7 @@
         <div class="relative overflow-hidden rounded-[22px] border border-slate-200/70 bg-white p-6 shadow-[0_12px_24px_rgba(15,23,42,0.04)] transition hover:shadow-[0_16px_32px_rgba(15,23,42,0.08)]">
             <div class="flex items-center justify-between">
                 <div>
-                    <p class="text-[12px] font-bold uppercase tracking-wider text-slate-400">Sessões no Mês</p>
+                    <p class="text-[12px] font-bold uppercase tracking-wider text-slate-400">{% trans "Sessões no Mês" %}</p>
                     <h3 class="mt-2 text-3xl font-black tracking-tight text-slate-900">{{ sessoes_mes }}</h3>
                 </div>
                 <div class="flex h-12 w-12 items-center justify-center rounded-xl bg-blue-50 text-blue-500 shadow-sm">
@@ -45,7 +49,7 @@
             
             <div class="flex items-center justify-between">
                 <div>
-                    <p class="text-[12px] font-bold uppercase tracking-wider text-slate-400 group-hover:text-emerald-500 transition-colors">Pacientes Ativos</p>
+                    <p class="text-[12px] font-bold uppercase tracking-wider text-slate-400 group-hover:text-emerald-500 transition-colors">{% trans "Pacientes Ativos" %}</p>
                     <h3 class="mt-2 text-3xl font-black tracking-tight text-slate-900">{{ pacientes_ativos }}</h3>
                 </div>
                 <div class="flex h-12 w-12 items-center justify-center rounded-xl bg-emerald-50 text-emerald-500 shadow-sm group-hover:bg-emerald-500 group-hover:text-white transition-all duration-200">
@@ -54,7 +58,7 @@
             </div>
             
             <div class="mt-4 flex items-center gap-1 text-[11px] font-semibold text-emerald-600 opacity-0 group-hover:opacity-100 transition-opacity duration-200">
-                Ver lista filtrada
+                {% trans "Ver lista filtrada" %}
                 <i class="fa-solid fa-arrow-right text-[9px]"></i>
             </div>
 
@@ -64,7 +68,7 @@
         <div class="relative overflow-hidden rounded-[22px] border border-slate-200/70 bg-white p-6 shadow-[0_12px_24px_rgba(15,23,42,0.04)] transition hover:shadow-[0_16px_32px_rgba(15,23,42,0.08)]">
             <div class="flex items-center justify-between">
                 <div>
-                    <p class="text-[12px] font-bold uppercase tracking-wider text-slate-400">A Receber (Pendente)</p>
+                    <p class="text-[12px] font-bold uppercase tracking-wider text-slate-400">{% trans "A Receber (Pendente)" %}</p>
                     <h3 class="mt-2 text-3xl font-black tracking-tight text-amber-600">R$ {{ valor_pendente }}</h3>
                 </div>
                 <div class="flex h-12 w-12 items-center justify-center rounded-xl bg-amber-50 text-amber-500 shadow-sm">
@@ -80,12 +84,12 @@
         <div class="mb-5 flex items-center justify-between">
             <div>
                 <h2 class="text-[17px] font-black tracking-[-0.02em] text-slate-900">
-                    Próximas Sessões do Dia
+                    {% trans "Próximas Sessões do Dia" %}
                 </h2>
-                <p class="mt-0.5 text-xs text-slate-400">Seus próximos atendimentos agendados para hoje.</p>
+                <p class="mt-0.5 text-xs text-slate-400">{% trans "Seus próximos atendimentos agendados para hoje." %}</p>
             </div>
             <span class="rounded-full border border-slate-100 bg-slate-50 px-3 py-1 text-xs font-semibold text-slate-500">
-                Hoje
+                {% trans "Hoje" %}
             </span>
         </div>
 
@@ -93,9 +97,9 @@
            <table class="w-full min-w-[500px] border-collapse text-left">
                 <thead>
                     <tr class="border-b border-slate-100 text-[13px] font-bold text-slate-400">
-                        <th class="pb-3 pr-4">Paciente</th>
-                        <th class="pb-3 px-4">Data e Horário</th>
-                        <th class="pb-3 pl-4 text-right">Valor da Sessão</th>
+                        <th class="pb-3 pr-4">{% trans "Paciente" %}</th>
+                        <th class="pb-3 px-4">{% trans "Data e Horário" %}</th>
+                        <th class="pb-3 pl-4 text-right">{% trans "Valor da Sessão" %}</th>
                     </tr>
                 </thead>
                 <tbody class="divide-y divide-slate-50 text-[14px] text-slate-600">
@@ -124,7 +128,7 @@
                         <td colspan="3" class="py-10 text-center text-sm font-medium italic text-slate-400">
                             <div class="flex flex-col items-center justify-center gap-2">
                                 <i class="fa-regular fa-calendar text-[24px] text-slate-300"></i>
-                                Não há sessões agendadas para os próximos dias.
+                                {% trans "Não há sessões agendadas para os próximos dias." %}
                             </div>
                         </td>
                     </tr>

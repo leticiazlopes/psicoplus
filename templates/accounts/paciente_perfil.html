@@ -1,26 +1,27 @@
 {% extends "shared/base.html" %}
+{% load i18n %}
 
-{% block title %}Perfil do Paciente | Psico+{% endblock %}
-{% block page_title %}Perfil do Paciente{% endblock %}
+{% block title %}{% trans "Perfil do Paciente" %} | Psico+{% endblock %}
+{% block page_title %}{% trans "Perfil do Paciente" %}{% endblock %}
 
 {% block content %}
 <section class="space-y-6">
     <div class="flex flex-wrap items-center justify-between gap-3">
         <div>
-            <p class="text-xs font-bold uppercase tracking-[0.18em] text-slate-400">Paciente</p>
+            <p class="text-xs font-bold uppercase tracking-[0.18em] text-slate-400">{% trans "Paciente" %}</p>
             <h1 class="mt-2 text-2xl font-black tracking-tight text-slate-900">{{ paciente.nome_completo }}</h1>
-            <p class="mt-2 text-sm text-slate-500">Histórico clínico e dados principais do acompanhamento.</p>
+            <p class="mt-2 text-sm text-slate-500">{% trans "Histórico clínico e dados principais do acompanhamento." %}</p>
         </div>
         <div class="flex flex-wrap gap-2">
             <a href="{% url 'pacientes_lista' %}"
                class="inline-flex items-center gap-2 rounded-xl border border-slate-200 bg-white px-4 py-2.5 text-sm font-semibold text-slate-600 transition hover:bg-slate-50">
                 <i class="fa-solid fa-arrow-left text-xs"></i>
-                Voltar para lista
+                {% trans "Voltar para lista" %}
             </a>
             <a href="{% url 'editar_paciente' paciente.pk %}"
                class="inline-flex items-center gap-2 rounded-xl bg-gradient-to-r from-primary to-primaryDark px-4 py-2.5 text-sm font-semibold text-white transition hover:translate-y-[-1px]">
                 <i class="fa-solid fa-pen-to-square text-xs"></i>
-                Editar paciente
+                {% trans "Editar paciente" %}
             </a>
         </div>
     </div>
@@ -28,40 +29,44 @@
     <div class="grid gap-6 xl:grid-cols-[minmax(0,0.85fr)_minmax(0,1.4fr)]">
         <div class="space-y-6">
             <div class="rounded-[24px] border border-slate-200/70 bg-white p-6 shadow-soft">
-                <p class="text-xs font-bold uppercase tracking-[0.18em] text-slate-400">Resumo</p>
-                <h2 class="mt-2 text-xl font-black text-slate-900">Dados do paciente</h2>
+                <p class="text-xs font-bold uppercase tracking-[0.18em] text-slate-400">{% trans "Resumo" %}</p>
+                <h2 class="mt-2 text-xl font-black text-slate-900">{% trans "Dados do paciente" %}</h2>
 
                 <dl class="mt-5 space-y-3">
                     <div class="rounded-2xl border border-slate-100 bg-slate-50/70 px-4 py-3">
-                        <dt class="text-[11px] font-bold uppercase tracking-[0.16em] text-slate-400">E-mail</dt>
+                        <dt class="text-[11px] font-bold uppercase tracking-[0.16em] text-slate-400">{% trans "E-mail" %}</dt>
                         <dd class="mt-1 text-sm font-semibold text-slate-800">{{ paciente.email }}</dd>
                     </div>
                     <div class="rounded-2xl border border-slate-100 bg-slate-50/70 px-4 py-3">
-                        <dt class="text-[11px] font-bold uppercase tracking-[0.16em] text-slate-400">Telefone</dt>
-                        <dd class="mt-1 text-sm font-semibold text-slate-800">{{ paciente.telefone|default:"Não informado" }}</dd>
+                        <dt class="text-[11px] font-bold uppercase tracking-[0.16em] text-slate-400">{% trans "Telefone" %}</dt>
+                        <dd class="mt-1 text-sm font-semibold text-slate-800">
+                            {% if paciente.telefone %}{{ paciente.telefone }}{% else %}{% trans "Não informado" %}{% endif %}
+                        </dd>
                     </div>
                     <div class="rounded-2xl border border-slate-100 bg-slate-50/70 px-4 py-3">
-                        <dt class="text-[11px] font-bold uppercase tracking-[0.16em] text-slate-400">Nascimento</dt>
-                        <dd class="mt-1 text-sm font-semibold text-slate-800">{{ paciente.data_nascimento|date:"d/m/Y"|default:"Não informada" }}</dd>
+                        <dt class="text-[11px] font-bold uppercase tracking-[0.16em] text-slate-400">{% trans "Nascimento" %}</dt>
+                        <dd class="mt-1 text-sm font-semibold text-slate-800">
+                            {% if paciente.data_nascimento %}{{ paciente.data_nascimento|date:"d/m/Y" }}{% else %}{% trans "Não informada" %}{% endif %}
+                        </dd>
                     </div>
                     <div class="rounded-2xl border border-slate-100 bg-slate-50/70 px-4 py-3">
-                        <dt class="text-[11px] font-bold uppercase tracking-[0.16em] text-slate-400">Psicólogo responsável</dt>
+                        <dt class="text-[11px] font-bold uppercase tracking-[0.16em] text-slate-400">{% trans "Psicólogo responsável" %}</dt>
                         <dd class="mt-1 text-sm font-semibold text-slate-800">{{ paciente.psicologo.usuario.nome }}</dd>
                     </div>
                     <div class="rounded-2xl border border-slate-100 bg-slate-50/70 px-4 py-3">
-                        <dt class="text-[11px] font-bold uppercase tracking-[0.16em] text-slate-400">Status</dt>
+                        <dt class="text-[11px] font-bold uppercase tracking-[0.16em] text-slate-400">{% trans "Status" %}</dt>
                         <dd class="mt-1 text-sm font-semibold {% if paciente.ativo %}text-emerald-700{% else %}text-amber-700{% endif %}">
-                            {% if paciente.ativo %}Ativo{% else %}Inativo{% endif %}
+                            {% if paciente.ativo %}{% trans "Ativo" %}{% else %}{% trans "Inativo" %}{% endif %}
                         </dd>
                     </div>
                 </dl>
             </div>
 
             <div class="rounded-[24px] border border-slate-200/70 bg-white p-6 shadow-soft">
-                <p class="text-xs font-bold uppercase tracking-[0.18em] text-slate-400">Histórico</p>
-                <h2 class="mt-2 text-xl font-black text-slate-900">Visão geral clínica</h2>
+                <p class="text-xs font-bold uppercase tracking-[0.18em] text-slate-400">{% trans "Histórico" %}</p>
+                <h2 class="mt-2 text-xl font-black text-slate-900">{% trans "Visão geral clínica" %}</h2>
                 <div class="mt-5 rounded-2xl border border-violet-100 bg-violet-50/70 px-4 py-4">
-                    <p class="text-[11px] font-bold uppercase tracking-[0.16em] text-violet-700">Total de evoluções</p>
+                    <p class="text-[11px] font-bold uppercase tracking-[0.16em] text-violet-700">{% trans "Total de evoluções" %}</p>
                     <p class="mt-2 text-3xl font-black tracking-[-0.05em] text-slate-900">{{ total_evolucoes }}</p>
                 </div>
             </div>
@@ -70,8 +75,8 @@
         <div class="rounded-[24px] border border-slate-200/70 bg-white p-6 shadow-soft">
             <div class="flex items-start justify-between gap-4">
                 <div>
-                    <p class="text-xs font-bold uppercase tracking-[0.18em] text-slate-400">Histórico clínico</p>
-                    <h2 class="mt-2 text-xl font-black text-slate-900">Evoluções do paciente</h2>
+                    <p class="text-xs font-bold uppercase tracking-[0.18em] text-slate-400">{% trans "Histórico clínico" %}</p>
+                    <h2 class="mt-2 text-xl font-black text-slate-900">{% trans "Evoluções do paciente" %}</h2>
                 </div>
                 <span class="rounded-full bg-slate-100 px-3 py-1 text-[11px] font-bold uppercase tracking-[0.16em] text-slate-500">
                     {{ total_evolucoes }} registro{{ total_evolucoes|pluralize }}
@@ -100,29 +105,29 @@
                             </div>
                             <span class="inline-flex items-center gap-2 rounded-full bg-white px-3 py-1 text-[11px] font-bold uppercase tracking-[0.16em] text-slate-500 transition group-open:bg-violet-100 group-open:text-violet-700">
                                 <i class="fa-solid fa-chevron-down text-[10px] transition group-open:rotate-180"></i>
-                                Ver completo
+                                {% trans "Ver completo" %}
                             </span>
                         </summary>
 
                         <div class="mt-4 space-y-4 border-t border-slate-100 pt-4 text-sm text-slate-700">
                             <div>
-                                <p class="text-[11px] font-bold uppercase tracking-[0.16em] text-slate-400">Queixa / Evolução</p>
+                                <p class="text-[11px] font-bold uppercase tracking-[0.16em] text-slate-400">{% trans "Queixa / Evolução" %}</p>
                                 <p class="mt-2 leading-6">{{ prontuario.texto }}</p>
                             </div>
                             <div>
-                                <p class="text-[11px] font-bold uppercase tracking-[0.16em] text-slate-400">Observações clínicas / Riscos</p>
-                                <p class="mt-2 leading-6">{{ prontuario.riscos_identificados|default:"Nenhuma observação registrada." }}</p>
+                                <p class="text-[11px] font-bold uppercase tracking-[0.16em] text-slate-400">{% trans "Observações clínicas / Riscos" %}</p>
+                                <p class="mt-2 leading-6">{% if prontuario.riscos_identificados %}{{ prontuario.riscos_identificados }}{% else %}{% trans "Nenhuma observação registrada." %}{% endif %}</p>
                             </div>
                             <div>
-                                <p class="text-[11px] font-bold uppercase tracking-[0.16em] text-slate-400">Plano terapêutico</p>
-                                <p class="mt-2 leading-6">{{ prontuario.plano_terapeutico|default:"Nenhum plano terapêutico registrado." }}</p>
+                                <p class="text-[11px] font-bold uppercase tracking-[0.16em] text-slate-400">{% trans "Plano terapêutico" %}</p>
+                                <p class="mt-2 leading-6">{% if prontuario.plano_terapeutico %}{{ prontuario.plano_terapeutico }}{% else %}{% trans "Nenhum plano terapêutico registrado." %}{% endif %}</p>
                             </div>
                         </div>
                     </details>
                 {% empty %}
                     <div class="rounded-2xl border border-dashed border-slate-200 bg-slate-50/60 px-4 py-8 text-center">
-                        <p class="text-sm font-semibold text-slate-600">Ainda não há evoluções registradas para este paciente.</p>
-                        <p class="mt-1 text-xs text-slate-400">As evoluções salvas nos atendimentos aparecerão aqui automaticamente.</p>
+                        <p class="text-sm font-semibold text-slate-600">{% trans "Ainda não há evoluções registradas para este paciente." %}</p>
+                        <p class="mt-1 text-xs text-slate-400">{% trans "As evoluções salvas nos atendimentos aparecerão aqui automaticamente." %}</p>
                     </div>
                 {% endfor %}
             </div>

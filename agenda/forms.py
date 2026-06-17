@@ -1,13 +1,14 @@
 import datetime
 
 from django import forms
+from django.utils.translation import gettext_lazy as _
 
 from accounts.models import Paciente, Sessao
 
 
 class SessaoForm(forms.ModelForm):
-    eh_recorrente = forms.BooleanField(required=False)
-    repeticoes = forms.IntegerField(required=False, min_value=2, max_value=52)
+    eh_recorrente = forms.BooleanField(required=False, label=_("Sessão recorrente"))
+    repeticoes = forms.IntegerField(required=False, min_value=2, max_value=52, label=_("Número de repetições"))
 
     class Meta:
         model = Sessao
@@ -45,7 +46,7 @@ class SessaoForm(forms.ModelForm):
             attrs={
                 "min": 2,
                 "max": 52,
-                "placeholder": "Ex: 4, 8, 12",
+                "placeholder": _("Ex: 4, 8, 12"),
                 "class": tailwind_classes,
                 "x-model": "repeticoesRecorrencia",
             }
@@ -96,7 +97,7 @@ class SessaoForm(forms.ModelForm):
 
         if data and data < datetime.date.today():
             raise forms.ValidationError(
-                "A data do agendamento deve ser hoje ou uma data futura."
+                _("A data do agendamento deve ser hoje ou uma data futura.")
             )
 
         if atendido_por_plano or isento_pagamento:
@@ -104,13 +105,13 @@ class SessaoForm(forms.ModelForm):
         elif valor is None or valor <= 0:
             self.add_error(
                 "valor",
-                "Informe um valor maior que zero quando a sessão não for isenta nem atendida por plano.",
+                _("Informe um valor maior que zero quando a sessão não for isenta nem atendida por plano."),
             )
 
         if eh_recorrente and not repeticoes:
             self.add_error(
                 "repeticoes",
-                "Informe por quantas semanas a sessão deve se repetir.",
+                _("Informe por quantas semanas a sessão deve se repetir."),
             )
 
         if not eh_recorrente:
@@ -128,11 +129,8 @@ class SessaoForm(forms.ModelForm):
                 duracao_minutos,
             ):
                 raise forms.ValidationError(
-                    (
-                        "Já existe um agendamento nesse horário para "
-                        f"{data_ocorrencia.strftime('%d/%m/%Y')}. "
-                        "Escolha outro intervalo."
-                    )
+                    _("Já existe um agendamento nesse horário para %(data)s. Escolha outro intervalo.")
+                    % {"data": data_ocorrencia.strftime("%d/%m/%Y")}
                 )
 
         return cleaned_data

@@ -8,6 +8,7 @@ from django.db import transaction
 from django.shortcuts import get_object_or_404, redirect, render
 from django.utils.dateparse import parse_date
 from django.utils import timezone
+from django.utils.translation import gettext as _
 
 from accounts.models import SerieSessao, Sessao
 
@@ -139,8 +140,8 @@ def _validar_conflitos_edicao_seguintes(sessao_original, form):
             excluir_ids=ids_serie,
         ):
             return (
-                "Já existe um agendamento nesse horário para "
-                f"{nova_data.strftime('%d/%m/%Y')} ao aplicar a alteração nas próximas sessões."
+                _("Já existe um agendamento nesse horário para %(data)s ao aplicar a alteração nas próximas sessões.")
+                % {"data": nova_data.strftime("%d/%m/%Y")}
             )
 
     return None
@@ -337,7 +338,7 @@ def atualizar_status_sessao(request, sessao_id):
         
         psicologo = request.user.psicologo
     except AttributeError:
-        return JsonResponse({'success': False, 'error': 'Usuário não possui perfil de psicólogo.'}, status=403)
+        return JsonResponse({'success': False, 'error': _("Usuário não possui perfil de psicólogo.")}, status=403)
         
     
     sessao = get_object_or_404(Sessao, id=sessao_id, psicologo=psicologo)
@@ -348,7 +349,7 @@ def atualizar_status_sessao(request, sessao_id):
         
         
         if novo_status not in Sessao.Status.values:
-            return JsonResponse({'success': False, 'error': 'Status inválido.'}, status=400)
+            return JsonResponse({'success': False, 'error': _("Status inválido.")}, status=400)
         
         if sessao.status != novo_status:
             sessao.status = novo_status
@@ -359,7 +360,7 @@ def atualizar_status_sessao(request, sessao_id):
         return JsonResponse({
             'success': True, 
             'pode_evoluir': sessao.pode_evoluir,
-            'message': 'Status atualizado com sucesso.'
+            'message': _("Status atualizado com sucesso.")
         })
         
     except Exception as e:
@@ -372,40 +373,44 @@ def enviar_confirmacao_email(request, sessao_id):
     try:
         psicologo = request.user.psicologo
     except AttributeError:
-        return JsonResponse({'success': False, 'error': 'Usuário não possui perfil de psicólogo.'}, status=403)
+        return JsonResponse({'success': False, 'error': _("Usuário não possui perfil de psicólogo.")}, status=403)
 
     sessao = get_object_or_404(Sessao, id=sessao_id, psicologo=psicologo)
     paciente = sessao.paciente
 
     if not paciente.email:
-        return JsonResponse({'success': False, 'error': 'Paciente não possui e-mail cadastrado.'}, status=400)
+        return JsonResponse({'success': False, 'error': _("Paciente não possui e-mail cadastrado.")}, status=400)
 
     if not paciente.aceita_lembrete_email:
-        return JsonResponse({'success': False, 'error': 'Paciente não aceita lembretes por e-mail.'}, status=400)
+        return JsonResponse({'success': False, 'error': _("Paciente não aceita lembretes por e-mail.")}, status=400)
 
     token = sessao.token_confirmacao
     confirm_url = request.build_absolute_uri(reverse('visualizar_confirmacao_publica', args=[token]))
 
-    assunto = f"Confirmação de agendamento - {sessao.psicologo.usuario.nome}"
+    assunto = _("Confirmação de agendamento - %(nome)s") % {"nome": sessao.psicologo.usuario.nome}
     corpo = (
-        f"Olá {paciente.nome_completo},\n\n"
-        f"Você possui um agendamento em {sessao.data.strftime('%d/%m/%Y')} às {sessao.horario_inicio.strftime('%H:%M')}.\n"
-        f"Para confirmar sua presença, acesse: {confirm_url}\n\n"
-        f"Atenciosamente,\n{sessao.psicologo.usuario.nome}"
+        _("Olá %(paciente)s,\n\nVocê possui um agendamento em %(data)s às %(horario)s.\nPara confirmar sua presença, acesse: %(url)s\n\nAtenciosamente,\n%(psicologo)s")
+        % {
+            "paciente": paciente.nome_completo,
+            "data": sessao.data.strftime("%d/%m/%Y"),
+            "horario": sessao.horario_inicio.strftime("%H:%M"),
+            "url": confirm_url,
+            "psicologo": sessao.psicologo.usuario.nome,
+        }
     )
 
     # HTML com a mesma identidade visual do e-mail de recuperação de senha
     html_message = f"""
     <div style="background-color: #f7f5ff; padding: 30px; font-family: sans-serif;">
         <div style="max-width: 600px; margin: 0 auto; background-color: #ffffff; padding: 30px; border-radius: 20px; border: 1px solid #e7e9f2;">
-            <h2 style="color: #1e293b; font-size: 24px; margin-top: 0;">Confirmação de Agendamento — Psico+</h2>
-            <p style="font-size: 15px; line-height: 1.6; color: #475569;">Olá {paciente.nome_completo},</p>
-            <p style="font-size: 15px; line-height: 1.6; color: #475569;">Seu agendamento está marcado para <strong>{sessao.data.strftime('%d/%m/%Y')}</strong> às <strong>{sessao.horario_inicio.strftime('%H:%M')}</strong>.</p>
+            <h2 style="color: #1e293b; font-size: 24px; margin-top: 0;">{_("Confirmação de Agendamento — Psico+")}</h2>
+            <p style="font-size: 15px; line-height: 1.6; color: #475569;">{_("Olá %(paciente)s,") % {"paciente": paciente.nome_completo}}</p>
+            <p style="font-size: 15px; line-height: 1.6; color: #475569;">{_("Seu agendamento está marcado para <strong>%(data)s</strong> às <strong>%(horario)s</strong>.") % {"data": sessao.data.strftime("%d/%m/%Y"), "horario": sessao.horario_inicio.strftime("%H:%M")}}</p>
             <div style="text-align:center; margin: 20px 0;">
-                <a href="{confirm_url}" style="display:inline-block; padding:12px 20px; background:linear-gradient(90deg,#06b6d4,#3b82f6); color:#fff; border-radius:10px; text-decoration:none; font-weight:bold;">Confirmar presença</a>
+                <a href="{confirm_url}" style="display:inline-block; padding:12px 20px; background:linear-gradient(90deg,#06b6d4,#3b82f6); color:#fff; border-radius:10px; text-decoration:none; font-weight:bold;">{_("Confirmar presença")}</a>
             </div>
-            <p style="color: #64748b; font-size: 13px; line-height: 1.6; margin-bottom: 0; border-top: 1px solid #f1f5f9; padding-top: 20px;">Se você não reconhece este agendamento, ignore este e-mail ou entre em contato com sua clínica.</p>
-            <p style="color: #64748b; font-size: 13px; line-height: 1.6; margin-top: 12px;">Atenciosamente,<br/>{sessao.psicologo.usuario.nome}</p>
+            <p style="color: #64748b; font-size: 13px; line-height: 1.6; margin-bottom: 0; border-top: 1px solid #f1f5f9; padding-top: 20px;">{_("Se você não reconhece este agendamento, ignore este e-mail ou entre em contato com sua clínica.")}</p>
+            <p style="color: #64748b; font-size: 13px; line-height: 1.6; margin-top: 12px;">{_("Atenciosamente,")}<br/>{sessao.psicologo.usuario.nome}</p>
         </div>
     </div>
     """
@@ -436,9 +441,9 @@ def enviar_confirmacao_email(request, sessao_id):
 
     try:
         send_mail(subject=assunto, message=corpo, from_email=from_email, recipient_list=[paciente.email], html_message=html_message, fail_silently=False)
-        return JsonResponse({'success': True, 'message': 'E-mail de confirmação enviado.'})
+        return JsonResponse({'success': True, 'message': _("E-mail de confirmação enviado.")})
     except BadHeaderError:
-        return JsonResponse({'success': False, 'error': 'Cabeçalho de e-mail inválido.'}, status=500)
+        return JsonResponse({'success': False, 'error': _("Cabeçalho de e-mail inválido.")}, status=500)
     except Exception as e:
         logger.exception('Erro ao enviar e-mail de confirmação')
         return JsonResponse({'success': False, 'error': str(e)}, status=500)
@@ -457,11 +462,11 @@ class DetalheConfirmacaoPublicaView(View):
         if sessao.link_expirado:
             context['token_valido'] = False
             context['erro_codigo'] = 'EXPIRADO'
-            context['mensagem_erro'] = 'Link expirado. A sessão já passou.'
+            context['mensagem_erro'] = _('Link expirado. A sessão já passou.')
         elif sessao.status == Sessao.Status.CONFIRMADA:
             context['token_valido'] = False
             context['erro_codigo'] = 'JA_CONFIRMADO'
-            context['mensagem_erro'] = 'Presença já confirmada.'
+            context['mensagem_erro'] = _('Presença já confirmada.')
 
         return render(request, "agenda/confirmar_presenca_publica.html", context)
 
@@ -470,11 +475,11 @@ class DetalheConfirmacaoPublicaView(View):
 
         
         if sessao.link_expirado:
-            messages.error(request, 'Link expirado. A sessão já passou.')
+            messages.error(request, _('Link expirado. A sessão já passou.'))
             return redirect('visualizar_confirmacao_publica', token=token)
 
         if sessao.status == Sessao.Status.CONFIRMADA:
-            messages.info(request, 'Presença já confirmada.')
+            messages.info(request, _('Presença já confirmada.'))
             return redirect('visualizar_confirmacao_publica', token=token)
 
         
@@ -483,7 +488,7 @@ class DetalheConfirmacaoPublicaView(View):
         sessao.confirmado_en = timezone.now() 
         sessao.save()
 
-        messages.success(request, 'Presença confirmada com sucesso!')
+        messages.success(request, _('Presença confirmada com sucesso!'))
         return redirect('visualizar_confirmacao_publica', token=token)
 
 @csrf_exempt
@@ -491,15 +496,15 @@ def api_publica_confirmar(request, token):
     try:
         sessao = Sessao.objects.get(token_confirmacao=token)
     except Sessao.DoesNotExist:
-        return JsonResponse({"error": "Link de confirmação inválido."}, status=404)
+        return JsonResponse({"error": _("Link de confirmação inválido.")}, status=404)
 
     # Subtask: Token já usado retorna status 400 com mensagem específica
     if sessao.status == Sessao.Status.CONFIRMADA:
-        return JsonResponse({"error": "Presença já confirmada."}, status=400)
+        return JsonResponse({"error": _("Presença já confirmada.")}, status=400)
 
     # Subtask: Token expirado retorna status 400 com mensagem específica
     if sessao.link_expirado:
-        return JsonResponse({"error": "Link expirado. A sessão já passou."}, status=400)
+        return JsonResponse({"error": _("Link expirado. A sessão já passou.")}, status=400)
 
     # Resposta para o carregamento inicial da página (GET)
     if request.method == "GET":
@@ -516,9 +521,9 @@ def api_publica_confirmar(request, token):
         sessao.confirmado_por = "paciente"
         sessao.confirmado_em = timezone.now()
         sessao.save()
-        return JsonResponse({"success": True, "message": "Presença confirmada com sucesso!"})
+        return JsonResponse({"success": True, "message": _("Presença confirmada com sucesso!")})
 
-    return JsonResponse({"error": "Método não permitido."}, status=405)
+    return JsonResponse({"error": _("Método não permitido.")}, status=405)
 
 
 @login_required
@@ -530,7 +535,7 @@ def api_status_sessoes(request):
     ids = [i for i in ids_param.split(',') if i]
     psicologo = getattr(request.user, 'psicologo', None)
     if not psicologo:
-        return JsonResponse({'error': 'Não autorizado.'}, status=403)
+        return JsonResponse({'error': _('Não autorizado.')}, status=403)
 
     sessoes = Sessao.objects.filter(id__in=ids, psicologo=psicologo).values('id', 'status', 'confirmado_por', 'confirmado_em')
     mapping = {
@@ -548,12 +553,12 @@ def api_status_sessoes(request):
 def confirmar_sessao_psicologo(request, sessao_id):
     psicologo_perfil = getattr(request.user, "psicologo", None)
     if not psicologo_perfil:
-        return JsonResponse({'success': False, 'error': 'Não autorizado.'}, status=403)
+        return JsonResponse({'success': False, 'error': _('Não autorizado.')}, status=403)
 
     sessao = get_object_or_404(Sessao, id=sessao_id, psicologo=psicologo_perfil)
 
     if sessao.status != Sessao.Status.PENDENTE:
-        return JsonResponse({'success': False, 'error': 'Apenas sessões pendentes podem ser confirmadas.'}, status=400)
+        return JsonResponse({'success': False, 'error': _('Apenas sessões pendentes podem ser confirmadas.')}, status=400)
 
     sessao.status = Sessao.Status.CONFIRMADA
     sessao.confirmado_por = 'psicologo'
@@ -565,5 +570,5 @@ def confirmar_sessao_psicologo(request, sessao_id):
         'success': True,
         'status_novo': sessao.status,
         'confirmado_por': sessao.confirmado_por,
-        'message': 'Presença confirmada pelo psicólogo com sucesso.'
+        'message': _('Presença confirmada pelo psicólogo com sucesso.')
     })

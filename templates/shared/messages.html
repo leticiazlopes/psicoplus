@@ -1,3 +1,4 @@
+{% load i18n %}
 {% if messages %}
 <div class="mb-5 space-y-3 {% if not request.user.is_authenticated %}ml-auto w-full max-w-[860px]{% endif %}">
     {% for message in messages %}
@@ -20,13 +21,13 @@
                         <div>
                             <p class="text-[14px] font-bold {% if 'success' in message.tags %}text-emerald-900{% elif 'error' in message.tags %}text-rose-900{% elif 'warning' in message.tags %}text-amber-900{% else %}text-sky-900{% endif %}">
                                 {% if 'success' in message.tags %}
-                                    Tudo certo
+                                    {% trans "Tudo certo" %}
                                 {% elif 'error' in message.tags %}
-                                    Algo precisa de atenção
+                                    {% trans "Algo precisa de atenção" %}
                                 {% elif 'warning' in message.tags %}
-                                    Atenção
+                                    {% trans "Atenção" %}
                                 {% else %}
-                                    Aviso
+                                    {% trans "Aviso" %}
                                 {% endif %}
                             </p>
 
@@ -35,7 +36,7 @@
                             </p>
                         </div>
 
-                        <button type="button" class="flex h-8 w-8 shrink-0 items-center justify-center rounded-lg text-slate-400 transition hover:bg-white/70 hover:text-slate-600" onclick="this.closest('[data-message-alert]').remove()" aria-label="Fechar mensagem">
+                        <button type="button" class="flex h-8 w-8 shrink-0 items-center justify-center rounded-lg text-slate-400 transition hover:bg-white/70 hover:text-slate-600" onclick="this.closest('[data-message-alert]').remove()" aria-label="{% trans 'Fechar mensagem' %}">
                             <i class="fa-solid fa-xmark text-[14px]" aria-hidden="true"></i>
                         </button>
                     </div>

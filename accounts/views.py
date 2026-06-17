@@ -14,6 +14,7 @@ from django.contrib.messages.views import SuccessMessageMixin
 import random
 import datetime
 from django.utils import timezone
+from django.utils.translation import gettext_lazy as _
 from django.core.mail import send_mail
 from django.views.generic import FormView
 from django.urls import reverse_lazy
@@ -46,7 +47,7 @@ class CadastroPsicologoView(CreateView):
     form_class = CadastroPsicologoForm
     success_url = reverse_lazy("login")
     def form_valid(self, form):
-        messages.success(self.request, "Sua conta foi criada com sucesso! Faça login para começar.")
+        messages.success(self.request, _("Sua conta foi criada com sucesso! Faça login para começar."))
         return super().form_valid(form)
     
 class MeuPerfilUpdateView(LoginRequiredMixin, SuccessMessageMixin, UpdateView):
@@ -54,7 +55,7 @@ class MeuPerfilUpdateView(LoginRequiredMixin, SuccessMessageMixin, UpdateView):
     form_class = MeuPerfilForm
     template_name = "accounts/meu_perfil.html"
     success_url = reverse_lazy("pacientes_lista")
-    success_message = "Seu perfil foi atualizado com sucesso!"
+    success_message = _("Seu perfil foi atualizado com sucesso!")
 
     def _render_perfil_paciente(self, request, paciente, form=None):
         if form is None:
@@ -78,7 +79,7 @@ class MeuPerfilUpdateView(LoginRequiredMixin, SuccessMessageMixin, UpdateView):
                 form = CadastroPacienteForm(request.POST, instance=paciente)
                 if form.is_valid():
                     form.save()
-                    messages.success(request, "Seu perfil foi atualizado com sucesso!")
+                    messages.success(request, _("Seu perfil foi atualizado com sucesso!"))
                     return redirect("meu_perfil")
                 return self._render_perfil_paciente(request, paciente, form)
 
@@ -117,7 +118,7 @@ class LogoutUsuarioView(LogoutView):
         Sobrescrevemos o post para adicionar a mensagem de sucesso 
         antes de processar o encerramento da sessão.
         """
-        messages.success(request, "Logout realizado com sucesso.")
+        messages.success(request, _("Logout realizado com sucesso."))
         return super().post(request, *args, **kwargs)
 
 class CadastroPacienteView(LoginRequiredMixin, CreateView):
@@ -127,7 +128,7 @@ class CadastroPacienteView(LoginRequiredMixin, CreateView):
     success_url = reverse_lazy("pacientes_lista")
     def form_valid(self, form):
         form.instance.psicologo = self.request.user.psicologo
-        messages.success(self.request, "Paciente cadastrado com sucesso!")
+        messages.success(self.request, _("Paciente cadastrado com sucesso!"))
         return super().form_valid(form)
 
 
@@ -172,7 +173,7 @@ class DefinirSenhaPacienteView(FormView):
     @property
     def mensagem_token(self):
         if not self.usuario or not self._token_valido_cache:
-            return "Este link de definição de senha é inválido ou já expirou (prazo de 48 horas)."
+            return _("Este link de definição de senha é inválido ou já expirou (prazo de 48 horas).")
         return ""
 
     def get(self, request, *args, **kwargs):
@@ -197,10 +198,10 @@ class DefinirSenhaPacienteView(FormView):
         if nova_senha:
             self.usuario.set_password(nova_senha)
             self.usuario.save()
-            messages.success(self.request, "Senha definida com sucesso! Agora você já pode fazer login.")
+            messages.success(self.request, _("Senha definida com sucesso! Agora você já pode fazer login."))
         else:
             form.save()
-            messages.success(self.request, "Senha definida com sucesso! Agora você já pode fazer login.")
+            messages.success(self.request, _("Senha definida com sucesso! Agora você já pode fazer login."))
         return super().form_valid(form)
 
 class PacienteListView(LoginRequiredMixin, ListView):
@@ -251,7 +252,7 @@ class PacienteUpdateView(LoginRequiredMixin, UpdateView):
         return Paciente.objects.filter(psicologo=self.request.user.psicologo)
 
     def form_valid(self, form):
-        messages.success(self.request, "Alterações salvas com sucesso!")
+        messages.success(self.request, _("Alterações salvas com sucesso!"))
         return super().form_valid(form)
 
 
@@ -290,7 +291,7 @@ def inativar_paciente(request, pk):
     sessoes_futuras = Sessao.objects.filter(paciente=paciente, data__gte=hoje).exclude(status=Sessao.Status.CANCELADA)
     sessoes_futuras.update(status=Sessao.Status.CANCELADA)
 
-    messages.success(request, "Paciente inativado com sucesso. Sessões futuras foram canceladas.")
+    messages.success(request, _("Paciente inativado com sucesso. Sessões futuras foram canceladas."))
     return redirect("pacientes_lista")
 
 def ativar_paciente(request, pk):
@@ -303,7 +304,7 @@ def ativar_paciente(request, pk):
     sessoes_futuras_canceladas = Sessao.objects.filter(paciente=paciente, data__gt=hoje, status=Sessao.Status.CANCELADA)
     sessoes_futuras_canceladas.update(status=Sessao.Status.PENDENTE)
 
-    messages.success(request, "Paciente ativado com sucesso. Sessões futuras reativadas.")
+    messages.success(request, _("Paciente ativado com sucesso. Sessões futuras reativadas."))
     return redirect("pacientes_lista")
 
 def esqueci_senha_request(request):
@@ -332,14 +333,14 @@ def esqueci_senha_request(request):
                 <div style="max-width: 600px; margin: 0 auto; background-color: #ffffff; padding: 30px; border-radius: 20px; border: 1px solid #e7e9f2;">
                     
                     <h2 style="color: #1e293b; font-size: 24px; margin-top: 0;">
-                        Recuperação de Acesso — Psico+
+                        {_("Recuperação de Acesso — Psico+")}
                     </h2>
                     
                     <p style="font-size: 15px; line-height: 1.6; color: #475569;">
-                        Olá,
+                        {_("Olá,")}
                     </p>
                     <p style="font-size: 15px; line-height: 1.6; color: #475569;">
-                        Recebemos uma solicitação para redefinir a senha da sua conta no sistema <strong>Psico+</strong>. Utilize o código de verificação abaixo para prosseguir:
+                        {_("Recebemos uma solicitação para redefinir a senha da sua conta no sistema <strong>Psico+</strong>. Utilize o código de verificação abaixo para prosseguir:")}
                     </p>
                     
                     <div style="background-color: #eee9ff; color: #6d4aff; font-size: 32px; font-weight: bold; text-align: center; padding: 20px; border-radius: 12px; margin: 25px 0; letter-spacing: 5px;">
@@ -347,11 +348,11 @@ def esqueci_senha_request(request):
                     </div>
                     
                     <p style="color: #ef4444; font-size: 14px; font-weight: bold;">
-                        ⚠️ Atenção: Este código é válido por 15 minutos.
+                        ⚠️ {_("Atenção: Este código é válido por 15 minutos.")}
                     </p>
                     
                     <p style="color: #64748b; font-size: 13px; line-height: 1.6; margin-bottom: 0; border-top: 1px solid #f1f5f9; padding-top: 20px;">
-                        Se você não solicitou essa redefinição, nenhuma ação é necessária. Sua senha atual continuará segura e seu acesso protegido.
+                        {_("Se você não solicitou essa redefinição, nenhuma ação é necessária. Sua senha atual continuará segura e seu acesso protegido.")}
                     </p>
                 </div>
             </div>
@@ -359,8 +360,8 @@ def esqueci_senha_request(request):
             
             
             send_mail(
-                subject="[Psico+] Código de Recuperação de Senha",
-                message=f"Seu código de recuperação é: {codigo}", 
+                subject=_("[Psico+] Código de Recuperação de Senha"),
+                message=_("Seu código de recuperação é: %(codigo)s") % {"codigo": codigo}, 
                 from_email=None,
                 recipient_list=[user.email],
                 html_message=html_message
@@ -401,12 +402,12 @@ def validar_codigo_e_salvar(request):
                 
                 del request.session['email_recuperacao']
                 
-                messages.success(request, "Senha alterada com sucesso! Faça seu login.")
+                messages.success(request, _("Senha alterada com sucesso! Faça seu login."))
                 return redirect('login') 
             else:
-                messages.error(request, "Este código já expirou. Solicite um novo.")
+                messages.error(request, _("Este código já expirou. Solicite um novo."))
         else:
-            messages.error(request, "Código de verificação incorreto.")
+            messages.error(request, _("Código de verificação incorreto."))
 
     return render(request, "auth/password_reset_confirm.html")
 
@@ -417,11 +418,11 @@ from django.contrib.auth.decorators import login_required
 @login_required
 def api_paciente_home(request):
     if request.user.perfil != Usuario.Perfil.PACIENTE:
-        return JsonResponse({"error": "Acesso proibido."}, status=403)
+        return JsonResponse({"error": str(_("Acesso proibido."))}, status=403)
         
     paciente_perfil = getattr(request.user, "paciente", None)
     if not paciente_perfil:
-        return JsonResponse({"error": "Perfil não encontrado."}, status=404)
+        return JsonResponse({"error": str(_("Perfil não encontrado."))}, status=404)
 
     agora = timezone.now()
     
@@ -454,11 +455,11 @@ def api_paciente_home(request):
 @login_required
 def dashboard_paciente_page(request):
     if request.user.perfil != Usuario.Perfil.PACIENTE:
-        return HttpResponseForbidden("Você não tem permissão para acessar esta área.")
+        return HttpResponseForbidden(_("Você não tem permissão para acessar esta área."))
         
     paciente_perfil = getattr(request.user, "paciente", None)
     if not paciente_perfil:
-        return render(request, "accounts/dashboard_paciente.html", {"error": "Perfil não encontrado."})
+        return render(request, "accounts/dashboard_paciente.html", {"error": _("Perfil não encontrado.")})
 
     hoje = timezone.now().date()
 
@@ -489,7 +490,7 @@ def diario_paciente_view(request):
             diario = form.save(commit=False)
             diario.paciente = paciente_perfil
             diario.save()
-            messages.success(request, "Pensamento registrado no seu diário com sucesso!")
+            messages.success(request, _("Pensamento registrado no seu diário com sucesso!"))
             return redirect("diario_paciente")
     else:
         form = DiarioPensamentoForm()

@@ -4,6 +4,7 @@ from django.contrib.auth.decorators import login_required
 from django.http import JsonResponse
 from django.shortcuts import get_object_or_404, render
 from django.utils.dateparse import parse_date
+from django.utils.translation import gettext as _
 from django.views.decorators.http import require_http_methods, require_POST
 
 from accounts.models import Paciente, Sessao, DiarioPensamento
@@ -79,11 +80,11 @@ def atendimento_detalhe_view(request, sessao_id):
     )
 
     if data_inicio_param and not data_inicio:
-        erro_filtro_periodo = "Data inicial inválida. Use o formato YYYY-MM-DD."
+        erro_filtro_periodo = _("Data inicial inválida. Use o formato YYYY-MM-DD.")
     elif data_fim_param and not data_fim:
-        erro_filtro_periodo = "Data final inválida. Use o formato YYYY-MM-DD."
+        erro_filtro_periodo = _("Data final inválida. Use o formato YYYY-MM-DD.")
     elif data_inicio and data_fim and data_inicio > data_fim:
-        erro_filtro_periodo = "A data inicial não pode ser maior que a data final."
+        erro_filtro_periodo = _("A data inicial não pode ser maior que a data final.")
     else:
         if data_inicio:
             historico_queryset = historico_queryset.filter(sessao__data__gte=data_inicio)
@@ -152,22 +153,22 @@ def criar_prontuario_api(request):
     try:
         psicologo = request.user.psicologo
     except AttributeError:
-        return JsonResponse({"success": False, "error": "Usuário não possui perfil de psicólogo."}, status=403)
+        return JsonResponse({"success": False, "error": _("Usuário não possui perfil de psicólogo.")}, status=403)
 
     try:
         data = json.loads(request.body or "{}")
     except json.JSONDecodeError:
-        return JsonResponse({"success": False, "error": "JSON inválido."}, status=400)
+        return JsonResponse({"success": False, "error": _("JSON inválido.")}, status=400)
 
     sessao_id = data.get("sessao_id")
     if not sessao_id:
-        return JsonResponse({"success": False, "error": "sessao_id é obrigatório."}, status=400)
+        return JsonResponse({"success": False, "error": _("sessao_id é obrigatório.")}, status=400)
 
     sessao = get_object_or_404(Sessao, id=sessao_id)
 
     if sessao.psicologo_id != psicologo.id:
         return JsonResponse(
-            {"success": False, "error": "Você não tem permissão para registrar evolução nesta sessão."},
+            {"success": False, "error": _("Você não tem permissão para registrar evolução nesta sessão.")},
             status=403,
         )
 
@@ -175,14 +176,14 @@ def criar_prontuario_api(request):
         return JsonResponse(
             {
                 "success": False,
-                "error": "Só é permitido registrar evolução para sessões com status Realizada.",
+                "error": _("Só é permitido registrar evolução para sessões com status Realizada."),
             },
             status=400,
         )
 
     if Prontuario.objects.filter(sessao=sessao).exists():
         return JsonResponse(
-            {"success": False, "error": "Já existe uma evolução registrada para esta sessão."},
+            {"success": False, "error": _("Já existe uma evolução registrada para esta sessão.")},
             status=400,
         )
 
@@ -192,7 +193,7 @@ def criar_prontuario_api(request):
     plano_terapeutico = (data.get("plano_terapeutico") or "").strip()
 
     if not texto:
-        return JsonResponse({"success": False, "error": "texto é obrigatório."}, status=400)
+        return JsonResponse({"success": False, "error": _("texto é obrigatório.")}, status=400)
 
     encrypted_payload = encrypt_prontuario_payload(
         {
@@ -227,12 +228,12 @@ def editar_prontuario_api(request, prontuario_id):
     try:
         psicologo = request.user.psicologo
     except AttributeError:
-        return JsonResponse({"success": False, "error": "Usuário não possui perfil de psicólogo."}, status=403)
+        return JsonResponse({"success": False, "error": _("Usuário não possui perfil de psicólogo.")}, status=403)
 
     try:
         data = json.loads(request.body or "{}")
     except json.JSONDecodeError:
-        return JsonResponse({"success": False, "error": "JSON inválido."}, status=400)
+        return JsonResponse({"success": False, "error": _("JSON inválido.")}, status=400)
 
     prontuario = get_object_or_404(
         Prontuario.objects.select_related("sessao", "paciente", "psicologo"),
@@ -241,7 +242,7 @@ def editar_prontuario_api(request, prontuario_id):
 
     if prontuario.psicologo_id != psicologo.id:
         return JsonResponse(
-            {"success": False, "error": "Você não tem permissão para editar esta evolução."},
+            {"success": False, "error": _("Você não tem permissão para editar esta evolução.")},
             status=403,
         )
 
@@ -251,7 +252,7 @@ def editar_prontuario_api(request, prontuario_id):
     plano_terapeutico = (data.get("plano_terapeutico") or "").strip()
 
     if not texto:
-        return JsonResponse({"success": False, "error": "texto é obrigatório."}, status=400)
+        return JsonResponse({"success": False, "error": _("texto é obrigatório.")}, status=400)
 
     encrypted_payload = encrypt_prontuario_payload(
         {
@@ -280,12 +281,12 @@ def listar_prontuarios_paciente_api(request, paciente_id):
     try:
         psicologo = request.user.psicologo
     except AttributeError:
-        return JsonResponse({"success": False, "error": "Usuário não possui perfil de psicólogo."}, status=403)
+        return JsonResponse({"success": False, "error": _("Usuário não possui perfil de psicólogo.")}, status=403)
 
     paciente = get_object_or_404(Paciente, id=paciente_id)
     if paciente.psicologo_id != psicologo.id:
         return JsonResponse(
-            {"success": False, "error": "Você não tem permissão para acessar os prontuários deste paciente."},
+            {"success": False, "error": _("Você não tem permissão para acessar os prontuários deste paciente.")},
             status=403,
         )
 
@@ -295,13 +296,13 @@ def listar_prontuarios_paciente_api(request, paciente_id):
     data_fim = parse_date(data_fim_param) if data_fim_param else None
 
     if data_inicio_param and not data_inicio:
-        return JsonResponse({"success": False, "error": "data_inicio inválida. Use o formato YYYY-MM-DD."}, status=400)
+        return JsonResponse({"success": False, "error": _("data_inicio inválida. Use o formato YYYY-MM-DD.")}, status=400)
 
     if data_fim_param and not data_fim:
-        return JsonResponse({"success": False, "error": "data_fim inválida. Use o formato YYYY-MM-DD."}, status=400)
+        return JsonResponse({"success": False, "error": _("data_fim inválida. Use o formato YYYY-MM-DD.")}, status=400)
 
     if data_inicio and data_fim and data_inicio > data_fim:
-        return JsonResponse({"success": False, "error": "data_inicio não pode ser maior que data_fim."}, status=400)
+        return JsonResponse({"success": False, "error": _("data_inicio não pode ser maior que data_fim.")}, status=400)
 
     prontuarios = Prontuario.objects.select_related("sessao", "paciente", "psicologo").filter(
         paciente=paciente,

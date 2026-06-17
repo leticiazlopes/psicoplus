@@ -1,9 +1,11 @@
 {% load static %}
+{% load i18n %}
+{% get_current_language as CURRENT_LANGUAGE %}
 <!DOCTYPE html>
-<html lang="pt-br">
+<html lang="{{ LANGUAGE_CODE|default:'pt-br' }}">
 <head>
     <meta charset="UTF-8">
-    <title>Login | Psico+</title>
+    <title>{% trans "Login" %} | Psico+</title>
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
 
     <script src="https://cdn.tailwindcss.com"></script>
@@ -29,6 +31,14 @@
     </script>
 </head>
 <body class="h-screen overflow-hidden bg-[#f7f5ff] p-4 text-slate-900 lg:p-5">
+    <div class="mx-auto mb-3 flex max-w-[1400px] justify-end">
+        <form action="{% url 'set_language' %}" method="post" class="flex gap-0.5 rounded-xl border border-borderSoft bg-white p-1 text-[11px] font-bold shadow-sm">
+            {% csrf_token %}
+            <input type="hidden" name="next" value="{{ request.get_full_path }}">
+            <button type="submit" name="language" value="pt-br" class="rounded-lg px-3 py-1.5 transition {% if CURRENT_LANGUAGE == 'pt-br' %}bg-primary text-white{% else %}text-slate-600 hover:bg-slate-100{% endif %}">PT</button>
+            <button type="submit" name="language" value="en" class="rounded-lg px-3 py-1.5 transition {% if CURRENT_LANGUAGE == 'en' %}bg-primary text-white{% else %}text-slate-600 hover:bg-slate-100{% endif %}">EN</button>
+        </form>
+    </div>
     <div class="mx-auto flex h-[calc(100vh-2rem)] max-w-[1400px] overflow-hidden rounded-[28px] border border-white/70 bg-white shadow-soft lg:h-[calc(100vh-2.5rem)]">
         <section class="hidden h-full w-1/2 flex-col justify-between overflow-hidden bg-gradient-to-br from-[#f3efff] via-[#f6f3ff] to-[#f7f6ff] px-10 py-10 xl:px-12 xl:py-11 lg:flex">
             <div>
@@ -44,17 +54,17 @@
 
                 <div class="mt-10 max-w-[320px]">
                     <p class="text-[18px] font-bold leading-8 text-slate-900">
-                        Gestão que acolhe.
+                        {% trans "Gestão que acolhe." %}
                     </p>
                     <p class="mt-2 text-[17px] leading-8 text-slate-800">
-                        Mais tempo para o que importa:
-                        <span class="font-semibold text-primary">cuidar de pessoas.</span>
+                        {% trans "Mais tempo para o que importa:" %}
+                        <span class="font-semibold text-primary">{% trans "cuidar de pessoas." %}</span>
                     </p>
                 </div>
             </div>
 
             <div class="flex flex-1 items-center justify-center py-4">
-                <img src="{% static 'img/accounts/login.png' %}" alt="Ilustração da tela de login Psico+" class="w-full max-w-[390px] xl:max-w-[430px]">
+                <img src="{% static 'img/accounts/login.png' %}" alt="{% trans 'Ilustração da tela de login Psico+' %}" class="w-full max-w-[390px] xl:max-w-[430px]">
             </div>
 
             <div class="grid grid-cols-3 gap-5 border-t border-primary/10 pt-5 text-center">
@@ -62,21 +72,21 @@
                     <div class="flex h-11 w-11 items-center justify-center rounded-full bg-white text-primary shadow-sm">
                         <i class="fa-regular fa-shield text-[17px]"></i>
                     </div>
-                    <p class="mt-3 text-[13px] leading-5 text-slate-600">Seguro e confiável</p>
+                    <p class="mt-3 text-[13px] leading-5 text-slate-600">{% trans "Seguro e confiável" %}</p>
                 </div>
 
                 <div class="flex flex-col items-center">
                     <div class="flex h-11 w-11 items-center justify-center rounded-full bg-white text-primary shadow-sm">
                         <i class="fa-solid fa-lock text-[17px]"></i>
                     </div>
-                    <p class="mt-3 text-[13px] leading-5 text-slate-600">Seus dados protegidos</p>
+                    <p class="mt-3 text-[13px] leading-5 text-slate-600">{% trans "Seus dados protegidos" %}</p>
                 </div>
 
                 <div class="flex flex-col items-center">
                     <div class="flex h-11 w-11 items-center justify-center rounded-full bg-white text-primary shadow-sm">
                         <i class="fa-solid fa-cloud text-[17px]"></i>
                     </div>
-                    <p class="mt-3 text-[13px] leading-5 text-slate-600">Acesse de onde estiver</p>
+                    <p class="mt-3 text-[13px] leading-5 text-slate-600">{% trans "Acesse de onde estiver" %}</p>
                 </div>
             </div>
         </section>
@@ -102,7 +112,7 @@
 
                             <div class="flex-1">
                                 <p class="text-[14px] font-bold {% if 'success' in message.tags %}text-emerald-900{% elif 'error' in message.tags %}text-rose-900{% elif 'warning' in message.tags %}text-amber-900{% else %}text-sky-900{% endif %}">
-                                    {% if 'success' in message.tags %}Tudo certo{% elif 'error' in message.tags %}Algo precisa de atenção{% elif 'warning' in message.tags %}Atenção{% else %}Aviso{% endif %}
+                                    {% if 'success' in message.tags %}{% trans "Tudo certo" %}{% elif 'error' in message.tags %}{% trans "Algo precisa de atenção" %}{% elif 'warning' in message.tags %}{% trans "Atenção" %}{% else %}{% trans "Aviso" %}{% endif %}
                                 </p>
                                 <p class="mt-1 text-[14px] leading-6 {% if 'success' in message.tags %}text-emerald-800{% elif 'error' in message.tags %}text-rose-800{% elif 'warning' in message.tags %}text-amber-800{% else %}text-sky-800{% endif %}">
                                     {{ message }}
@@ -117,10 +127,10 @@
                 <div class="rounded-[20px] border border-borderSoft bg-white px-7 py-7 shadow-[0_12px_30px_rgba(15,23,42,0.06)]">
                     <div class="mb-6">
                         <h2 class="text-[28px] font-black tracking-[-0.05em] text-slate-900">
-                            Bem-vindo(a)! <span class="text-primary">♡</span>
+                            {% trans "Bem-vindo(a)!" %} <span class="text-primary">♡</span>
                         </h2>
                         <p class="mt-2 text-[14px] text-textMuted">
-                            Entre para acessar o <span class="font-semibold text-primary">Psico+</span>
+                            {% trans "Entre para acessar o" %} <span class="font-semibold text-primary">Psico+</span>
                         </p>
                     </div>
 
@@ -136,7 +146,7 @@
                         {% endif %}
 
                         <div>
-                            <label for="{{ form.username.id_for_label }}" class="mb-2 block text-[13px] font-bold text-slate-700">E-mail</label>
+                            <label for="{{ form.username.id_for_label }}" class="mb-2 block text-[13px] font-bold text-slate-700">{% trans "E-mail" %}</label>
                             <div class="relative">
                                 <span class="pointer-events-none absolute inset-y-0 left-0 flex items-center pl-4 text-slate-400">
                                     <i class="fa-regular fa-envelope text-[14px]"></i>
@@ -153,19 +163,19 @@
                         </div>
 
                         <div>
-                            <label for="{{ form.password.id_for_label }}" class="mb-2 block text-[13px] font-bold text-slate-700">Senha</label>
+                            <label for="{{ form.password.id_for_label }}" class="mb-2 block text-[13px] font-bold text-slate-700">{% trans "Senha" %}</label>
                             <div class="relative">
                                 <span class="pointer-events-none absolute inset-y-0 left-0 flex items-center pl-4 text-slate-400">
                                     <i class="fa-solid fa-lock text-[14px]"></i>
                                 </span>
                                 {{ form.password }}
-                                <button type="button" data-toggle-password class="absolute inset-y-0 right-0 flex items-center pr-4 text-slate-400" aria-label="Visualizar senha">
+                                <button type="button" data-toggle-password class="absolute inset-y-0 right-0 flex items-center pr-4 text-slate-400" aria-label="{% trans 'Visualizar senha' %}">
                                     <i class="fa-regular fa-eye text-[14px]"></i>
                                 </button>
                             </div>
                             <div class="mt-2 flex justify-end">
                                 <a href="{% url 'esqueci_senha' %}" class="text-[12px] font-semibold text-primary hover:text-primaryDark hover:underline transition-all">
-                                    Esqueci minha senha
+                                    {% trans "Esqueci minha senha" %}
                                 </a>
                             </div>
                             {% if form.password.errors %}
@@ -179,20 +189,20 @@
 
                         <button type="submit" class="inline-flex w-full items-center justify-center gap-2 rounded-[12px] bg-gradient-to-r from-primary to-primaryDark px-5 py-3.5 text-[15px] font-semibold text-white shadow-[0_16px_30px_rgba(109,74,255,0.24)]">
                             <i class="fa-regular fa-user text-[14px]"></i>
-                            Entrar
+                            {% trans "Entrar" %}
                         </button>
 
                         <div class="mt-6 flex flex-col items-center gap-3 border-t border-slate-100 pt-5">
                             <p class="text-[14px] text-slate-500">
-                                Ainda não tem uma conta?
+                                {% trans "Ainda não tem uma conta?" %}
                                 <a href="{% url 'cadastro_psicologo' %}" class="font-bold text-primary hover:underline">
-                                    Cadastre-se como psicólogo
+                                    {% trans "Cadastre-se como psicólogo" %}
                                 </a>
                             </p>
                         </div>
 
                         <div class="pt-1 text-center text-[13px] text-slate-400">
-                            Ambiente seguro para acesso da equipe clínica.
+                            {% trans "Ambiente seguro para acesso da equipe clínica." %}
                         </div>
                     </form>
                 </div>
@@ -213,7 +223,7 @@
                 input.setAttribute('type', isPassword ? 'text' : 'password');
                 icon.classList.toggle('fa-eye');
                 icon.classList.toggle('fa-eye-slash');
-                button.setAttribute('aria-label', isPassword ? 'Ocultar senha' : 'Visualizar senha');
+                button.setAttribute('aria-label', isPassword ? '{% trans "Ocultar senha" %}' : '{% trans "Visualizar senha" %}');
             });
         });
     </script>

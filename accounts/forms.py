@@ -3,9 +3,11 @@ from django.contrib.auth.forms import AuthenticationForm, SetPasswordForm, UserC
 from django.contrib.auth import get_user_model
 from django.db import transaction
 from django.contrib.auth.hashers import check_password
+from django.utils.translation import gettext_lazy as _
 
 from .models import Usuario, Psicologo
 from .models import Paciente
+from .models import DiarioPensamento
 
 
 User = get_user_model()
@@ -13,21 +15,21 @@ User = get_user_model()
 
 class LoginUsuarioForm(AuthenticationForm):
     username = forms.EmailField(
-        label="E-mail",
+        label=_("E-mail"),
         widget=forms.EmailInput(
             attrs={
-                "placeholder": "seu@email.com",
+                "placeholder": _("seu@email.com"),
                 "autocomplete": "email",
             }
         ),
     )
 
     password = forms.CharField(
-        label="Senha",
+        label=_("Senha"),
         strip=False,
         widget=forms.PasswordInput(
             attrs={
-                "placeholder": "Digite sua senha",
+                "placeholder": _("Digite sua senha"),
                 "autocomplete": "current-password",
             }
         ),
@@ -53,21 +55,25 @@ class LoginUsuarioForm(AuthenticationForm):
 class CadastroPsicologoForm(UserCreationForm):
     nome = forms.CharField(
         max_length=255,
-        widget=forms.TextInput(attrs={"placeholder": "Nome completo"})
+        label=_("Nome completo"),
+        widget=forms.TextInput(attrs={"placeholder": _("Nome completo")})
     )
 
     email = forms.EmailField(
-        widget=forms.EmailInput(attrs={"placeholder": "email@exemplo.com"})
+        label=_("E-mail"),
+        widget=forms.EmailInput(attrs={"placeholder": _("email@exemplo.com")})
     )
 
     crp = forms.CharField(
         max_length=20,
-        widget=forms.TextInput(attrs={"placeholder": "Ex: 13/12345"})
+        label=_("CRP"),
+        widget=forms.TextInput(attrs={"placeholder": _("Ex: 13/12345")})
     )
 
     telefone = forms.CharField(
         required=False,
-        widget=forms.TextInput(attrs={"placeholder": "(83) 99999-9999"})
+        label=_("Telefone"),
+        widget=forms.TextInput(attrs={"placeholder": _("(83) 99999-9999")})
     )
 
     class Meta:
@@ -90,12 +96,12 @@ class CadastroPsicologoForm(UserCreationForm):
             })
 
         self.fields["password1"].widget.attrs.update({
-            "placeholder": "Digite uma senha segura",
+            "placeholder": _("Digite uma senha segura"),
             "class": "w-full rounded-xl border border-slate-200 bg-white px-4 pr-10 py-3 text-[14px] text-slate-900 outline-none transition placeholder:text-slate-400 focus:border-primary focus:ring-4 focus:ring-primary/10"
         })
 
         self.fields["password2"].widget.attrs.update({
-            "placeholder": "Confirme a senha",
+            "placeholder": _("Confirme a senha"),
             "class": "w-full rounded-xl border border-slate-200 bg-white px-4 pr-10 py-3 text-[14px] text-slate-900 outline-none transition placeholder:text-slate-400 focus:border-primary focus:ring-4 focus:ring-primary/10"
         })
 
@@ -103,7 +109,7 @@ class CadastroPsicologoForm(UserCreationForm):
         email = self.cleaned_data["email"]
 
         if Usuario.objects.filter(email=email).exists():
-            raise forms.ValidationError("E-mail já cadastrado.")
+            raise forms.ValidationError(_("E-mail já cadastrado."))
 
         return email
 
@@ -111,7 +117,7 @@ class CadastroPsicologoForm(UserCreationForm):
         crp = self.cleaned_data["crp"]
 
         if Psicologo.objects.filter(crp=crp).exists():
-            raise forms.ValidationError("CRP já cadastrado.")
+            raise forms.ValidationError(_("CRP já cadastrado."))
 
         return crp
 
@@ -148,12 +154,12 @@ class CadastroPacienteForm(forms.ModelForm):
             "aceita_lembrete_email",
         ]
         widgets = {
-            "nome_completo": forms.TextInput(attrs={"placeholder": "Nome completo do paciente"}),
-            "email": forms.EmailInput(attrs={"placeholder": "email@paciente.com"}),
-            "telefone": forms.TextInput(attrs={"placeholder": "(83) 99999-9999"}),
+            "nome_completo": forms.TextInput(attrs={"placeholder": _("Nome completo do paciente")}),
+            "email": forms.EmailInput(attrs={"placeholder": _("email@paciente.com")}),
+            "telefone": forms.TextInput(attrs={"placeholder": _("(83) 99999-9999")}),
             "data_nascimento": forms.DateInput(attrs={"type": "date"}, format="%Y-%m-%d"),
-            "contato_emergencia_nome": forms.TextInput(attrs={"placeholder": "Nome do contato"}),
-            "contato_emergencia_telefone": forms.TextInput(attrs={"placeholder": "Telefone de emergência"}),
+            "contato_emergencia_nome": forms.TextInput(attrs={"placeholder": _("Nome do contato")}),
+            "contato_emergencia_telefone": forms.TextInput(attrs={"placeholder": _("Telefone de emergência")}),
             "aceita_lembrete_email": forms.CheckboxInput(),
         }
 
@@ -177,14 +183,14 @@ class CadastroPacienteForm(forms.ModelForm):
             pacientes_com_esse_email = pacientes_com_esse_email.exclude(pk=self.instance.pk)
             
         if pacientes_com_esse_email.exists():
-            raise forms.ValidationError("Este e-mail já está em uso por outro paciente.")
+            raise forms.ValidationError(_("Este e-mail já está em uso por outro paciente."))
 
         usuario_com_esse_email = User.objects.filter(email=email)
         if self.instance.pk and self.instance.usuario_id:
             usuario_com_esse_email = usuario_com_esse_email.exclude(pk=self.instance.usuario_id)
 
         if usuario_com_esse_email.exists():
-            raise forms.ValidationError("Este e-mail já está em uso por outro usuário.")
+            raise forms.ValidationError(_("Este e-mail já está em uso por outro usuário."))
             
         return email
 
@@ -216,11 +222,11 @@ class CadastroPacienteForm(forms.ModelForm):
         return paciente
 
 class MeuPerfilForm(forms.ModelForm):
-    nome = forms.CharField(label="Nome Completo")
-    email = forms.EmailField(label="E-mail")
+    nome = forms.CharField(label=_("Nome completo"))
+    email = forms.EmailField(label=_("E-mail"))
     senha_atual = forms.CharField(
-        label="Senha Atual para Confirmar", 
-        widget=forms.PasswordInput(attrs={'placeholder': 'Digite sua senha atual'})
+        label=_("Senha atual para confirmar"), 
+        widget=forms.PasswordInput(attrs={'placeholder': _('Digite sua senha atual')})
     )
     
     # Adicione estes dois se quiser permitir a troca no mesmo form, 
@@ -243,7 +249,7 @@ class MeuPerfilForm(forms.ModelForm):
         senha = self.cleaned_data.get("senha_atual")
         if not check_password(senha, self.user.password):
             # ISSO AQUI impede que o form seja válido e salva o banco!
-            raise forms.ValidationError("A senha atual está incorreta. As alterações não foram salvas.")
+            raise forms.ValidationError(_("A senha atual está incorreta. As alterações não foram salvas."))
         return senha
 
     @transaction.atomic
@@ -262,24 +268,24 @@ class MeuPerfilForm(forms.ModelForm):
 
 class DefinirSenhaPacienteForm(SetPasswordForm):
     error_messages = {
-        "password_mismatch": "As senhas informadas não coincidem.",
+        "password_mismatch": _("As senhas informadas não coincidem."),
     }
 
     def __init__(self, user, *args, **kwargs):
         super().__init__(user, *args, **kwargs)
 
-        self.fields["new_password1"].label = "Nova senha"
-        self.fields["new_password2"].label = "Confirme a nova senha"
+        self.fields["new_password1"].label = _("Nova senha")
+        self.fields["new_password2"].label = _("Confirme a nova senha")
 
         self.fields["new_password1"].widget.attrs.update(
             {
-                "placeholder": "Digite uma senha segura",
+                "placeholder": _("Digite uma senha segura"),
                 "class": "w-full rounded-[12px] border border-borderSoft bg-white py-3.5 pl-11 pr-12 text-[14.5px] text-slate-900 outline-none transition-all placeholder:text-slate-400 focus:border-primary focus:ring-2 focus:ring-primarySoft",
             }
         )
         self.fields["new_password2"].widget.attrs.update(
             {
-                "placeholder": "Repita a senha",
+                "placeholder": _("Repita a senha"),
                 "class": "w-full rounded-[12px] border border-borderSoft bg-white py-3.5 pl-11 pr-12 text-[14.5px] text-slate-900 outline-none transition-all placeholder:text-slate-400 focus:border-primary focus:ring-2 focus:ring-primarySoft",
             }
         )
@@ -292,10 +298,6 @@ class DefinirSenhaPacienteForm(SetPasswordForm):
             user.save()
 
         return user
-    
-    from django import forms
-from .models import DiarioPensamento
-
 class DiarioPensamentoForm(forms.ModelForm):
     class Meta:
         model = DiarioPensamento
@@ -308,27 +310,28 @@ class DiarioPensamentoForm(forms.ModelForm):
         self.fields['situacao'].widget = forms.Textarea(attrs={
             'class': classes_input,
             'rows': 3,
-            'placeholder': 'O que aconteceu?'
+            'placeholder': _('O que aconteceu?')
         })
         self.fields['emocao_principal'] = forms.CharField(
             required=False,
+            label=_("Emoção principal"),
             widget=forms.TextInput(attrs={
                 'class': classes_input,
-                'placeholder': 'Ex: Ansiedade, Raiva... (Opcional)'
+                'placeholder': _('Ex: Ansiedade, Raiva... (Opcional)')
             })
         )
         self.fields['intensidade'].widget = forms.Select(
             choices=[
-                (1, "1 - Muito Leve"),
-                (2, "2 - Leve"),
-                (3, "3 - Moderada"),
-                (4, "4 - Intensa"),
-                (5, "5 - Muito Intensa"),
+                (1, _("1 - Muito leve")),
+                (2, _("2 - Leve")),
+                (3, _("3 - Moderada")),
+                (4, _("4 - Intensa")),
+                (5, _("5 - Muito intensa")),
             ],
             attrs={'class': classes_input}
         )
         self.fields['observacoes_livres'].widget = forms.Textarea(attrs={
             'class': classes_input,
             'rows': 3,
-            'placeholder': 'Como reagiu ao que aconteceu? (Opcional)'
+            'placeholder': _('Como reagiu ao que aconteceu? (Opcional)')
         })

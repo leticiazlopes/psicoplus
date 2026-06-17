@@ -1,6 +1,8 @@
 {% extends 'shared/base.html' %}
+{% load i18n %}
 
-{% block page_title %}Minha Área Restrita{% endblock %}
+{% block title %}{% trans "Minha Área Restrita" %} | Psico+{% endblock %}
+{% block page_title %}{% trans "Minha Área Restrita" %}{% endblock %}
 
 {% block content %}
 <div class="space-y-6">
@@ -8,7 +10,7 @@
     <div class="grid gap-6 grid-cols-1 md:grid-cols-2 items-start">
         
         <div class="rounded-[22px] border border-borderSoft bg-white p-6 shadow-soft">
-            <p class="text-[11px] font-bold uppercase tracking-wider text-textMuted">Seus próximos encontros</p>
+            <p class="text-[11px] font-bold uppercase tracking-wider text-textMuted">{% trans "Seus próximos encontros" %}</p>
             
             <div id="sessao-loading" class="animate-pulse space-y-3 mt-4">
                 <div class="h-6 bg-slate-100 rounded w-2/3"></div>
@@ -19,7 +21,7 @@
         </div>
 
         <div class="rounded-[22px] border border-borderSoft bg-white p-6 shadow-soft">
-            <h3 class="text-sm font-bold text-textMain mb-4">Ações Rápidas</h3>
+            <h3 class="text-sm font-bold text-textMain mb-4">{% trans "Ações Rápidas" %}</h3>
             
             <a href="{% url 'diario_paciente' %}" class="flex items-center justify-between p-4 rounded-xl border border-slate-100 hover:border-primary/20 bg-gradient-to-r from-bgSoft to-white transition group">
                 <div class="flex items-center space-x-3">
@@ -27,8 +29,8 @@
                         <i class="fa-solid fa-book-journal-whills text-sm"></i>
                     </div>
                     <div>
-                        <p class="text-sm font-bold text-textMain">Diário de Pensamentos</p>
-                        <p class="text-xs text-textMuted">Registre suas reflexões para a próxima sessão</p>
+                        <p class="text-sm font-bold text-textMain">{% trans "Diário de Pensamentos" %}</p>
+                        <p class="text-xs text-textMuted">{% trans "Registre suas reflexões para a próxima sessão" %}</p>
                     </div>
                 </div>
                 <i class="fa-solid fa-chevron-right text-xs text-slate-300 group-hover:text-primary transition"></i>
@@ -42,9 +44,19 @@
 {% block extra_js %}
 <script>
     document.addEventListener("DOMContentLoaded", function() {
+        const textNaoAutorizado = "{% trans 'Não autorizado' %}";
+        const textParticular = "{% trans 'Particular' %}";
+        const textPlanoSaude = "{% trans 'Plano de Saúde' %}";
+        const textIsentoPagamento = "{% trans 'Isento de Pagamento' %}";
+        const textHorario = "{% trans 'Horário' %}";
+        const textTipo = "{% trans 'Tipo' %}";
+        const textTudoEmDia = "{% trans 'Tudo em dia!' %}";
+        const textSemSessao = "{% trans 'Você não tem nenhuma sessão agendada no momento.' %}";
+        const textErroApi = "{% trans 'Erro na API de pacientes:' %}";
+
         fetch("{% url 'api_paciente_home' %}")
             .then(response => {
-                if (!response.ok) throw new Error("Não autorizado");
+                if (!response.ok) throw new Error(textNaoAutorizado);
                 return response.json();
             })
             .then(data => {
@@ -59,21 +71,21 @@
                         conteudoEl.innerHTML = "";
 
                         data.sessoes.forEach(sessao => {
-                            let tipoPagamento = 'Particular';
+                            let tipoPagamento = textParticular;
                             if (sessao.atendido_por_plano) {
-                                tipoPagamento = 'Plano de Saúde';
+                                tipoPagamento = textPlanoSaude;
                             } else if (sessao.isento_pagamento) {
-                                tipoPagamento = 'Isento de Pagamento';
+                                tipoPagamento = textIsentoPagamento;
                             }
 
                             conteudoEl.innerHTML += `
                                 <div class="p-4 rounded-2xl bg-slate-50 border border-slate-100 mb-3 last:mb-0 shadow-sm">
                                     <h3 class="text-base font-black text-textMain">${sessao.data}</h3>
                                     <p class="text-xs text-textMuted mt-1">
-                                        <i class="fa-regular fa-clock text-primary mr-1"></i> Horário: <strong>${sessao.horario}</strong>
+                                        <i class="fa-regular fa-clock text-primary mr-1"></i> ${textHorario}: <strong>${sessao.horario}</strong>
                                     </p>
                                     <p class="text-xs text-textMuted mt-0.5">
-                                        <i class="fa-solid fa-handshake text-slate-400 mr-1"></i> Tipo: ${tipoPagamento}
+                                        <i class="fa-solid fa-handshake text-slate-400 mr-1"></i> ${textTipo}: ${tipoPagamento}
                                     </p>
                                     <span class="mt-2 inline-flex rounded-full px-2.5 py-0.5 text-[9px] font-bold uppercase tracking-wide bg-primarySoft text-primary">
                                         ${sessao.status}
@@ -85,14 +97,14 @@
                         conteudoEl.innerHTML = `
                             <div class="text-center py-6 text-textMuted text-xs">
                                 <i class="fa-regular fa-calendar-check text-2xl mb-2 block text-primary/40"></i>
-                                <span class="font-medium block text-textMain mb-1">Tudo em dia!</span>
-                                Você não tem nenhuma sessão agendada no momento.
+                                <span class="font-medium block text-textMain mb-1">${textTudoEmDia}</span>
+                                ${textSemSessao}
                             </div>
                         `;
                     }
                 }
             })
-            .catch(error => console.error("Erro na API de pacientes:", error));
+            .catch(error => console.error(textErroApi, error));
     });
 </script>
 {% endblock %}

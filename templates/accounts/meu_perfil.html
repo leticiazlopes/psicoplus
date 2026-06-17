@@ -1,8 +1,9 @@
 {% extends "shared/base.html" %}
 {% load static %}
+{% load i18n %}
 
-{% block title %}Meu Perfil | Psico+{% endblock %}
-{% block page_title %}Configurações do Perfil{% endblock %}
+{% block title %}{% trans "Meu Perfil" %} | Psico+{% endblock %}
+{% block page_title %}{% trans "Configurações do Perfil" %}{% endblock %}
 
 {% block content %}
 {% if perfil_tipo == 'paciente' %}
@@ -10,17 +11,17 @@
     <div class="rounded-[24px] border border-white/70 bg-white/88 p-5 shadow-soft backdrop-blur-xl lg:p-8">
         <div class="flex flex-col gap-4 border-b border-slate-100 pb-6 lg:flex-row lg:items-center lg:justify-between">
             <div>
-                <h1 class="text-2xl font-bold text-slate-900 tracking-tight">Meu Perfil</h1>
-                <p class="text-[14px] leading-6 text-slate-500">Veja e atualize seus dados cadastrais e as informações do seu acompanhamento.</p>
+                <h1 class="text-2xl font-bold text-slate-900 tracking-tight">{% trans "Meu Perfil" %}</h1>
+                <p class="text-[14px] leading-6 text-slate-500">{% trans "Veja e atualize seus dados cadastrais e as informações do seu acompanhamento." %}</p>
             </div>
 
             <div class="flex flex-nowrap items-center gap-3">
                 <a href="{% url 'dashboard_paciente' %}" class="inline-flex shrink-0 items-center justify-center whitespace-nowrap rounded-xl border border-slate-200 bg-white px-5 py-2.5 text-[14px] font-semibold text-slate-600 transition hover:border-primary/20 hover:text-primary">
-                    Voltar para início
+                    {% trans "Voltar para início" %}
                 </a>
                 <button form="perfil-form-paciente" type="submit" class="inline-flex shrink-0 items-center justify-center gap-2 whitespace-nowrap rounded-xl bg-gradient-to-r from-primary to-primaryDark px-6 py-2.5 text-[14px] font-semibold text-white shadow-[0_14px_28px_rgba(109,74,255,0.22)] transition hover:translate-y-[-1px]">
                     <i class="fa-solid fa-floppy-disk text-[13px]"></i>
-                    Salvar Alterações
+                    {% trans "Salvar Alterações" %}
                 </button>
             </div>
         </div>
@@ -42,32 +43,32 @@
                         <i class="fa-solid fa-id-card text-[16px]"></i>
                     </div>
                     <div>
-                        <h3 class="text-[16px] font-bold text-slate-900">Seus dados</h3>
-                        <p class="mt-1 text-[13px] text-slate-500">Atualize as informações que aparecem na sua conta.</p>
+                        <h3 class="text-[16px] font-bold text-slate-900">{% trans "Seus dados" %}</h3>
+                        <p class="mt-1 text-[13px] text-slate-500">{% trans "Atualize as informações que aparecem na sua conta." %}</p>
                     </div>
                 </div>
 
                 <div class="space-y-4">
                     <div>
-                        <label for="{{ form.nome_completo.id_for_label }}" class="mb-2 block text-sm font-semibold text-slate-600">Nome</label>
+                        <label for="{{ form.nome_completo.id_for_label }}" class="mb-2 block text-sm font-semibold text-slate-600">{% trans "Nome" %}</label>
                         {{ form.nome_completo }}
                         {% if form.nome_completo.errors %}<p class="mt-1.5 text-[12px] font-medium text-rose-600">{{ form.nome_completo.errors.0 }}</p>{% endif %}
                     </div>
 
                     <div>
-                        <label for="{{ form.email.id_for_label }}" class="mb-2 block text-sm font-semibold text-slate-600">E-mail</label>
+                        <label for="{{ form.email.id_for_label }}" class="mb-2 block text-sm font-semibold text-slate-600">{% trans "E-mail" %}</label>
                         {{ form.email }}
                         {% if form.email.errors %}<p class="mt-1.5 text-[12px] font-medium text-rose-600">{{ form.email.errors.0 }}</p>{% endif %}
                     </div>
 
                     <div>
-                        <label for="{{ form.telefone.id_for_label }}" class="mb-2 block text-sm font-semibold text-slate-600">Telefone</label>
+                        <label for="{{ form.telefone.id_for_label }}" class="mb-2 block text-sm font-semibold text-slate-600">{% trans "Telefone" %}</label>
                         {{ form.telefone }}
                         {% if form.telefone.errors %}<p class="mt-1.5 text-[12px] font-medium text-rose-600">{{ form.telefone.errors.0 }}</p>{% endif %}
                     </div>
 
                     <div>
-                        <label for="{{ form.data_nascimento.id_for_label }}" class="mb-2 block text-sm font-semibold text-slate-600">Data de nascimento</label>
+                        <label for="{{ form.data_nascimento.id_for_label }}" class="mb-2 block text-sm font-semibold text-slate-600">{% trans "Data de nascimento" %}</label>
                         {{ form.data_nascimento }}
                         {% if form.data_nascimento.errors %}<p class="mt-1.5 text-[12px] font-medium text-rose-600">{{ form.data_nascimento.errors.0 }}</p>{% endif %}
                     </div>
@@ -80,40 +81,40 @@
                         <i class="fa-solid fa-user-doctor text-[16px]"></i>
                     </div>
                     <div>
-                        <h3 class="text-[16px] font-bold text-slate-900">Acompanhamento</h3>
-                        <p class="mt-1 text-[13px] text-slate-500">Dados da sua referência terapêutica.</p>
+                        <h3 class="text-[16px] font-bold text-slate-900">{% trans "Acompanhamento" %}</h3>
+                        <p class="mt-1 text-[13px] text-slate-500">{% trans "Dados da sua referência terapêutica." %}</p>
                     </div>
                 </div>
 
                 <div class="space-y-4">
                     <div>
-                        <label for="{{ form.contato_emergencia_nome.id_for_label }}" class="mb-2 block text-sm font-semibold text-slate-600">Contato de emergência</label>
+                        <label for="{{ form.contato_emergencia_nome.id_for_label }}" class="mb-2 block text-sm font-semibold text-slate-600">{% trans "Contato de emergência" %}</label>
                         {{ form.contato_emergencia_nome }}
                         {% if form.contato_emergencia_nome.errors %}<p class="mt-1.5 text-[12px] font-medium text-rose-600">{{ form.contato_emergencia_nome.errors.0 }}</p>{% endif %}
                     </div>
 
                     <div>
-                        <label for="{{ form.contato_emergencia_telefone.id_for_label }}" class="mb-2 block text-sm font-semibold text-slate-600">Telefone de emergência</label>
+                        <label for="{{ form.contato_emergencia_telefone.id_for_label }}" class="mb-2 block text-sm font-semibold text-slate-600">{% trans "Telefone de emergência" %}</label>
                         {{ form.contato_emergencia_telefone }}
                         {% if form.contato_emergencia_telefone.errors %}<p class="mt-1.5 text-[12px] font-medium text-rose-600">{{ form.contato_emergencia_telefone.errors.0 }}</p>{% endif %}
                     </div>
 
                     <label class="flex items-center justify-between rounded-2xl bg-white px-4 py-3 shadow-sm">
-                        <span class="text-sm font-medium text-slate-600">Lembretes por e-mail</span>
+                        <span class="text-sm font-medium text-slate-600">{% trans "Lembretes por e-mail" %}</span>
                         {{ form.aceita_lembrete_email }}
                     </label>
 
                     <div class="flex items-center justify-between rounded-2xl bg-white px-4 py-3 shadow-sm">
-                        <span class="text-sm font-medium text-slate-600">Psicólogo</span>
+                        <span class="text-sm font-medium text-slate-600">{% trans "Psicólogo" %}</span>
                         <span class="text-sm font-bold text-slate-900 text-right">{{ paciente.psicologo.usuario.nome }}</span>
                     </div>
                     <div class="flex items-center justify-between rounded-2xl bg-white px-4 py-3 shadow-sm">
-                        <span class="text-sm font-medium text-slate-600">CRP</span>
+                        <span class="text-sm font-medium text-slate-600">{% trans "CRP" %}</span>
                         <span class="text-sm font-bold text-slate-900 text-right">{{ paciente.psicologo.crp }}</span>
                     </div>
                     <div class="flex items-center justify-between rounded-2xl bg-white px-4 py-3 shadow-sm">
-                        <span class="text-sm font-medium text-slate-600">Status</span>
-                        <span class="text-sm font-bold text-slate-900 text-right">{% if paciente.ativo %}Ativo{% else %}Inativo{% endif %}</span>
+                        <span class="text-sm font-medium text-slate-600">{% trans "Status" %}</span>
+                        <span class="text-sm font-bold text-slate-900 text-right">{% if paciente.ativo %}{% trans "Ativo" %}{% else %}{% trans "Inativo" %}{% endif %}</span>
                     </div>
                 </div>
             </section>
@@ -126,18 +127,18 @@
         
         <div class="flex flex-col gap-4 border-b border-slate-100 pb-6 lg:flex-row lg:items-center lg:justify-between">
             <div>
-                <h1 class="text-2xl font-bold text-slate-900 tracking-tight">Meu Perfil</h1>
-                <p class="text-[14px] leading-6 text-slate-500">Gerencie suas informações profissionais e dados de acesso.</p>
+                <h1 class="text-2xl font-bold text-slate-900 tracking-tight">{% trans "Meu Perfil" %}</h1>
+                <p class="text-[14px] leading-6 text-slate-500">{% trans "Gerencie suas informações profissionais e dados de acesso." %}</p>
             </div>
 
             <div class="flex flex-wrap gap-3">
                 <a href="{% url 'pacientes_lista' %}" class="inline-flex items-center justify-center rounded-xl border border-slate-200 bg-white px-5 py-2.5 text-[14px] font-semibold text-slate-600 transition hover:border-primary/20 hover:text-primary">
-                    Cancelar
+                    {% trans "Cancelar" %}
                 </a>
                 <button form="perfil-form" type="submit" 
                     class="inline-flex items-center justify-center gap-2 rounded-xl bg-gradient-to-r from-primary to-primaryDark px-6 py-2.5 text-[14px] font-semibold text-white shadow-[0_14px_28px_rgba(109,74,255,0.22)] transition hover:translate-y-[-1px]">
                     <i class="fa-solid fa-floppy-disk text-[13px]"></i>
-                    Salvar Alterações
+                    {% trans "Salvar Alterações" %}
                 </button>
             </div>
         </div>
@@ -159,32 +160,32 @@
                         <i class="fa-solid fa-id-card text-[16px]"></i>
                     </div>
                     <div>
-                        <h3 class="text-[16px] font-bold text-slate-900">Informações Profissionais</h3>
-                        <p class="mt-1 text-[13px] text-slate-500">Dados visíveis no sistema e documentos.</p>
+                        <h3 class="text-[16px] font-bold text-slate-900">{% trans "Informações Profissionais" %}</h3>
+                        <p class="mt-1 text-[13px] text-slate-500">{% trans "Dados visíveis no sistema e documentos." %}</p>
                     </div>
                 </div>
 
                 <div class="grid gap-5 md:grid-cols-2">
                     <div class="md:col-span-2">
-                        <label for="{{ form.nome.id_for_label }}" class="mb-2 block text-[13px] font-bold text-slate-600">Nome completo</label>
+                        <label for="{{ form.nome.id_for_label }}" class="mb-2 block text-[13px] font-bold text-slate-600">{% trans "Nome completo" %}</label>
                         {{ form.nome }}
                         {% if form.nome.errors %}<p class="mt-1.5 text-[12px] text-rose-600 font-medium">{{ form.nome.errors.0 }}</p>{% endif %}
                     </div>
 
                     <div>
-                        <label for="{{ form.email.id_for_label }}" class="mb-2 block text-[13px] font-bold text-slate-600">E-mail de acesso</label>
+                        <label for="{{ form.email.id_for_label }}" class="mb-2 block text-[13px] font-bold text-slate-600">{% trans "E-mail de acesso" %}</label>
                         {{ form.email }}
                         {% if form.email.errors %}<p class="mt-1.5 text-[12px] text-rose-600 font-medium">{{ form.email.errors.0 }}</p>{% endif %}
                     </div>
 
                     <div>
-                        <label for="{{ form.crp.id_for_label }}" class="mb-2 block text-[13px] font-bold text-slate-600">Registro Profissional (CRP)</label>
+                        <label for="{{ form.crp.id_for_label }}" class="mb-2 block text-[13px] font-bold text-slate-600">{% trans "Registro Profissional (CRP)" %}</label>
                         {{ form.crp }}
                         {% if form.crp.errors %}<p class="mt-1.5 text-[12px] text-rose-600 font-medium">{{ form.crp.errors.0 }}</p>{% endif %}
                     </div>
                     
                     <div>
-                        <label for="{{ form.telefone.id_for_label }}" class="mb-2 block text-[13px] font-bold text-slate-600">Telefone para contato</label>
+                        <label for="{{ form.telefone.id_for_label }}" class="mb-2 block text-[13px] font-bold text-slate-600">{% trans "Telefone para contato" %}</label>
                         {{ form.telefone }}
                     </div>
                 </div>
@@ -196,16 +197,16 @@
                         <i class="fa-solid fa-shield-halved text-[16px]"></i>
                     </div>
                     <div class="flex-1">
-                        <h3 class="text-[16px] font-bold text-slate-900">Segurança</h3>
-                        <p class="mt-1 text-[13px] text-slate-500">Confirme sua identidade para aplicar as mudanças.</p>
+                        <h3 class="text-[16px] font-bold text-slate-900">{% trans "Segurança" %}</h3>
+                        <p class="mt-1 text-[13px] text-slate-500">{% trans "Confirme sua identidade para aplicar as mudanças." %}</p>
                     </div>
                     <a href="{% url 'password_change' %}" class="text-[13px] font-bold text-primary hover:text-primaryDark bg-white px-4 py-2 rounded-lg border border-primary/20 shadow-sm transition">
-                        Alterar senha
+                        {% trans "Alterar senha" %}
                     </a>
                 </div>
 
                 <div class="max-w-md">
-                    <label for="{{ form.senha_atual.id_for_label }}" class="mb-2 block text-[13px] font-bold text-slate-700">Senha atual</label>
+                    <label for="{{ form.senha_atual.id_for_label }}" class="mb-2 block text-[13px] font-bold text-slate-700">{% trans "Senha atual" %}</label>
                     {{ form.senha_atual }}
                     {% if form.senha_atual.errors %}
                         <p class="mt-2 text-[12px] text-rose-600 font-medium flex items-center gap-1.5">

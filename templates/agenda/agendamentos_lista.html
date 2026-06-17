@@ -1,4 +1,5 @@
 {% extends 'shared/base.html' %}
+{% load i18n %}
 
 {% block content %}
 <div class="flex-1 bg-slate-50/50 px-8 py-8"
@@ -6,7 +7,7 @@
      x-data="{ 
         showModal: {% if form.errors %}true{% else %}false{% endif %}, 
         viewMode: 'dia',
-        modalTitle: 'Agendar Sessão',
+        modalTitle: '{% trans "Agendar Sessão" %}',
         formAction: '',
         modoEdicao: false,
         sessaoEhSerie: {% if form.instance.pk and form.instance.serie_id %}true{% else %}false{% endif %},
@@ -23,7 +24,7 @@
         },
 
         abrirParaCriar() {
-            this.modalTitle = 'Agendar Sessão';
+            this.modalTitle = '{% trans "Agendar Sessão" %}';
             this.formAction = ''; 
             this.showModal = true;
             this.modoEdicao = false;
@@ -45,7 +46,7 @@
         },
 
         abrirParaEditar(url, pacienteId, data, horario, duracao, valor, atendidoPorPlano, isentoPagamento, serieId) {
-            this.modalTitle = 'Editar Agendamento';
+            this.modalTitle = '{% trans "Editar Agendamento" %}';
             this.formAction = url; 
             this.showModal = true;
             this.modoEdicao = true;
@@ -73,8 +74,8 @@
             const form = document.getElementById('form-confirmar');
             const inputSessaoId = document.getElementById('confirmar-sessao-id');
 
-            titulo.innerText = 'Confirmar Agendamento';
-            descricao.innerText = `Deseja confirmar o agendamento de ${pacienteNome} para ${data} às ${horario}?`;
+            titulo.innerText = '{% trans "Confirmar Agendamento" %}';
+            descricao.innerText = `{% trans "Deseja confirmar o agendamento de" %} ${pacienteNome} {% trans "para" %} ${data} {% trans "às" %} ${horario}?`;
             inputSessaoId.value = sessaoId;
             form.setAttribute('data-sessao-id', sessaoId);
             modal.classList.remove('hidden');
@@ -87,7 +88,7 @@
             const originalText = btn ? btn.innerText : null;
             if (btn) {
                 btn.disabled = true;
-                btn.innerText = 'Enviando...';
+                btn.innerText = '{% trans "Enviando..." %}';
             }
 
             console.log('enviarEmailConfirmacao ->', sessaoId, url);
@@ -109,12 +110,12 @@
                     // Sucesso: fecha o modal sem exibir mensagem ao usuário
                     closeConfirmarModal();
                 } else {
-                    alert('Erro ao enviar e-mail: ' + (data.error || 'Erro desconhecido'));
+                    alert('{% trans "Erro ao enviar e-mail:" %} ' + (data.error || '{% trans "Erro desconhecido" %}'));
                 }
             })
             .catch((err) => {
                 console.error('fetch error', err);
-                alert('Erro de comunicação ao enviar e-mail.');
+                alert('{% trans "Erro de comunicação ao enviar e-mail." %}');
             })
             .finally(() => {
                 if (btn) {
@@ -154,46 +155,46 @@
             const diaFinal = String(dataFinal.getDate()).padStart(2, '0');
             const mesFinal = String(dataFinal.getMonth() + 1).padStart(2, '0');
             const anoFinal = dataFinal.getFullYear();
-            const labelSessoes = repeticoes === 1 ? 'sessão' : 'sessões';
+            const labelSessoes = repeticoes === 1 ? '{% trans "sessão" %}' : '{% trans "sessões" %}';
 
-            return `Serão criadas ${repeticoes} ${labelSessoes} até ${diaFinal}/${mesFinal}/${anoFinal}`;
+            return `{% trans "Serão criadas" %} ${repeticoes} ${labelSessoes} {% trans "até" %} ${diaFinal}/${mesFinal}/${anoFinal}`;
         }
      }">
 
     <div class="mb-8 flex items-center justify-between">
         <div>
-            <h1 class="text-2xl font-black tracking-tight text-slate-900">Agenda</h1>
-            <p class="text-sm text-slate-500">Gerencie os agendamentos e organize os horários dos seus pacientes.</p>
+            <h1 class="text-2xl font-black tracking-tight text-slate-900">{% trans "Agenda" %}</h1>
+            <p class="text-sm text-slate-500">{% trans "Gerencie os agendamentos e organize os horários dos seus pacientes." %}</p>
         </div>
 
         <button @click="abrirParaCriar()" class="flex items-center gap-2 rounded-xl bg-primary px-4 py-2.5 text-sm font-bold text-white shadow-lg shadow-primary/20 transition hover:bg-primaryDark">
             <i class="fa-solid fa-plus"></i>
-            Novo Agendamento
+            {% trans "Novo Agendamento" %}
         </button>
     </div>
 
     <div class="mb-6 rounded-[20px] border border-slate-100 bg-white p-4 shadow-sm">
         <form method="get" class="flex flex-col gap-3 sm:flex-row sm:items-end sm:justify-between">
             <div class="w-full sm:max-w-xs">
-                <label for="data" class="mb-1.5 block text-xs font-bold uppercase tracking-wider text-slate-500">Filtrar por data</label>
+                <label for="data" class="mb-1.5 block text-xs font-bold uppercase tracking-wider text-slate-500">{% trans "Filtrar por data" %}</label>
                 <input id="data" name="data" type="date" value="{{ data_filtro }}" class="w-full rounded-xl border border-slate-200 bg-white px-4 py-3 text-sm text-slate-900 transition focus:border-primary focus:ring-primary">
             </div>
             <div class="flex gap-3">
-                <a href="{% url 'agenda_lista' %}" class="rounded-xl border border-slate-200 px-4 py-3 text-sm font-semibold text-slate-600 transition hover:bg-slate-50">Limpar</a>
-                <button type="submit" class="rounded-xl bg-primary px-5 py-3 text-sm font-bold text-white shadow-lg shadow-primary/10 transition hover:bg-primaryDark">Filtrar</button>
+                <a href="{% url 'agenda_lista' %}" class="rounded-xl border border-slate-200 px-4 py-3 text-sm font-semibold text-slate-600 transition hover:bg-slate-50">{% trans "Limpar" %}</a>
+                <button type="submit" class="rounded-xl bg-primary px-5 py-3 text-sm font-bold text-white shadow-lg shadow-primary/10 transition hover:bg-primaryDark">{% trans "Filtrar" %}</button>
             </div>
         </form>
     </div>
 
     <div class="mb-4 flex items-center justify-between">
         <div>
-            <p class="text-xs font-bold uppercase tracking-wider text-slate-400">Visualização</p>
-            <h2 class="mt-1 text-lg font-black text-slate-900">Calendário da agenda</h2>
+            <p class="text-xs font-bold uppercase tracking-wider text-slate-400">{% trans "Visualização" %}</p>
+            <h2 class="mt-1 text-lg font-black text-slate-900">{% trans "Calendário da agenda" %}</h2>
         </div>
         <div class="inline-flex rounded-xl border border-slate-200 bg-white p-1 shadow-sm">
-            <button type="button" @click="viewMode = 'dia'" class="rounded-lg px-4 py-2 text-sm font-semibold transition" :class="viewMode === 'dia' ? 'bg-primary text-white shadow-sm' : 'text-slate-600 hover:bg-slate-50'">Dia</button>
-            <button type="button" @click="viewMode = 'semana'" class="rounded-lg px-4 py-2 text-sm font-semibold transition" :class="viewMode === 'semana' ? 'bg-primary text-white shadow-sm' : 'text-slate-600 hover:bg-slate-50'">Semana</button>
-            <button type="button" @click="viewMode = 'mes'" class="rounded-lg px-4 py-2 text-sm font-semibold transition" :class="viewMode === 'mes' ? 'bg-primary text-white shadow-sm' : 'text-slate-600 hover:bg-slate-50'">Mês</button>
+            <button type="button" @click="viewMode = 'dia'" class="rounded-lg px-4 py-2 text-sm font-semibold transition" :class="viewMode === 'dia' ? 'bg-primary text-white shadow-sm' : 'text-slate-600 hover:bg-slate-50'">{% trans "Dia" %}</button>
+            <button type="button" @click="viewMode = 'semana'" class="rounded-lg px-4 py-2 text-sm font-semibold transition" :class="viewMode === 'semana' ? 'bg-primary text-white shadow-sm' : 'text-slate-600 hover:bg-slate-50'">{% trans "Semana" %}</button>
+            <button type="button" @click="viewMode = 'mes'" class="rounded-lg px-4 py-2 text-sm font-semibold transition" :class="viewMode === 'mes' ? 'bg-primary text-white shadow-sm' : 'text-slate-600 hover:bg-slate-50'">{% trans "Mês" %}</button>
         </div>
     </div>
 

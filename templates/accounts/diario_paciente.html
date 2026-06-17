@@ -1,6 +1,8 @@
 {% extends 'shared/base.html' %}
+{% load i18n %}
 
-{% block page_title %}Meu Diário de Pensamentos{% endblock %}
+{% block title %}{% trans "Meu Diário de Pensamentos" %} | Psico+{% endblock %}
+{% block page_title %}{% trans "Meu Diário de Pensamentos" %}{% endblock %}
 
 {% block content %}
 <div class="space-y-6">
@@ -23,8 +25,8 @@
                     <i class="fa-solid fa-pen-to-square text-sm"></i>
                 </div>
                 <div>
-                    <h2 class="text-sm font-bold text-textMain">Nova Reflexão</h2>
-                    <p class="text-xs text-textMuted">Anote o que está sentindo agora</p>
+                    <h2 class="text-sm font-bold text-textMain">{% trans "Nova Reflexão" %}</h2>
+                    <p class="text-xs text-textMuted">{% trans "Anote o que está sentindo agora" %}</p>
                 </div>
             </div>
 
@@ -32,7 +34,7 @@
                 {% csrf_token %}
                 
                 <div>
-                    <label class="mb-1.5 block text-xs font-bold uppercase tracking-wider text-textMuted">Situação</label>
+                    <label class="mb-1.5 block text-xs font-bold uppercase tracking-wider text-textMuted">{% trans "Situação" %}</label>
                     <div @input="situacao = $el.querySelector('textarea').value">
                         {{ form.situacao }}
                     </div>
@@ -43,7 +45,7 @@
 
                 <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
                     <div>
-                        <label class="mb-1.5 block text-xs font-bold uppercase tracking-wider text-textMuted">Emoção Principal</label>
+                        <label class="mb-1.5 block text-xs font-bold uppercase tracking-wider text-textMuted">{% trans "Emoção Principal" %}</label>
                         <div @input="emocao = $el.querySelector('input').value">
                             {{ form.emocao_principal }}
                         </div>
@@ -52,7 +54,7 @@
                         {% endif %}
                     </div>
                     <div>
-                        <label class="mb-1.5 block text-xs font-bold uppercase tracking-wider text-textMuted">Intensidade</label>
+                        <label class="mb-1.5 block text-xs font-bold uppercase tracking-wider text-textMuted">{% trans "Intensidade" %}</label>
                         {{ form.intensidade }}
                         {% if form.intensidade.errors %}
                             <p class="mt-1 text-xs text-rose-600">{{ form.intensidade.errors.0 }}</p>
@@ -61,7 +63,7 @@
                 </div>
 
                 <div>
-                    <label class="mb-1.5 block text-xs font-bold uppercase tracking-wider text-textMuted">Observações Livres</label>
+                    <label class="mb-1.5 block text-xs font-bold uppercase tracking-wider text-textMuted">{% trans "Observações Livres" %}</label>
                     {{ form.observacoes_livres }}
                     {% if form.observacoes_livres.errors %}
                         <p class="mt-1 text-xs text-rose-600">{{ form.observacoes_livres.errors.0 }}</p>
@@ -74,14 +76,14 @@
                             :class="!situacao.trim() ? 'opacity-50 bg-slate-400 cursor-not-allowed shadow-none' : 'bg-primary hover:bg-primaryDark shadow-lg shadow-primary/10'"
                             class="w-full rounded-xl px-5 py-3 text-sm font-bold text-white transition flex items-center justify-center gap-2">
                         <i class="fa-solid fa-floppy-disk"></i>
-                        Salvar Registro
+                        {% trans "Salvar Registro" %}
                     </button>
                 </div>
             </form>
         </div>
 
         <div class="rounded-[22px] border border-borderSoft bg-white p-6 shadow-soft">
-            <p class="text-[11px] font-bold uppercase tracking-wider text-textMuted mb-4">Histórico de anotações</p>
+            <p class="text-[11px] font-bold uppercase tracking-wider text-textMuted mb-4">{% trans "Histórico de anotações" %}</p>
             
             <div class="space-y-4 max-h-[500px] overflow-y-auto pr-1">
                 {% for diario in historico_diarios %}
@@ -95,23 +97,23 @@
                                 {% if diario.intensidade <= 2 %}bg-emerald-50 text-emerald-700 border border-emerald-100
                                 {% elif diario.intensidade <= 3 %}bg-amber-50 text-amber-700 border border-amber-100
                                 {% else %}bg-rose-50 text-rose-700 border border-rose-100{% endif %}">
-                                Intensidade: {{ diario.intensidade }}
+                                {% blocktrans %}Intensidade: {{ diario.intensidade }}{% endblocktrans %}
                             </span>
                         </div>
 
                         <div>
-                            <p class="text-[10px] font-bold uppercase tracking-wider text-textMuted">Sentimento</p>
+                            <p class="text-[10px] font-bold uppercase tracking-wider text-textMuted">{% trans "Sentimento" %}</p>
                             <p class="text-sm font-bold text-textMain mt-0.5">{{ diario.emocao_principal }}</p>
                         </div>
 
                         <div>
-                            <p class="text-[10px] font-bold uppercase tracking-wider text-textMuted">Situação relatada</p>
+                            <p class="text-[10px] font-bold uppercase tracking-wider text-textMuted">{% trans "Situação relatada" %}</p>
                             <p class="text-xs text-slate-600 mt-1 whitespace-pre-line bg-white p-3 rounded-xl border border-slate-100/70 shadow-inner">{{ diario.situacao }}</p>
                         </div>
 
                         {% if diario.observacoes_livres %}
                             <div>
-                                <p class="text-[10px] font-bold uppercase tracking-wider text-textMuted">Pensamentos Automáticos</p>
+                                <p class="text-[10px] font-bold uppercase tracking-wider text-textMuted">{% trans "Pensamentos Automáticos" %}</p>
                                 <p class="text-xs text-slate-500 italic mt-1 bg-slate-100/50 p-3 rounded-xl">{{ diario.observacoes_livres }}</p>
                             </div>
                         {% endif %}
@@ -119,8 +121,8 @@
                 {% empty %}
                     <div class="text-center py-10 text-textMuted text-xs">
                         <i class="fa-solid fa-book text-2xl mb-2 block text-primary/30"></i>
-                        <span class="font-medium block text-textMain mb-1">Seu diário está vazio</span>
-                        Os pensamentos que você registrar aqui aparecerão nesta linha do tempo.
+                        <span class="font-medium block text-textMain mb-1">{% trans "Seu diário está vazio" %}</span>
+                        {% trans "Os pensamentos que você registrar aqui aparecerão nesta linha do tempo." %}
                     </div>
                 {% endfor %}
             </div>
