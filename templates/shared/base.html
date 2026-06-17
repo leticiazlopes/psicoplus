@@ -1,4 +1,5 @@
 {% load static %}
+{% load i18n %} 
 <!DOCTYPE html>
 <html lang="pt-br">
 <head>
@@ -55,7 +56,7 @@
 
                     <div>
                         <span class="text-[11px] font-bold uppercase tracking-[0.16em] text-primary">
-                            Painel
+                            {% translate "Painel" %}
                         </span>
 
                         <h1 class="mt-1 text-[22px] font-extrabold tracking-[-0.03em] text-gray-900">
@@ -63,25 +64,45 @@
                         </h1>
                     </div>
 
-                    <div class="flex items-center gap-3">
+                    <!-- Bloco do Perfil + Seletor de Idioma -->
+                    <div class="flex items-center gap-4">
 
-                        {% if request.user.foto %}
-                        <img src="{{ request.user.foto.url }}" alt="{{ request.user.nome }}" class="h-10 w-10 rounded-xl object-cover shadow-lg">
-                        {% else %}
-                        <div class="flex h-10 w-10 items-center justify-center rounded-xl bg-gradient-to-br from-primary to-primaryDark text-sm font-extrabold text-white shadow-lg">
-                            {{ request.user.nome|slice:":1"|upper }}
-                        </div>
-                        {% endif %}
+                        <!-- ✨ Formulário do Django para alternar entre os idiomas -->
+                        <form action="{% url 'set_language' %}" method="post" class="flex gap-0.5 text-[11px] font-bold bg-slate-100 p-1 rounded-xl border border-borderSoft">
+                            {% csrf_token %}
+                            <input name="next" type="hidden" value="{{ request.get_full_path }}">
+                            
+                            <button type="submit" name="language" value="pt-br" 
+                                    class="px-2.5 py-1 rounded-lg transition-all {% if request.LANGUAGE_CODE == 'pt-br' %}bg-white shadow-sm text-primary{% else %}text-textMuted hover:text-textMain{% endif %}">
+                                PT
+                            </button>
+                            <button type="submit" name="language" value="en" 
+                                    class="px-2.5 py-1 rounded-lg transition-all {% if request.LANGUAGE_CODE == 'en' %}bg-white shadow-sm text-primary{% else %}text-textMuted hover:text-textMain{% endif %}">
+                                EN
+                            </button>
+                        </form>
 
-                        <div class="leading-tight">
-                            <div class="text-[14px] font-bold">
-                                {{ request.user.nome }}
+                        <!-- Linha divisória interna -->
+                        <div class="flex items-center gap-3 border-l pl-4 border-borderSoft">
+                            {% if request.user.foto %}
+                            <img src="{{ request.user.foto.url }}" alt="{{ request.user.nome }}" class="h-10 w-10 rounded-xl object-cover shadow-lg">
+                            {% else %}
+                            <div class="flex h-10 w-10 items-center justify-center rounded-xl bg-gradient-to-br from-primary to-primaryDark text-sm font-extrabold text-white shadow-lg">
+                                {{ request.user.nome|slice:":1"|upper }}
                             </div>
+                            {% endif %}
 
-                            <div class="text-[12px] text-textMuted">
-                                {{ request.user.get_perfil_display }}
+                            <div class="leading-tight">
+                                <div class="text-[14px] font-bold">
+                                    {{ request.user.nome }}
+                                </div>
+
+                                <div class="text-[12px] text-textMuted">
+                                    {{ request.user.get_perfil_display }}
+                                </div>
                             </div>
                         </div>
+
                     </div>
                 </div>
                 {% endif %}

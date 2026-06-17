@@ -9,4 +9,5 @@ urlpatterns = [
     path('', include('atendimentos.urls')),
     path('', include('dashboard.urls')),
     path('', include('accounts.urls')),
+    path('i18n/', include('django.conf.urls.i18n')), 
 ]

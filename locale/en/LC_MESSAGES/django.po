@@ -1,0 +1,83 @@
+# SOME DESCRIPTIVE TITLE.
+# Copyright (C) YEAR THE PACKAGE'S COPYRIGHT HOLDER
+# This file is distributed under the same license as the PACKAGE package.
+# FIRST AUTHOR <EMAIL@ADDRESS>, YEAR.
+#
+#, fuzzy
+msgid ""
+msgstr ""
+"Project-Id-Version: PACKAGE VERSION\n"
+"Report-Msgid-Bugs-To: \n"
+"POT-Creation-Date: 2026-06-17 00:19-0300\n"
+"PO-Revision-Date: YEAR-MO-DA HO:MI+ZONE\n"
+"Last-Translator: FULL NAME <EMAIL@ADDRESS>\n"
+"Language-Team: LANGUAGE <LL@li.org>\n"
+"Language: \n"
+"MIME-Version: 1.0\n"
+"Content-Type: text/plain; charset=UTF-8\n"
+"Content-Transfer-Encoding: 8bit\n"
+"Plural-Forms: nplurals=2; plural=(n != 1);\n"
+
+#: psicoplus/settings.py:121
+msgid "Português"
+msgstr "Portuguese"
+
+#: psicoplus/settings.py:122
+msgid "Inglês"
+msgstr "English"
+
+#: templates/shared/base.html:59
+msgid "Painel"
+msgstr "Dashboard"
+
+#: templates/shared/sidebar.html:28 templates/shared/sidebar.html:38
+msgid "Início"
+msgstr "Home"
+
+#: templates/shared/sidebar.html:47
+msgid "Agenda"
+msgstr "Schedule"
+
+#: templates/shared/sidebar.html:57
+msgid "Pacientes"
+msgstr "Patients"
+
+#: templates/shared/sidebar.html:65
+msgid "Atendimentos"
+msgstr "Appointments"
+
+#: templates/shared/sidebar.html:72
+msgid "Anotações"
+msgstr "Notes"
+
+#: templates/shared/sidebar.html:79
+msgid "Financeiro"
+msgstr "Financial"
+
+#: templates/shared/sidebar.html:86
+msgid "Relatórios"
+msgstr "Reports"
+
+#: templates/shared/sidebar.html:95
+msgid "Diário"
+msgstr "Diary"
+
+#: templates/shared/sidebar.html:137
+msgid "Meu Perfil"
+msgstr "My Profile"
+
+#: templates/shared/sidebar.html:148
+msgid "Sair"
+msgstr "Logout"
+
+#: templates/shared/sidebar.html:194
+msgid "Seguro e confiável"
+msgstr "Safe and reliable"
+
+#: templates/shared/sidebar.html:201
+msgid "Dados protegidos"
+msgstr "Protected data"
+
+#: templates/shared/sidebar.html:208
+msgid "Acesso de qualquer lugar"
+msgstr "Access from anywhere"
