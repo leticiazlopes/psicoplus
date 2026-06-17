@@ -164,6 +164,52 @@
                 {% endfor %}
             </div>
         </div>
+
+        {% if is_paginated %}
+        <div class="flex items-center justify-between border-t border-slate-100 bg-white/50 px-4 py-4 sm:px-6 mt-4 rounded-xl">
+            <div class="flex flex-1 justify-between sm:hidden">
+                {% if page_obj.has_previous %}
+                    <a href="?page={{ page_obj.previous_page_number }}{% if status_filtro %}&status={{ status_filtro }}{% endif %}{% if search_query %}&search={{ search_query }}{% endif %}" class="relative inline-flex items-center rounded-xl border border-slate-200 bg-white px-4 py-2 text-[13px] font-semibold text-slate-600 hover:bg-slate-50 transition">Anterior</a>
+                {% endif %}
+                {% if page_obj.has_next %}
+                    <a href="?page={{ page_obj.next_page_number }}{% if status_filtro %}&status={{ status_filtro }}{% endif %}{% if search_query %}&search={{ search_query }}{% endif %}" class="relative ml-3 inline-flex items-center rounded-xl border border-slate-200 bg-white px-4 py-2 text-[13px] font-semibold text-slate-600 hover:bg-slate-50 transition">Próxima</a>
+                {% endif %}
+            </div>
+            
+            <div class="hidden sm:flex sm:flex-1 sm:items-center sm:justify-between">
+                <div>
+                    <p class="text-[13px] text-slate-500">
+                        Mostrando <span class="font-bold text-slate-800">{{ page_obj.start_index }}</span> até <span class="font-bold text-slate-800">{{ page_obj.end_index }}</span> de <span class="font-bold text-slate-800">{{ page_obj.paginator.count }}</span> pacientes
+                    </p>
+                </div>
+                
+                <div>
+                    <nav class="isolate inline-flex -space-x-px gap-1.5" aria-label="Pagination">
+                        {% if page_obj.has_previous %}
+                            <a href="?page={{ page_obj.previous_page_number }}{% if status_filtro %}&status={{ status_filtro }}{% endif %}{% if search_query %}&search={{ search_query }}{% endif %}" class="relative inline-flex items-center rounded-lg border border-slate-200 bg-white px-3 py-1.5 text-[13px] font-semibold text-slate-600 hover:bg-slate-50 transition">
+                                Anterior
+                            </a>
+                        {% else %}
+                            <span class="relative inline-flex items-center rounded-lg border border-slate-100 bg-slate-50/50 px-3 py-1.5 text-[13px] font-semibold text-slate-300 cursor-not-allowed">Anterior</span>
+                        {% endif %}
+
+                        <span class="relative inline-flex items-center px-4 py-1.5 text-[13px] font-bold text-primary rounded-lg bg-primarySoft border border-primary/10">
+                            Página {{ page_obj.number }} de {{ page_obj.paginator.num_pages }}
+                        </span>
+
+                        {% if page_obj.has_next %}
+                            <a href="?page={{ page_obj.next_page_number }}{% if status_filtro %}&status={{ status_filtro }}{% endif %}{% if search_query %}&search={{ search_query }}{% endif %}" class="relative inline-flex items-center rounded-lg border border-slate-200 bg-white px-3 py-1.5 text-[13px] font-semibold text-slate-600 hover:bg-slate-50 transition">
+                                Próxima
+                            </a>
+                        {% else %}
+                            <span class="relative inline-flex items-center rounded-lg border border-slate-100 bg-slate-50/50 px-3 py-1.5 text-[13px] font-semibold text-slate-300 cursor-not-allowed">Próxima</span>
+                        {% endif %}
+                    </nav>
+                </div>
+            </div>
+        </div>
+        {% endif %}
+
     </div>
 </section>
 

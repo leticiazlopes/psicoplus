@@ -207,6 +207,7 @@ class PacienteListView(LoginRequiredMixin, ListView):
     model = Paciente
     template_name = "accounts/pacientes_lista.html"
     context_object_name = "pacientes"
+    paginate_by = 10
 
     def get_queryset(self):
         
@@ -238,6 +239,7 @@ class PacienteListView(LoginRequiredMixin, ListView):
         
         
         context["status_filtro"] = self.request.GET.get('status')
+        context["search_query"] = self.request.GET.get('search', '')
         
         return context
 class PacienteUpdateView(LoginRequiredMixin, UpdateView):
