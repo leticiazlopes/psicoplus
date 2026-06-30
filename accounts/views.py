@@ -19,6 +19,8 @@ from django.core.mail import send_mail
 from django.views.generic import FormView
 from django.urls import reverse_lazy
 from django.contrib import messages
+from django.db.models import Count, DecimalField, Q, Sum, Value
+from django.db.models.functions import Coalesce
 from .forms import DiarioPensamentoForm
 from .models import DiarioPensamento
 from .services import enviar_email_definicao_senha
@@ -245,6 +247,88 @@ class PacienteListView(LoginRequiredMixin, ListView):
         context["search_query"] = self.request.GET.get('search', '')
         
         return context
+
+
+class FinanceiroMensalView(LoginRequiredMixin, ListView):
+    model = Sessao
+    template_name = "accounts/financeiro_mensal.html"
+    context_object_name = "sessoes"
+    paginate_by = 20
+
+    def _get_mes_ano(self):
+        hoje = timezone.localdate()
+        mes_param = self.request.GET.get("mes")
+        ano_param = self.request.GET.get("ano")
+
+        try:
+            mes = int(mes_param) if mes_param else hoje.month
+        except (TypeError, ValueError):
+            mes = hoje.month
+
+        try:
+            ano = int(ano_param) if ano_param else hoje.year
+        except (TypeError, ValueError):
+            ano = hoje.year
+
+        if mes < 1 or mes > 12:
+            mes = hoje.month
+
+        return mes, ano
+
+    def get_queryset(self):
+        mes, ano = self._get_mes_ano()
+        return (
+            Sessao.objects.select_related("paciente")
+            .filter(
+                psicologo=self.request.user.psicologo,
+                data__month=mes,
+                data__year=ano,
+            )
+            .order_by("-data", "-horario_inicio")
+        )
+
+    def get_context_data(self, **kwargs):
+        context = super().get_context_data(**kwargs)
+        hoje = timezone.localdate()
+        mes, ano = self._get_mes_ano()
+        queryset = self.get_queryset()
+
+        totais = queryset.aggregate(
+            total_recebido=Coalesce(
+                Sum("valor", filter=Q(status_pagamento=Sessao.StatusPagamento.PAGO)),
+                Value(0, output_field=DecimalField(max_digits=10, decimal_places=2)),
+                output_field=DecimalField(max_digits=10, decimal_places=2),
+            ),
+            total_pendente=Coalesce(
+                Sum("valor", filter=Q(status_pagamento=Sessao.StatusPagamento.PENDENTE)),
+                Value(0, output_field=DecimalField(max_digits=10, decimal_places=2)),
+                output_field=DecimalField(max_digits=10, decimal_places=2),
+            ),
+            total_sessoes=Count("id"),
+        )
+
+        context["mes_selecionado"] = mes
+        context["ano_selecionado"] = ano
+        context["meses"] = [
+            (1, _("Janeiro")),
+            (2, _("Fevereiro")),
+            (3, _("Março")),
+            (4, _("Abril")),
+            (5, _("Maio")),
+            (6, _("Junho")),
+            (7, _("Julho")),
+            (8, _("Agosto")),
+            (9, _("Setembro")),
+            (10, _("Outubro")),
+            (11, _("Novembro")),
+            (12, _("Dezembro")),
+        ]
+        context["anos_disponiveis"] = list(range(hoje.year - 2, hoje.year + 3))
+        context["total_recebido"] = totais["total_recebido"]
+        context["total_pendente"] = totais["total_pendente"]
+        context["total_sessoes_mes"] = totais["total_sessoes"]
+        return context
+
 class PacienteUpdateView(LoginRequiredMixin, UpdateView):
     model = Paciente
     form_class = CadastroPacienteForm

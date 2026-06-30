@@ -3,6 +3,7 @@ from pathlib import Path
 from django.test import TestCase
 from django.urls import resolve, reverse
 from datetime import timedelta
+from decimal import Decimal
 from django.utils import timezone
 from .forms import CadastroPacienteForm
 from .models import Usuario, Psicologo, Paciente, Sessao, DiarioPensamento
@@ -573,6 +574,93 @@ class AccountsViewsAdicionaisTests(TestCase):
         data = response.json()
         self.assertTrue(data['tem_sessao'])
         self.assertEqual(len(data['sessoes']), 1)
+
+
+class FinanceiroMensalViewTests(TestCase):
+    def setUp(self):
+        self.user = Usuario.objects.create_user(
+            username="financeiro@teste.com",
+            email="financeiro@teste.com",
+            password="senha123",
+            perfil=Usuario.Perfil.PSICOLOGO,
+        )
+        self.psicologo = Psicologo.objects.create(usuario=self.user, crp="55555")
+        self.paciente = Paciente.objects.create(
+            nome_completo="Paciente Financeiro",
+            email="paciente.financeiro@teste.com",
+            psicologo=self.psicologo,
+        )
+        self.client.force_login(self.user)
+
+    def test_financeiro_mensal_exibe_totais_e_sessoes_do_mes_filtrado(self):
+        Sessao.objects.create(
+            psicologo=self.psicologo,
+            paciente=self.paciente,
+            data="2026-06-10",
+            horario_inicio="09:00",
+            duracao_minutos=50,
+            valor=Decimal("150.00"),
+            status=Sessao.Status.REALIZADA,
+            status_pagamento=Sessao.StatusPagamento.PAGO,
+            data_pagamento="2026-06-10",
+        )
+        Sessao.objects.create(
+            psicologo=self.psicologo,
+            paciente=self.paciente,
+            data="2026-06-20",
+            horario_inicio="10:00",
+            duracao_minutos=50,
+            valor=Decimal("200.00"),
+            status=Sessao.Status.CONFIRMADA,
+            status_pagamento=Sessao.StatusPagamento.PENDENTE,
+        )
+        Sessao.objects.create(
+            psicologo=self.psicologo,
+            paciente=self.paciente,
+            data="2026-05-20",
+            horario_inicio="11:00",
+            duracao_minutos=50,
+            valor=Decimal("999.00"),
+            status=Sessao.Status.REALIZADA,
+            status_pagamento=Sessao.StatusPagamento.PAGO,
+            data_pagamento="2026-05-20",
+        )
+
+        response = self.client.get(reverse("financeiro_mensal"), {"mes": 6, "ano": 2026})
+
+        self.assertEqual(response.status_code, 200)
+        self.assertEqual(response.context["mes_selecionado"], 6)
+        self.assertEqual(response.context["ano_selecionado"], 2026)
+        self.assertEqual(response.context["total_recebido"], Decimal("150"))
+        self.assertEqual(response.context["total_pendente"], Decimal("200"))
+        self.assertEqual(response.context["total_sessoes_mes"], 2)
+        self.assertEqual(len(response.context["sessoes"]), 2)
+        self.assertContains(response, "Paciente Financeiro")
+        self.assertContains(response, "150")
+        self.assertContains(response, "200")
+        self.assertNotContains(response, "999")
+
+    def test_financeiro_mensal_ignora_mes_invalido_e_usa_mes_atual(self):
+        hoje = timezone.localdate()
+        Sessao.objects.create(
+            psicologo=self.psicologo,
+            paciente=self.paciente,
+            data=hoje,
+            horario_inicio="14:00",
+            duracao_minutos=50,
+            valor=Decimal("120.00"),
+            status=Sessao.Status.REALIZADA,
+            status_pagamento=Sessao.StatusPagamento.PAGO,
+            data_pagamento=hoje,
+        )
+
+        response = self.client.get(reverse("financeiro_mensal"), {"mes": 99, "ano": hoje.year})
+
+        self.assertEqual(response.status_code, 200)
+        self.assertEqual(response.context["mes_selecionado"], hoje.month)
+        self.assertEqual(response.context["ano_selecionado"], hoje.year)
+        self.assertEqual(response.context["total_recebido"], Decimal("120"))
+        self.assertEqual(response.context["total_sessoes_mes"], 1)
         
 #-- DIÁRIO DO PENSAMENTO --
 class DiarioPacienteViewTests(TestCase):
