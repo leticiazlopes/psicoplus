@@ -15,6 +15,7 @@ urlpatterns = [
     path('sessao/<uuid:sessao_id>/confirmar/', views.confirmar_sessao_psicologo, name='confirmar_sessao_psicologo'),    path('api/sessoes/confirmar/<uuid:token>/', views.api_publica_confirmar, name='api_publica_confirmar'),
     path('agenda/enviar-confirmacao-email/<uuid:sessao_id>/', views.enviar_confirmacao_email, name='enviar_confirmacao_email'),
     path('agenda/api/status-sessoes/', views.api_status_sessoes, name='api_status_sessoes'),
+    path('agenda/marcar-pagamento/<uuid:sessao_id>/', views.marcar_pagamento_sessao, name='marcar_pagamento_sessao'),
     
 ]
 
