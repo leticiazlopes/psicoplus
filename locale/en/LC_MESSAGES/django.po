@@ -2065,6 +2065,50 @@ msgstr "Not recorded"
 msgid "Nenhuma sessão encontrada para o período selecionado."
 msgstr "No sessions found for the selected period."
 
+#: templates/accounts/relatorio_atendimentos.html:11
+msgid "Produtividade"
+msgstr "Productivity"
+
+#: templates/accounts/relatorio_atendimentos.html:12
+msgid "Relatório de atendimentos por período"
+msgstr "Appointment report by period"
+
+#: templates/accounts/relatorio_atendimentos.html:13
+msgid "Acompanhe quantas sessões foram realizadas, canceladas ou registradas como falta."
+msgstr "Track how many sessions were completed, canceled, or recorded as no-shows."
+
+#: templates/accounts/relatorio_atendimentos.html:18
+msgid "Data inicial"
+msgstr "Start date"
+
+#: templates/accounts/relatorio_atendimentos.html:22
+msgid "Data final"
+msgstr "End date"
+
+#: templates/accounts/relatorio_atendimentos.html:29
+msgid "Exportar CSV"
+msgstr "Export CSV"
+
+#: templates/accounts/relatorio_atendimentos.html:46
+msgid "Sessões canceladas"
+msgstr "Canceled sessions"
+
+#: templates/accounts/relatorio_atendimentos.html:50
+msgid "Faltas"
+msgstr "No-shows"
+
+#: templates/accounts/relatorio_atendimentos.html:58
+msgid "Detalhamento do relatório"
+msgstr "Report details"
+
+#: templates/accounts/relatorio_atendimentos.html:66
+msgid "Data"
+msgstr "Date"
+
+#: templates/accounts/relatorio_atendimentos.html:69
+msgid "Pagamento"
+msgstr "Payment"
+
 #: templates/shared/sidebar.html:86
 msgid "Relatórios"
 msgstr "Reports"
