@@ -86,15 +86,15 @@
                             <span class="text-[14px] font-black">{{ paciente.nome_completo|slice:":1"|upper }}</span>
                         </div>
                         <div class="min-w-0">
-                            <p class="truncate text-[14px] font-bold text-slate-900">{{ paciente.nome_completo }}</p>
+                            <p class="truncate text-[14px] font-bold text-slate-900 sensitive-data">{{ paciente.nome_completo }}</p>
                             <p class="mt-1 text-[13px] text-slate-500">Cadastrado em {{ paciente.criado_em|date:"d/m/Y" }}</p>
                         </div>
                     </div>
 
                     <div class="space-y-1">
                         <p class="text-[11px] font-bold uppercase tracking-[0.18em] text-slate-400 lg:hidden">Contato</p>
-                        <p class="truncate text-[14px] font-semibold text-slate-700">{{ paciente.email }}</p>
-                        <p class="text-[13px] text-slate-500">{{ paciente.telefone|default:"Telefone não informado" }}</p>
+                        <p class="truncate text-[14px] font-semibold text-slate-700 sensitive-data">{{ paciente.email }}</p>
+                        <p class="text-[13px] text-slate-500 sensitive-data">{{ paciente.telefone|default:"Telefone não informado" }}</p>
                     </div>
 
                     <div class="space-y-1">
