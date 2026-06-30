@@ -83,40 +83,69 @@
         </div>
 
         <div class="rounded-[22px] border border-borderSoft bg-white p-6 shadow-soft">
-            <p class="text-[11px] font-bold uppercase tracking-wider text-textMuted mb-4">{% trans "Histórico de anotações" %}</p>
+            <div class="flex items-center justify-between mb-4">
+                <p class="text-[11px] font-bold uppercase tracking-wider text-textMuted">{% trans "Histórico de anotações" %}</p>
+                <span class="text-[10px] text-slate-400 flex items-center gap-1 bg-slate-100 px-2 py-1 rounded-md">
+                    <i class="fa-solid fa-user-shield"></i> {% trans "Modo Privado Ativo" %}
+                </span>
+            </div>
             
             <div class="space-y-4 max-h-[500px] overflow-y-auto pr-1">
                 {% for diario in historico_diarios %}
-                    <div class="p-4 rounded-2xl bg-slate-50 border border-slate-100 shadow-sm space-y-3">
+                    <div class="p-4 rounded-2xl bg-slate-50 border border-slate-100 shadow-sm space-y-3 relative overflow-hidden" 
+                         x-data="{ visivel: false }">
+                        
                         <div class="flex items-center justify-between">
                             <span class="inline-flex items-center gap-1 text-xs text-textMuted font-bold">
                                 <i class="fa-regular fa-clock text-primary"></i> 
                                 {{ diario.criado_em|date:"d/m/Y H:i" }}
                             </span>
-                           <span class="inline-flex rounded-full px-2.5 py-0.5 text-[9px] font-bold uppercase tracking-wide 
-                                {% if diario.intensidade <= 2 %}bg-emerald-50 text-emerald-700 border border-emerald-100
-                                {% elif diario.intensidade <= 3 %}bg-amber-50 text-amber-700 border border-amber-100
-                                {% else %}bg-rose-50 text-rose-700 border border-rose-100{% endif %}">
-                                {% blocktrans %}Intensidade: {{ diario.intensidade }}{% endblocktrans %}
+                            
+                            <div class="flex items-center gap-2">
+                                <button type="button" 
+                                        @click="visivel = !visivel" 
+                                        class="text-xs font-semibold px-2.5 py-1 rounded-lg border border-slate-200 bg-white hover:bg-slate-100 text-slate-600 flex items-center gap-1 transition"
+                                        title="{% trans 'Mostrar/Ocultar conteúdo' %}">
+                                    <i class="fa-solid" :class="visivel ? 'fa-eye-slash text-slate-400' : 'fa-eye text-primary'"></i>
+                                    <span x-text="visivel ? '{% trans 'Ocultar' %}' : '{% trans 'Revelar' %}'"></span>
+                                </button>
+
+                                <span class="inline-flex rounded-full px-2.5 py-0.5 text-[9px] font-bold uppercase tracking-wide 
+                                    {% if diario.intensidade <= 2 %}bg-emerald-50 text-emerald-700 border border-emerald-100
+                                    {% elif diario.intensidade <= 3 %}bg-amber-50 text-amber-700 border border-amber-100
+                                    {% else %}bg-rose-50 text-rose-700 border border-rose-100{% endif %}">
+                                    {% blocktrans %}Intensidade: {{ diario.intensidade }}{% endblocktrans %}
+                                </span>
+                            </div>
+                        </div>
+
+                        <div class="space-y-3 transition-all duration-300" 
+                             :class="visivel ? 'blur-none select-text' : 'blur-[4.5px] select-none pointer-events-none opacity-40'">
+                            
+                            <div>
+                                <p class="text-[10px] font-bold uppercase tracking-wider text-textMuted">{% trans "Sentimento" %}</p>
+                                <p class="text-sm font-bold text-textMain mt-0.5">{{ diario.emocao_principal }}</p>
+                            </div>
+
+                            <div>
+                                <p class="text-[10px] font-bold uppercase tracking-wider text-textMuted">{% trans "Situação relatada" %}</p>
+                                <p class="text-xs text-slate-600 mt-1 whitespace-pre-line bg-white p-3 rounded-xl border border-slate-100/70 shadow-inner">{{ diario.situacao }}</p>
+                            </div>
+
+                            {% if diario.observacoes_livres %}
+                                <div>
+                                    <p class="text-[10px] font-bold uppercase tracking-wider text-textMuted">{% trans "Pensamentos Automáticos" %}</p>
+                                    <p class="text-xs text-slate-500 italic mt-1 bg-slate-100/50 p-3 rounded-xl">{{ diario.observacoes_livres }}</p>
+                                </div>
+                            {% endif %}
+                        </div>
+
+                        <div class="absolute inset-x-0 bottom-3 flex justify-center pointer-events-none" x-show="!visivel" x-transition>
+                            <span class="bg-slate-800/80 text-[10px] text-white font-medium px-2.5 py-1 rounded-full backdrop-blur-sm shadow-sm">
+                                <i class="fa-solid fa-lock text-[9px] mr-1 text-slate-300"></i>{% trans "Conteúdo ocultado por privacidade" %}
                             </span>
                         </div>
 
-                        <div>
-                            <p class="text-[10px] font-bold uppercase tracking-wider text-textMuted">{% trans "Sentimento" %}</p>
-                            <p class="text-sm font-bold text-textMain mt-0.5">{{ diario.emocao_principal }}</p>
-                        </div>
-
-                        <div>
-                            <p class="text-[10px] font-bold uppercase tracking-wider text-textMuted">{% trans "Situação relatada" %}</p>
-                            <p class="text-xs text-slate-600 mt-1 whitespace-pre-line bg-white p-3 rounded-xl border border-slate-100/70 shadow-inner">{{ diario.situacao }}</p>
-                        </div>
-
-                        {% if diario.observacoes_livres %}
-                            <div>
-                                <p class="text-[10px] font-bold uppercase tracking-wider text-textMuted">{% trans "Pensamentos Automáticos" %}</p>
-                                <p class="text-xs text-slate-500 italic mt-1 bg-slate-100/50 p-3 rounded-xl">{{ diario.observacoes_livres }}</p>
-                            </div>
-                        {% endif %}
                     </div>
                 {% empty %}
                     <div class="text-center py-10 text-textMuted text-xs">
