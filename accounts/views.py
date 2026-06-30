@@ -21,6 +21,8 @@ from django.urls import reverse_lazy
 from django.contrib import messages
 from .forms import DiarioPensamentoForm
 from .models import DiarioPensamento
+from .services import enviar_email_definicao_senha
+
 
 class PsicologoListView(LoginRequiredMixin, ListView):
     template_name = "accounts/psicologos_lista.html"
@@ -509,3 +511,16 @@ def inicio_view(request):
     if request.user.perfil == Usuario.Perfil.PACIENTE:
         return redirect("dashboard_paciente")
     return render(request, "agenda/agendamentos_lista.html")
+
+@login_required
+@require_POST
+def reenviar_definicao_senha(request, pk):
+    paciente = get_object_or_404(Paciente, pk=pk, psicologo=request.user.psicologo)
+
+    if not paciente.usuario_id:
+        messages.error(request, _("Este paciente ainda não possui usuário de acesso vinculado."))
+        return redirect("paciente_perfil", pk=paciente.pk)
+
+    enviar_email_definicao_senha(paciente.usuario)
+    messages.success(request, _("E-mail de definição de senha reenviado com sucesso."))
+    return redirect("paciente_perfil", pk=paciente.pk)

@@ -18,6 +18,19 @@
                 <i class="fa-solid fa-arrow-left text-xs"></i>
                 {% trans "Voltar para lista" %}
             </a>
+
+            {% if paciente.usuario_id %}
+                <form action="{% url 'reenviar_definicao_senha' paciente.pk %}" method="post" class="inline">
+                    {% csrf_token %}
+                    <button type="submit"
+                            class="inline-flex items-center gap-2 rounded-xl border border-slate-200 bg-white px-4 py-2.5 text-sm font-semibold text-slate-600 transition hover:bg-slate-50">
+                        <i class="fa-solid fa-paper-plane text-xs"></i>
+                        {% trans "Reenviar definição de senha" %}
+                    </button>
+                </form>
+            {% endif %}
+
+
             <a href="{% url 'editar_paciente' paciente.pk %}"
                class="inline-flex items-center gap-2 rounded-xl bg-gradient-to-r from-primary to-primaryDark px-4 py-2.5 text-sm font-semibold text-white transition hover:translate-y-[-1px]">
                 <i class="fa-solid fa-pen-to-square text-xs"></i>
