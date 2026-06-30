@@ -211,8 +211,6 @@ class CadastroPacienteForm(forms.ModelForm):
                 perfil=Usuario.Perfil.PACIENTE,
             )
             usuario.set_unusable_password()
-            usuario.gerar_token_definicao_senha()
-
         if commit:
             usuario.save()
             paciente.usuario = usuario
