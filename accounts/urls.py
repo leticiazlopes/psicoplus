@@ -38,4 +38,6 @@ urlpatterns = [
     path("paciente/diario/", views.diario_paciente_view, name="diario_paciente"),
     path("pacientes/<uuid:pk>/reenviar-definicao-senha/", views.reenviar_definicao_senha, name="reenviar_definicao_senha"),
     path("financeiro/", views.FinanceiroMensalView.as_view(), name="financeiro_mensal"),
+    path("relatorios/atendimentos/", views.RelatorioAtendimentosPeriodoView.as_view(), name="relatorio_atendimentos"),
+    path("relatorios/atendimentos/csv/", views.exportar_relatorio_atendimentos_csv, name="exportar_relatorio_atendimentos_csv"),
     ]   

@@ -1,29 +1,86 @@
-from django.views.generic import CreateView, DetailView, FormView, ListView, UpdateView
-from django.contrib.auth.views import LoginView, LogoutView
-from django.urls import reverse_lazy
-from django.contrib import messages
-from django.contrib.auth.mixins import LoginRequiredMixin
-from django.shortcuts import get_object_or_404, redirect, render
-from .forms import CadastroPacienteForm, CadastroPsicologoForm, DefinirSenhaPacienteForm, LoginUsuarioForm, MeuPerfilForm
-from .models import Usuario, Psicologo, Paciente, Sessao
-from atendimentos.models import Prontuario
-from atendimentos.services import serialize_prontuario
-from django.views.decorators.http import require_POST
-from django.utils.decorators import method_decorator
-from django.contrib.messages.views import SuccessMessageMixin
-import random
+import csv
 import datetime
-from django.utils import timezone
-from django.utils.translation import gettext_lazy as _
-from django.core.mail import send_mail
-from django.views.generic import FormView
-from django.urls import reverse_lazy
+import random
+
 from django.contrib import messages
+from django.contrib.auth.decorators import login_required
+from django.contrib.auth.mixins import LoginRequiredMixin
+from django.contrib.auth.views import LoginView, LogoutView
+from django.contrib.messages.views import SuccessMessageMixin
+from django.core.mail import send_mail
 from django.db.models import Count, DecimalField, Q, Sum, Value
 from django.db.models.functions import Coalesce
-from .forms import DiarioPensamentoForm
-from .models import DiarioPensamento
+from django.http import HttpResponse
+from django.shortcuts import get_object_or_404, redirect, render
+from django.urls import reverse_lazy
+from django.utils import timezone
+from django.utils.dateparse import parse_date
+from django.utils.decorators import method_decorator
+from django.utils.translation import gettext_lazy as _
+from django.views.decorators.http import require_POST
+from django.views.generic import CreateView, DetailView, FormView, ListView, UpdateView
+
+from atendimentos.models import Prontuario
+from atendimentos.services import serialize_prontuario
+
+from .forms import (
+    CadastroPacienteForm,
+    CadastroPsicologoForm,
+    DefinirSenhaPacienteForm,
+    DiarioPensamentoForm,
+    LoginUsuarioForm,
+    MeuPerfilForm,
+)
+from .models import DiarioPensamento, Paciente, Psicologo, Sessao, Usuario
 from .services import enviar_email_definicao_senha
+
+
+def _datas_padrao_relatorio():
+    hoje = timezone.localdate()
+    return hoje.replace(day=1), hoje
+
+
+def _get_periodo_relatorio(request):
+    data_inicio_padrao, data_fim_padrao = _datas_padrao_relatorio()
+    data_inicio_param = (request.GET.get("data_inicio") or "").strip()
+    data_fim_param = (request.GET.get("data_fim") or "").strip()
+    erro_filtro_periodo = None
+
+    data_inicio = parse_date(data_inicio_param) if data_inicio_param else data_inicio_padrao
+    data_fim = parse_date(data_fim_param) if data_fim_param else data_fim_padrao
+
+    if data_inicio_param and not data_inicio:
+        erro_filtro_periodo = _("Data inicial inválida. Use o formato YYYY-MM-DD.")
+        data_inicio = data_inicio_padrao
+
+    if not erro_filtro_periodo and data_fim_param and not data_fim:
+        erro_filtro_periodo = _("Data final inválida. Use o formato YYYY-MM-DD.")
+        data_fim = data_fim_padrao
+
+    if not erro_filtro_periodo and data_inicio and data_fim and data_inicio > data_fim:
+        erro_filtro_periodo = _("A data inicial não pode ser maior que a data final.")
+        data_inicio, data_fim = data_inicio_padrao, data_fim_padrao
+
+    return {
+        "data_inicio": data_inicio,
+        "data_fim": data_fim,
+        "data_inicio_param": data_inicio.strftime("%Y-%m-%d") if data_inicio else "",
+        "data_fim_param": data_fim.strftime("%Y-%m-%d") if data_fim else "",
+        "erro_filtro_periodo": erro_filtro_periodo,
+    }
+
+
+def _get_queryset_relatorio_atendimentos(request):
+    periodo = _get_periodo_relatorio(request)
+    queryset = (
+        Sessao.objects.select_related("paciente")
+        .filter(
+            psicologo=request.user.psicologo,
+            data__range=(periodo["data_inicio"], periodo["data_fim"]),
+        )
+        .order_by("-data", "-horario_inicio")
+    )
+    return queryset, periodo
 
 
 class PsicologoListView(LoginRequiredMixin, ListView):
@@ -328,6 +385,72 @@ class FinanceiroMensalView(LoginRequiredMixin, ListView):
         context["total_pendente"] = totais["total_pendente"]
         context["total_sessoes_mes"] = totais["total_sessoes"]
         return context
+
+
+class RelatorioAtendimentosPeriodoView(LoginRequiredMixin, ListView):
+    model = Sessao
+    template_name = "accounts/relatorio_atendimentos.html"
+    context_object_name = "sessoes"
+    paginate_by = 30
+
+    def get_queryset(self):
+        queryset, _ = _get_queryset_relatorio_atendimentos(self.request)
+        return queryset
+
+    def get_context_data(self, **kwargs):
+        context = super().get_context_data(**kwargs)
+        queryset, periodo = _get_queryset_relatorio_atendimentos(self.request)
+
+        totais = queryset.aggregate(
+            total_realizadas=Count("id", filter=Q(status=Sessao.Status.REALIZADA)),
+            total_canceladas=Count("id", filter=Q(status=Sessao.Status.CANCELADA)),
+            total_faltas=Count("id", filter=Q(status=Sessao.Status.FALTA)),
+        )
+
+        context.update(periodo)
+        context["total_realizadas"] = totais["total_realizadas"]
+        context["total_canceladas"] = totais["total_canceladas"]
+        context["total_faltas"] = totais["total_faltas"]
+        return context
+
+@login_required
+def exportar_relatorio_atendimentos_csv(request):
+    queryset, periodo = _get_queryset_relatorio_atendimentos(request)
+
+    response = HttpResponse(content_type="text/csv; charset=utf-8")
+    nome_arquivo = (
+        f"relatorio-atendimentos-{periodo['data_inicio'].strftime('%Y%m%d')}"
+        f"-{periodo['data_fim'].strftime('%Y%m%d')}.csv"
+    )
+    response["Content-Disposition"] = f'attachment; filename="{nome_arquivo}"'
+
+    writer = csv.writer(response)
+    writer.writerow(
+        [
+            "Paciente",
+            "Data",
+            "Horario",
+            "Status",
+            "Valor",
+            "Status pagamento",
+            "Data pagamento",
+        ]
+    )
+
+    for sessao in queryset:
+        writer.writerow(
+            [
+                sessao.paciente.nome_completo,
+                sessao.data.strftime("%d/%m/%Y"),
+                sessao.horario_inicio.strftime("%H:%M"),
+                sessao.get_status_display(),
+                f"{sessao.valor:.2f}",
+                sessao.get_status_pagamento_display(),
+                sessao.data_pagamento.strftime("%d/%m/%Y") if sessao.data_pagamento else "",
+            ]
+        )
+
+    return response
 
 class PacienteUpdateView(LoginRequiredMixin, UpdateView):
     model = Paciente

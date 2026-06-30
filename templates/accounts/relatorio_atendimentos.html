@@ -1,0 +1,101 @@
+{% extends 'shared/base.html' %}
+{% load i18n %}
+
+{% block title %}{% trans "Relatórios" %} | Psico+{% endblock %}
+{% block page_title %}{% trans "Relatórios" %}{% endblock %}
+
+{% block content %}
+<section class="space-y-6">
+    <div class="flex flex-wrap items-end justify-between gap-4">
+        <div>
+            <p class="text-xs font-bold uppercase tracking-[0.18em] text-slate-400">{% trans "Produtividade" %}</p>
+            <h1 class="mt-2 text-2xl font-black tracking-tight text-slate-900">{% trans "Relatório de atendimentos por período" %}</h1>
+            <p class="mt-2 text-sm text-slate-500">{% trans "Acompanhe quantas sessões foram realizadas, canceladas ou registradas como falta." %}</p>
+        </div>
+
+        <form method="get" class="flex flex-wrap items-end gap-3 rounded-2xl border border-slate-200/70 bg-white p-4 shadow-soft">
+            <div>
+                <label for="id_data_inicio" class="mb-2 block text-xs font-bold uppercase tracking-[0.16em] text-slate-500">{% trans "Data inicial" %}</label>
+                <input id="id_data_inicio" name="data_inicio" type="date" value="{{ data_inicio_param }}" class="rounded-xl border border-slate-200 bg-white px-4 py-3 text-sm font-semibold text-slate-900 outline-none transition focus:border-primary/30 focus:ring-4 focus:ring-primary/5">
+            </div>
+            <div>
+                <label for="id_data_fim" class="mb-2 block text-xs font-bold uppercase tracking-[0.16em] text-slate-500">{% trans "Data final" %}</label>
+                <input id="id_data_fim" name="data_fim" type="date" value="{{ data_fim_param }}" class="rounded-xl border border-slate-200 bg-white px-4 py-3 text-sm font-semibold text-slate-900 outline-none transition focus:border-primary/30 focus:ring-4 focus:ring-primary/5">
+            </div>
+            <button type="submit" class="rounded-xl bg-primary px-5 py-3 text-sm font-bold text-white shadow-[0_14px_28px_rgba(109,74,255,0.22)] transition hover:translate-y-[-1px]">
+                {% trans "Filtrar" %}
+            </button>
+            <a href="{% url 'exportar_relatorio_atendimentos_csv' %}?data_inicio={{ data_inicio_param }}&data_fim={{ data_fim_param }}" class="rounded-xl border border-slate-200 bg-white px-5 py-3 text-sm font-bold text-slate-700 transition hover:border-primary/30 hover:text-primary">
+                {% trans "Exportar CSV" %}
+            </a>
+        </form>
+    </div>
+
+    {% if erro_filtro_periodo %}
+    <div class="rounded-2xl border border-amber-200 bg-amber-50 px-4 py-3 text-sm font-medium text-amber-800">
+        {{ erro_filtro_periodo }}
+    </div>
+    {% endif %}
+
+    <div class="grid gap-5 sm:grid-cols-2 xl:grid-cols-3">
+        <div class="rounded-[24px] border border-emerald-100 bg-white p-6 shadow-soft">
+            <p class="text-[12px] font-bold uppercase tracking-wider text-emerald-500">{% trans "Sessões realizadas" %}</p>
+            <h2 class="mt-3 text-3xl font-black tracking-tight text-emerald-700">{{ total_realizadas }}</h2>
+        </div>
+        <div class="rounded-[24px] border border-rose-100 bg-white p-6 shadow-soft">
+            <p class="text-[12px] font-bold uppercase tracking-wider text-rose-500">{% trans "Sessões canceladas" %}</p>
+            <h2 class="mt-3 text-3xl font-black tracking-tight text-rose-700">{{ total_canceladas }}</h2>
+        </div>
+        <div class="rounded-[24px] border border-amber-100 bg-white p-6 shadow-soft">
+            <p class="text-[12px] font-bold uppercase tracking-wider text-amber-500">{% trans "Faltas" %}</p>
+            <h2 class="mt-3 text-3xl font-black tracking-tight text-amber-700">{{ total_faltas }}</h2>
+        </div>
+    </div>
+
+    <div class="rounded-[24px] border border-slate-200/70 bg-white p-6 shadow-soft">
+        <div class="mb-5">
+            <p class="text-xs font-bold uppercase tracking-[0.18em] text-slate-400">{% trans "Sessões do período" %}</p>
+            <h2 class="mt-2 text-xl font-black text-slate-900">{% trans "Detalhamento do relatório" %}</h2>
+        </div>
+
+        <div class="overflow-x-auto">
+            <table class="w-full min-w-[820px] border-collapse text-left">
+                <thead>
+                    <tr class="border-b border-slate-100 text-[12px] font-bold uppercase tracking-[0.16em] text-slate-400">
+                        <th class="pb-3 pr-4">{% trans "Paciente" %}</th>
+                        <th class="px-4 pb-3">{% trans "Data" %}</th>
+                        <th class="px-4 pb-3">{% trans "Status" %}</th>
+                        <th class="px-4 pb-3">{% trans "Valor" %}</th>
+                        <th class="pl-4 pb-3">{% trans "Pagamento" %}</th>
+                    </tr>
+                </thead>
+                <tbody class="divide-y divide-slate-50 text-sm text-slate-600">
+                    {% for sessao in sessoes %}
+                    <tr class="hover:bg-slate-50/60 transition">
+                        <td class="py-4 pr-4 font-semibold text-slate-800 sensitive-data">{{ sessao.paciente.nome_completo }}</td>
+                        <td class="px-4 py-4">{{ sessao.data|date:"d/m/Y" }} • {{ sessao.horario_inicio|time:"H:i" }}</td>
+                        <td class="px-4 py-4">
+                            <span class="inline-flex items-center rounded-full px-3 py-1.5 text-xs font-bold uppercase tracking-[0.14em]
+                            {% if sessao.status == 'realizada' %}bg-emerald-50 text-emerald-700
+                            {% elif sessao.status == 'cancelada' %}bg-rose-50 text-rose-700
+                            {% elif sessao.status == 'falta' %}bg-amber-50 text-amber-700
+                            {% else %}bg-slate-100 text-slate-600{% endif %}">
+                                {{ sessao.get_status_display }}
+                            </span>
+                        </td>
+                        <td class="px-4 py-4 font-bold text-slate-800 sensitive-data">R$ {{ sessao.valor|floatformat:2 }}</td>
+                        <td class="pl-4 py-4">{{ sessao.get_status_pagamento_display }}</td>
+                    </tr>
+                    {% empty %}
+                    <tr>
+                        <td colspan="5" class="py-10 text-center text-sm font-medium italic text-slate-400">
+                            {% trans "Nenhuma sessão encontrada para o período selecionado." %}
+                        </td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+    </div>
+</section>
+{% endblock %}

@@ -2,6 +2,7 @@ from pathlib import Path
 
 from django.test import TestCase
 from django.urls import resolve, reverse
+import csv
 from datetime import timedelta
 from decimal import Decimal
 from django.utils import timezone
@@ -661,6 +662,112 @@ class FinanceiroMensalViewTests(TestCase):
         self.assertEqual(response.context["ano_selecionado"], hoje.year)
         self.assertEqual(response.context["total_recebido"], Decimal("120"))
         self.assertEqual(response.context["total_sessoes_mes"], 1)
+
+
+class RelatorioAtendimentosPeriodoViewTests(TestCase):
+    def setUp(self):
+        self.user = Usuario.objects.create_user(
+            username="relatorio@teste.com",
+            email="relatorio@teste.com",
+            password="senha123",
+            perfil=Usuario.Perfil.PSICOLOGO,
+        )
+        self.psicologo = Psicologo.objects.create(usuario=self.user, crp="77777")
+        self.paciente = Paciente.objects.create(
+            nome_completo="Paciente Relatorio",
+            email="paciente.relatorio@teste.com",
+            psicologo=self.psicologo,
+        )
+        self.client.force_login(self.user)
+
+    def test_relatorio_periodo_contabiliza_status_filtrados_por_data(self):
+        Sessao.objects.create(
+            psicologo=self.psicologo,
+            paciente=self.paciente,
+            data="2026-06-10",
+            horario_inicio="09:00",
+            duracao_minutos=50,
+            valor=Decimal("150.00"),
+            status=Sessao.Status.REALIZADA,
+        )
+        Sessao.objects.create(
+            psicologo=self.psicologo,
+            paciente=self.paciente,
+            data="2026-06-12",
+            horario_inicio="10:00",
+            duracao_minutos=50,
+            valor=Decimal("180.00"),
+            status=Sessao.Status.CANCELADA,
+        )
+        Sessao.objects.create(
+            psicologo=self.psicologo,
+            paciente=self.paciente,
+            data="2026-06-15",
+            horario_inicio="11:00",
+            duracao_minutos=50,
+            valor=Decimal("200.00"),
+            status=Sessao.Status.FALTA,
+        )
+        Sessao.objects.create(
+            psicologo=self.psicologo,
+            paciente=self.paciente,
+            data="2026-05-25",
+            horario_inicio="14:00",
+            duracao_minutos=50,
+            valor=Decimal("999.00"),
+            status=Sessao.Status.REALIZADA,
+        )
+
+        response = self.client.get(
+            reverse("relatorio_atendimentos"),
+            {"data_inicio": "2026-06-01", "data_fim": "2026-06-30"},
+        )
+
+        self.assertEqual(response.status_code, 200)
+        self.assertEqual(response.context["total_realizadas"], 1)
+        self.assertEqual(response.context["total_canceladas"], 1)
+        self.assertEqual(response.context["total_faltas"], 1)
+        self.assertEqual(len(response.context["sessoes"]), 3)
+        self.assertContains(response, "Paciente Relatorio")
+        self.assertNotContains(response, "999")
+
+    def test_relatorio_periodo_csv_exporta_sessoes_do_intervalo(self):
+        Sessao.objects.create(
+            psicologo=self.psicologo,
+            paciente=self.paciente,
+            data="2026-06-10",
+            horario_inicio="09:00",
+            duracao_minutos=50,
+            valor=Decimal("150.00"),
+            status=Sessao.Status.REALIZADA,
+            status_pagamento=Sessao.StatusPagamento.PAGO,
+            data_pagamento="2026-06-10",
+        )
+        Sessao.objects.create(
+            psicologo=self.psicologo,
+            paciente=self.paciente,
+            data="2026-05-10",
+            horario_inicio="09:00",
+            duracao_minutos=50,
+            valor=Decimal("500.00"),
+            status=Sessao.Status.CANCELADA,
+        )
+
+        response = self.client.get(
+            reverse("exportar_relatorio_atendimentos_csv"),
+            {"data_inicio": "2026-06-01", "data_fim": "2026-06-30"},
+        )
+
+        self.assertEqual(response.status_code, 200)
+        self.assertEqual(response["Content-Type"], "text/csv; charset=utf-8")
+        self.assertIn("relatorio-atendimentos-20260601-20260630.csv", response["Content-Disposition"])
+
+        linhas = list(csv.reader(response.content.decode("utf-8").splitlines()))
+        self.assertEqual(linhas[0], ["Paciente", "Data", "Horario", "Status", "Valor", "Status pagamento", "Data pagamento"])
+        self.assertEqual(len(linhas), 2)
+        self.assertEqual(linhas[1][0], "Paciente Relatorio")
+        self.assertEqual(linhas[1][3], "Realizada")
+        self.assertEqual(linhas[1][4], "150.00")
         
 #-- DIÁRIO DO PENSAMENTO --
 class DiarioPacienteViewTests(TestCase):
