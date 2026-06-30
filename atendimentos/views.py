@@ -1,16 +1,27 @@
 import json
+from datetime import timedelta
 
 from django.contrib.auth.decorators import login_required
 from django.http import JsonResponse
 from django.shortcuts import get_object_or_404, render
+from django.urls import reverse
+from django.utils import timezone
 from django.utils.dateparse import parse_date
 from django.utils.translation import gettext as _
 from django.views.decorators.http import require_http_methods, require_POST
 
 from accounts.models import Paciente, Sessao, DiarioPensamento
 
-from .models import Prontuario
-from .services import encrypt_prontuario_payload, serialize_prontuario
+from .models import (
+    CompartilhamentoSupervisao,
+    LogAcessoCompartilhamentoSupervisao,
+    Prontuario,
+)
+from .services import (
+    encrypt_prontuario_payload,
+    serialize_prontuario,
+    serialize_prontuario_supervisao,
+)
 from datetime import datetime
 from django.utils.timezone import make_aware
 
@@ -322,3 +333,109 @@ def listar_prontuarios_paciente_api(request, paciente_id):
             "prontuarios": [serialize_prontuario(prontuario) for prontuario in prontuarios],
         }
     )
+
+
+def _get_duracao_supervisao(valor):
+    mapa = {
+        CompartilhamentoSupervisao.Duracao.VINTE_QUATRO_HORAS: timedelta(hours=24),
+        CompartilhamentoSupervisao.Duracao.SETE_DIAS: timedelta(days=7),
+    }
+    return mapa.get(valor)
+
+
+def _get_request_ip(request):
+    forwarded_for = request.META.get("HTTP_X_FORWARDED_FOR", "")
+    if forwarded_for:
+        return forwarded_for.split(",")[0].strip()
+    return request.META.get("REMOTE_ADDR")
+
+
+@login_required
+@require_POST
+def criar_compartilhamento_supervisao_api(request, prontuario_id):
+    try:
+        psicologo = request.user.psicologo
+    except AttributeError:
+        return JsonResponse({"success": False, "error": _("Usuário não possui perfil de psicólogo.")}, status=403)
+
+    prontuario = get_object_or_404(
+        Prontuario.objects.select_related("sessao", "paciente", "psicologo"),
+        id=prontuario_id,
+    )
+    if prontuario.psicologo_id != psicologo.id:
+        return JsonResponse(
+            {"success": False, "error": _("Você não tem permissão para compartilhar este caso.")},
+            status=403,
+        )
+
+    try:
+        data = json.loads(request.body or "{}")
+    except json.JSONDecodeError:
+        return JsonResponse({"success": False, "error": _("JSON inválido.")}, status=400)
+
+    duracao = data.get("duracao")
+    delta = _get_duracao_supervisao(duracao)
+    if not delta:
+        return JsonResponse(
+            {"success": False, "error": _("Duração inválida. Use 24h ou 7d.")},
+            status=400,
+        )
+
+    compartilhamento = CompartilhamentoSupervisao.objects.create(
+        prontuario=prontuario,
+        criado_por=psicologo,
+        duracao=duracao,
+        expira_em=timezone.now() + delta,
+    )
+
+    url_compartilhamento = request.build_absolute_uri(
+        reverse("supervisao_compartilhada_publica", kwargs={"token": compartilhamento.token})
+    )
+
+    return JsonResponse(
+        {
+            "success": True,
+            "url": url_compartilhamento,
+            "expira_em": timezone.localtime(compartilhamento.expira_em).strftime("%d/%m/%Y %H:%M"),
+        },
+        status=201,
+    )
+
+
+def supervisao_compartilhada_publica_view(request, token):
+    compartilhamento = get_object_or_404(
+        CompartilhamentoSupervisao.objects.select_related(
+            "prontuario__sessao",
+            "prontuario__paciente",
+            "prontuario__psicologo",
+        ),
+        token=token,
+    )
+
+    resultado = LogAcessoCompartilhamentoSupervisao.Resultado.SUCESSO
+    status_code = 200
+    template_name = "atendimentos/supervisao_compartilhada_publica.html"
+
+    if compartilhamento.expirado:
+        resultado = LogAcessoCompartilhamentoSupervisao.Resultado.EXPIRADO
+        status_code = 410
+        template_name = "atendimentos/supervisao_compartilhada_expirada.html"
+    else:
+        compartilhamento.ultimo_acesso_em = timezone.now()
+        compartilhamento.save(update_fields=["ultimo_acesso_em"])
+
+    LogAcessoCompartilhamentoSupervisao.objects.create(
+        compartilhamento=compartilhamento,
+        resultado=resultado,
+        ip_acesso=_get_request_ip(request),
+        user_agent=request.META.get("HTTP_USER_AGENT", "")[:1000],
+    )
+
+    context = {
+        "compartilhamento": compartilhamento,
+        "caso": serialize_prontuario_supervisao(compartilhamento.prontuario),
+    }
+
+    if status_code == 410:
+        return render(request, template_name, context, status=410)
+    return render(request, template_name, context)

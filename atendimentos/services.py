@@ -42,6 +42,30 @@ def encrypt_prontuario_payload(payload):
     return encrypted
 
 
+def anonymize_supervisao_text(value, prontuario):
+    if not value:
+        return value
+
+    paciente = prontuario.paciente
+    replacements = [
+        (paciente.nome_completo, "[PACIENTE]"),
+        (paciente.email, "[E-MAIL REMOVIDO]"),
+        (paciente.telefone, "[TELEFONE REMOVIDO]"),
+        (paciente.contato_emergencia_nome, "[CONTATO DE EMERGENCIA REMOVIDO]"),
+        (paciente.contato_emergencia_telefone, "[TELEFONE DE EMERGENCIA REMOVIDO]"),
+    ]
+
+    if paciente.data_nascimento:
+        replacements.append((paciente.data_nascimento.strftime("%d/%m/%Y"), "[DATA DE NASCIMENTO REMOVIDA]"))
+
+    anonymized = value
+    for original, replacement in replacements:
+        if original:
+            anonymized = anonymized.replace(original, replacement)
+
+    return anonymized
+
+
 def serialize_prontuario(prontuario):
     return {
         "id": str(prontuario.id),
@@ -58,6 +82,23 @@ def serialize_prontuario(prontuario):
         "horario_sessao": prontuario.sessao.horario_inicio.strftime("%H:%M"),
         "duracao_minutos": prontuario.sessao.duracao_minutos,
         "status_sessao": prontuario.sessao.status,
+        "serie_id": str(prontuario.sessao.serie_id) if prontuario.sessao.serie_id else None,
+        "posicao_na_serie": prontuario.sessao.posicao_na_serie,
+        "total_sessoes_serie": (
+            prontuario.sessao.serie.sessoes.count() if prontuario.sessao.serie_id else None
+        ),
+    }
+
+
+def serialize_prontuario_supervisao(prontuario):
+    return {
+        "id": str(prontuario.id),
+        "texto": anonymize_supervisao_text(decrypt_value(prontuario.texto), prontuario),
+        "humor_paciente": prontuario.humor_paciente,
+        "riscos_identificados": anonymize_supervisao_text(decrypt_value(prontuario.riscos_identificados), prontuario),
+        "plano_terapeutico": anonymize_supervisao_text(decrypt_value(prontuario.plano_terapeutico), prontuario),
+        "duracao_minutos": prontuario.sessao.duracao_minutos,
+        "status_sessao": prontuario.sessao.get_status_display(),
         "serie_id": str(prontuario.sessao.serie_id) if prontuario.sessao.serie_id else None,
         "posicao_na_serie": prontuario.sessao.posicao_na_serie,
         "total_sessoes_serie": (

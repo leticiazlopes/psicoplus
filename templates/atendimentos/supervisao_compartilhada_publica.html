@@ -1,0 +1,64 @@
+{% extends 'shared/base.html' %}
+{% load i18n %}
+
+{% block title %}{% trans "Caso Compartilhado para Supervisão" %} | Psico+{% endblock %}
+
+{% block content %}
+<section class="mx-auto max-w-4xl space-y-6 py-6">
+    <div class="rounded-[28px] border border-slate-200/70 bg-white p-6 shadow-soft lg:p-8">
+        <div class="flex flex-wrap items-start justify-between gap-4">
+            <div>
+                <p class="text-xs font-bold uppercase tracking-[0.18em] text-sky-500">{% trans "Supervisão clínica" %}</p>
+                <h1 class="mt-2 text-2xl font-black tracking-tight text-slate-900">{% trans "Caso compartilhado" %}</h1>
+                <p class="mt-3 max-w-2xl text-sm leading-6 text-slate-600">
+                    {% trans "Visualização temporária e somente leitura para discussão clínica. Os dados identificadores do paciente foram ocultados." %}
+                </p>
+            </div>
+            <span class="rounded-full bg-sky-50 px-3 py-1 text-[11px] font-bold uppercase tracking-[0.16em] text-sky-700">
+                {% trans "Link temporário" %}
+            </span>
+        </div>
+
+        <div class="mt-6 grid gap-4 sm:grid-cols-3">
+            <div class="rounded-2xl border border-slate-100 bg-slate-50/70 p-4">
+                <p class="text-[11px] font-bold uppercase tracking-[0.16em] text-slate-400">{% trans "Paciente" %}</p>
+                <p class="mt-2 text-sm font-semibold text-slate-800">{% trans "Paciente anonimizado" %}</p>
+            </div>
+            <div class="rounded-2xl border border-slate-100 bg-slate-50/70 p-4">
+                <p class="text-[11px] font-bold uppercase tracking-[0.16em] text-slate-400">{% trans "Status da sessão" %}</p>
+                <p class="mt-2 text-sm font-semibold text-slate-800">{{ caso.status_sessao }}</p>
+            </div>
+            <div class="rounded-2xl border border-slate-100 bg-slate-50/70 p-4">
+                <p class="text-[11px] font-bold uppercase tracking-[0.16em] text-slate-400">{% trans "Duração" %}</p>
+                <p class="mt-2 text-sm font-semibold text-slate-800">{{ caso.duracao_minutos }} min</p>
+            </div>
+        </div>
+
+        {% if caso.humor_paciente %}
+        <div class="mt-4 rounded-2xl border border-violet-100 bg-violet-50/50 p-4">
+            <p class="text-[11px] font-bold uppercase tracking-[0.16em] text-violet-700">{% trans "Humor do paciente" %}</p>
+            <p class="mt-2 text-sm font-semibold text-slate-800">{{ caso.humor_paciente }}/10</p>
+        </div>
+        {% endif %}
+
+        <div class="mt-6 space-y-4">
+            <div class="rounded-2xl border border-slate-100 bg-white p-5">
+                <p class="text-[11px] font-bold uppercase tracking-[0.16em] text-slate-400">{% trans "Queixa / Evolução" %}</p>
+                <p class="mt-3 whitespace-pre-line text-sm leading-7 text-slate-700">{{ caso.texto }}</p>
+            </div>
+            <div class="rounded-2xl border border-slate-100 bg-white p-5">
+                <p class="text-[11px] font-bold uppercase tracking-[0.16em] text-slate-400">{% trans "Observações clínicas / Riscos" %}</p>
+                <p class="mt-3 whitespace-pre-line text-sm leading-7 text-slate-700">
+                    {% if caso.riscos_identificados %}{{ caso.riscos_identificados }}{% else %}{% trans "Nenhuma observação registrada." %}{% endif %}
+                </p>
+            </div>
+            <div class="rounded-2xl border border-slate-100 bg-white p-5">
+                <p class="text-[11px] font-bold uppercase tracking-[0.16em] text-slate-400">{% trans "Plano terapêutico" %}</p>
+                <p class="mt-3 whitespace-pre-line text-sm leading-7 text-slate-700">
+                    {% if caso.plano_terapeutico %}{{ caso.plano_terapeutico }}{% else %}{% trans "Nenhum plano terapêutico registrado." %}{% endif %}
+                </p>
+            </div>
+        </div>
+    </div>
+</section>
+{% endblock %}

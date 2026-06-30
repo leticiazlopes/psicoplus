@@ -1,16 +1,18 @@
 import json
 from decimal import Decimal
 from pathlib import Path
+from datetime import timedelta
 from unittest.mock import patch
 
 from django.test import RequestFactory, TestCase
 from django.urls import reverse
+from django.utils import timezone
 
 from accounts.models import Paciente, Psicologo, Sessao, Usuario, DiarioPensamento
 
-from .models import Prontuario
+from .models import CompartilhamentoSupervisao, LogAcessoCompartilhamentoSupervisao, Prontuario
 from .views import atendimento_detalhe_view, atendimentos_view
-from .services import decrypt_value, encrypt_value, serialize_prontuario
+from .services import decrypt_value, encrypt_value, serialize_prontuario, serialize_prontuario_supervisao
 
 
 class CriarProntuarioApiTests(TestCase):
@@ -258,6 +260,146 @@ class CriarProntuarioApiTests(TestCase):
             response.json()["error"],
             "Você não tem permissão para editar esta evolução.",
         )
+
+
+class CompartilhamentoSupervisaoTests(TestCase):
+    def setUp(self):
+        self.user = Usuario.objects.create_user(
+            username="psico-supervisao@teste.com",
+            email="psico-supervisao@teste.com",
+            password="senha123",
+            nome="Psicólogo Supervisão",
+            perfil=Usuario.Perfil.PSICOLOGO,
+        )
+        self.psicologo = Psicologo.objects.create(usuario=self.user, crp="99887")
+        self.paciente = Paciente.objects.create(
+            nome_completo="Paciente Sigiloso",
+            email="sigiloso@teste.com",
+            telefone="85999999999",
+            psicologo=self.psicologo,
+        )
+        self.sessao_realizada = Sessao.objects.create(
+            psicologo=self.psicologo,
+            paciente=self.paciente,
+            data="2026-06-02",
+            horario_inicio="10:00",
+            duracao_minutos=50,
+            valor=Decimal("180.00"),
+            status=Sessao.Status.REALIZADA,
+        )
+        self.sessao = self.sessao_realizada
+        self.outro_user = Usuario.objects.create_user(
+            username="outro-supervisor@teste.com",
+            email="outro-supervisor@teste.com",
+            password="senha123",
+            nome="Outro Psicólogo",
+            perfil=Usuario.Perfil.PSICOLOGO,
+        )
+        self.outro_psicologo = Psicologo.objects.create(usuario=self.outro_user, crp="77665")
+        self.factory = RequestFactory()
+
+    def _criar_prontuario_compartilhavel(self):
+        return Prontuario.objects.create(
+            sessao=self.sessao_realizada,
+            psicologo=self.psicologo,
+            paciente=self.paciente,
+            texto=encrypt_value("Paciente relata conflitos familiares e ansiedade."),
+            humor_paciente=6,
+            riscos_identificados=encrypt_value("Sem risco imediato."),
+            plano_terapeutico=encrypt_value("Manter sessões semanais e monitoramento."),
+        )
+
+    def test_cria_link_temporario_para_supervisao(self):
+        self.client.force_login(self.user)
+        prontuario = self._criar_prontuario_compartilhavel()
+
+        response = self.client.post(
+            reverse("criar_compartilhamento_supervisao_api", kwargs={"prontuario_id": prontuario.id}),
+            data=json.dumps({"duracao": "24h"}),
+            content_type="application/json",
+        )
+
+        self.assertEqual(response.status_code, 201)
+        payload = response.json()
+        self.assertTrue(payload["success"])
+        self.assertIn("/supervisao/", payload["url"])
+
+        compartilhamento = CompartilhamentoSupervisao.objects.get(prontuario=prontuario)
+        self.assertEqual(compartilhamento.duracao, CompartilhamentoSupervisao.Duracao.VINTE_QUATRO_HORAS)
+        self.assertGreater(compartilhamento.expira_em, timezone.now())
+
+    def test_bloqueia_compartilhamento_de_outro_psicologo(self):
+        self.client.force_login(self.outro_user)
+        prontuario = self._criar_prontuario_compartilhavel()
+
+        response = self.client.post(
+            reverse("criar_compartilhamento_supervisao_api", kwargs={"prontuario_id": prontuario.id}),
+            data=json.dumps({"duracao": "24h"}),
+            content_type="application/json",
+        )
+
+        self.assertEqual(response.status_code, 403)
+        self.assertEqual(response.json()["error"], "Você não tem permissão para compartilhar este caso.")
+
+    def test_serialize_prontuario_supervisao_nao_expone_identificadores(self):
+        prontuario = self._criar_prontuario_compartilhavel()
+        prontuario.texto = encrypt_value(
+            f"{self.paciente.nome_completo} relata conflitos familiares e ansiedade. Contato: {self.paciente.email}"
+        )
+        prontuario.save(update_fields=["texto"])
+        payload = serialize_prontuario_supervisao(prontuario)
+
+        self.assertNotIn("paciente_id", payload)
+        self.assertNotIn("psicologo_id", payload)
+        self.assertNotIn("data_sessao", payload)
+        self.assertNotIn(self.paciente.nome_completo, payload["texto"])
+        self.assertNotIn(self.paciente.email, payload["texto"])
+        self.assertIn("[PACIENTE]", payload["texto"])
+
+    def test_link_publico_nao_exige_login_e_nao_exibe_dados_identificadores(self):
+        prontuario = self._criar_prontuario_compartilhavel()
+        compartilhamento = CompartilhamentoSupervisao.objects.create(
+            prontuario=prontuario,
+            criado_por=self.psicologo,
+            duracao=CompartilhamentoSupervisao.Duracao.SETE_DIAS,
+            expira_em=timezone.now() + timedelta(days=7),
+        )
+
+        response = self.client.get(
+            reverse("supervisao_compartilhada_publica", kwargs={"token": compartilhamento.token}),
+            HTTP_USER_AGENT="pytest-agent",
+            REMOTE_ADDR="127.0.0.1",
+        )
+
+        self.assertEqual(response.status_code, 200)
+        self.assertContains(response, "Caso compartilhado")
+        self.assertContains(response, "Paciente anonimizado")
+        self.assertContains(response, "Paciente relata conflitos familiares e ansiedade.")
+        self.assertNotContains(response, self.paciente.nome_completo)
+        self.assertNotContains(response, self.paciente.email)
+        self.assertNotContains(response, self.paciente.telefone)
+
+        log = LogAcessoCompartilhamentoSupervisao.objects.get(compartilhamento=compartilhamento)
+        self.assertEqual(log.resultado, LogAcessoCompartilhamentoSupervisao.Resultado.SUCESSO)
+        self.assertEqual(log.ip_acesso, "127.0.0.1")
+        self.assertEqual(log.user_agent, "pytest-agent")
+
+    def test_link_expirado_retorna_410_e_registra_log(self):
+        prontuario = self._criar_prontuario_compartilhavel()
+        compartilhamento = CompartilhamentoSupervisao.objects.create(
+            prontuario=prontuario,
+            criado_por=self.psicologo,
+            duracao=CompartilhamentoSupervisao.Duracao.VINTE_QUATRO_HORAS,
+            expira_em=timezone.now() - timedelta(minutes=1),
+        )
+
+        response = self.client.get(reverse("supervisao_compartilhada_publica", kwargs={"token": compartilhamento.token}))
+
+        self.assertEqual(response.status_code, 410)
+        self.assertContains(response, "Link expirado", status_code=410)
+
+        log = LogAcessoCompartilhamentoSupervisao.objects.get(compartilhamento=compartilhamento)
+        self.assertEqual(log.resultado, LogAcessoCompartilhamentoSupervisao.Resultado.EXPIRADO)
 
     def test_lista_prontuarios_do_paciente_ordenados_do_mais_recente_para_o_mais_antigo(self):
         sessao_antiga = Sessao.objects.create(

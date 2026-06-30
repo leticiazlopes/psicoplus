@@ -7,5 +7,15 @@ urlpatterns = [
     path("atendimentos/<uuid:sessao_id>/", views.atendimento_detalhe_view, name="atendimento_detalhe"),
     path("api/prontuarios/", views.criar_prontuario_api, name="criar_prontuario_api"),
     path("api/prontuarios/<uuid:prontuario_id>/", views.editar_prontuario_api, name="editar_prontuario_api"),
+    path(
+        "api/prontuarios/<uuid:prontuario_id>/supervisao/",
+        views.criar_compartilhamento_supervisao_api,
+        name="criar_compartilhamento_supervisao_api",
+    ),
     path("api/pacientes/<uuid:paciente_id>/prontuarios/", views.listar_prontuarios_paciente_api, name="listar_prontuarios_paciente_api"),
+    path(
+        "supervisao/<uuid:token>/",
+        views.supervisao_compartilhada_publica_view,
+        name="supervisao_compartilhada_publica",
+    ),
 ]
