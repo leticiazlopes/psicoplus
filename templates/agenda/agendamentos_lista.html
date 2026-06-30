@@ -235,6 +235,17 @@
                             Confirmado por {{ sessao.confirmado_por|title }} em {{ sessao.confirmado_em|date:"d/m H:i" }}
                         {% endif %}
                     </p>
+                    <div class="mt-2 flex items-center gap-2">
+                        <button type="button"
+                                onclick="abrirModalPagamento('{{ sessao.id }}', '{{ sessao.status_pagamento }}')"
+                                class="inline-flex items-center gap-1.5 rounded-full border px-2.5 py-1 text-[10px] font-bold uppercase tracking-wide transition shrink-0
+                                    {% if sessao.status_pagamento == 'pago' %}border-emerald-200 bg-emerald-50 text-emerald-700 hover:bg-emerald-100{% else %}border-amber-200 bg-amber-50 text-amber-700 hover:bg-amber-100{% endif %}">
+                            <i class="fa-solid text-[9px] {% if sessao.status_pagamento == 'pago' %}fa-check-circle{% else %}fa-clock{% endif %}"></i>
+                            {% if sessao.status_pagamento == 'pago' %}Pago{% else %}Pendente{% endif %}
+                            <span class="font-semibold opacity-60">·</span>
+                            <span class="font-semibold normal-case">R$ {{ sessao.valor }}</span>
+                        </button>
+                    </div>
                 </div>
 
                 <div class="flex items-center gap-3">
@@ -382,6 +393,51 @@
                 </form>
             </div>
         </div>
+    </div>
+
+    <div id="modal-pagamento" class="fixed inset-0 z-50 flex items-center justify-center bg-slate-900/40 backdrop-blur-sm hidden">
+    <div class="bg-white rounded-2xl shadow-xl p-8 max-w-sm w-full transition transform">
+        <div class="flex flex-col items-center text-center">
+            <div class="flex h-12 w-12 items-center justify-center rounded-xl bg-emerald-100 text-emerald-700 mb-4">
+                <i class="fa-solid fa-money-bill-wave text-2xl"></i>
+            </div>
+            <h2 id="pagamento-titulo" class="text-lg font-bold mb-2 text-slate-900">Marcar como Pago</h2>
+            <p id="pagamento-descricao" class="text-slate-500 text-sm mb-6">Confirme os dados do pagamento.</p>
+
+            <form id="form-pagamento" class="w-full text-left">
+                {% csrf_token %}
+                <input id="pagamento-sessao-id" type="hidden" name="sessao_id" value="">
+                <input id="pagamento-novo-status" type="hidden" name="status_pagamento" value="pago">
+
+                <div id="pagamento-campos-pago" class="space-y-4 mb-2">
+                    <div>
+                        <label class="mb-1.5 block text-xs font-bold uppercase tracking-wider text-slate-500">Data do Pagamento</label>
+                        <input id="pagamento-data" type="date" name="data_pagamento" class="w-full rounded-xl border border-slate-200 bg-white px-4 py-3 text-sm text-slate-900 transition focus:border-primary focus:ring-primary">
+                    </div>
+                    <div>
+                        <label class="mb-1.5 block text-xs font-bold uppercase tracking-wider text-slate-500">Forma de Pagamento</label>
+                        <select id="pagamento-forma" name="forma_pagamento" class="w-full rounded-xl border border-slate-200 bg-white px-4 py-3 text-sm text-slate-900 transition focus:border-primary focus:ring-primary">
+                            <option value="">Selecione</option>
+                            <option value="pix">Pix</option>
+                            <option value="dinheiro">Dinheiro</option>
+                            <option value="cartao">Cartão</option>
+                            <option value="transferencia">Transferência</option>
+                            <option value="outro">Outro</option>
+                        </select>
+                    </div>
+                </div>
+
+                <div class="flex gap-3 w-full mt-4">
+                    <button onclick="closePagamentoModal()" type="button" class="flex-1 rounded-xl border border-slate-200 bg-white px-4 py-3 text-sm font-semibold text-slate-600 transition hover:bg-slate-50">
+                        Voltar
+                    </button>
+                    <button type="submit" class="flex-1 rounded-xl bg-gradient-to-r from-emerald-500 to-emerald-600 px-4 py-3 text-sm font-bold text-white shadow-lg shadow-emerald-500/20 transition hover:from-emerald-600 hover:to-emerald-700">
+                        Confirmar
+                    </button>
+                </div>
+            </form>
+        </div>
+    </div>
     </div>
 
     <!-- VIEW: SEMANA -->
@@ -967,5 +1023,80 @@
     setInterval(atualizarStatusVisiveis, 10000);
     // Faz uma primeira chamada após carregamento para captar confirmações recentes
     setTimeout(atualizarStatusVisiveis, 2000);
+
+function abrirModalPagamento(sessaoId, statusAtual) {
+    const modal = document.getElementById('modal-pagamento');
+    const titulo = document.getElementById('pagamento-titulo');
+    const descricao = document.getElementById('pagamento-descricao');
+    const novoStatusInput = document.getElementById('pagamento-novo-status');
+    const camposPago = document.getElementById('pagamento-campos-pago');
+    const inputData = document.getElementById('pagamento-data');
+    const inputForma = document.getElementById('pagamento-forma');
+    const sessaoIdInput = document.getElementById('pagamento-sessao-id');
+
+    sessaoIdInput.value = sessaoId;
+
+    const vaiMarcarComoPago = statusAtual !== 'pago';
+    novoStatusInput.value = vaiMarcarComoPago ? 'pago' : 'pendente';
+
+    if (vaiMarcarComoPago) {
+        titulo.innerText = 'Marcar como Pago';
+        descricao.innerText = 'Confirme os dados do pagamento.';
+        camposPago.classList.remove('hidden');
+        inputData.value = new Date().toISOString().split('T')[0];
+        inputForma.value = '';
+    } else {
+        titulo.innerText = 'Marcar como Pendente';
+        descricao.innerText = 'Deseja reverter esta sessão para pendente de pagamento?';
+        camposPago.classList.add('hidden');
+    }
+
+    modal.classList.remove('hidden');
+}
+
+function closePagamentoModal() {
+    document.getElementById('modal-pagamento').classList.add('hidden');
+}
+
+document.getElementById('form-pagamento').addEventListener('submit', async function(e) {
+    e.preventDefault()
+    const sessaoId = document.getElementById('pagamento-sessao-id').value;
+    const novoStatus = document.getElementById('pagamento-novo-status').value;
+    const dataPagamento = document.getElementById('pagamento-data').value;
+    const formaPagamento = document.getElementById('pagamento-forma').value;
+
+    closePagamentoModal();
+
+    try {
+        const response = await fetch(`/agenda/marcar-pagamento/${sessaoId}/`, {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+                'X-CSRFToken': getCookie('csrftoken')
+            },
+            body: JSON.stringify({
+                status_pagamento: novoStatus,
+                data_pagamento: novoStatus === 'pago' ? dataPagamento : null,
+                forma_pagamento: novoStatus === 'pago' ? formaPagamento : null
+            })
+        });
+
+        const data = await response.json();
+
+        if (data.success) {
+            location.reload();
+        } else {
+            alert('Erro ao atualizar pagamento: ' + data.error);
+        }
+    } catch (err) {
+        alert('Erro de comunicação ao atualizar pagamento.');
+    }
+});
+
+document.getElementById('modal-pagamento').addEventListener('click', function(e) {
+    if (e.target === this) {
+        closePagamentoModal();
+    }
+});
 </script>
 {% endblock %}

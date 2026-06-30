@@ -572,3 +572,46 @@ def confirmar_sessao_psicologo(request, sessao_id):
         'confirmado_por': sessao.confirmado_por,
         'message': _('Presença confirmada pelo psicólogo com sucesso.')
     })
+
+@login_required
+@require_POST
+def marcar_pagamento_sessao(request, sessao_id):
+    """
+    Toggle rápido de status de pagamento na listagem da agenda (AJAX).
+    """
+    try:
+        psicologo = request.user.psicologo
+    except AttributeError:
+        return JsonResponse({'success': False, 'error': _("Usuário não possui perfil de psicólogo.")}, status=403)
+
+    sessao = get_object_or_404(Sessao, id=sessao_id, psicologo=psicologo)
+
+    try:
+        data = json.loads(request.body) if request.body else {}
+    except json.JSONDecodeError:
+        data = {}
+
+    novo_status = data.get('status_pagamento')
+    if novo_status not in Sessao.StatusPagamento.values:
+        return JsonResponse({'success': False, 'error': _("Status de pagamento inválido.")}, status=400)
+
+    sessao.status_pagamento = novo_status
+
+    if novo_status == Sessao.StatusPagamento.PAGO:
+        # permite informar a data manualmente; senão usa hoje
+        data_pagamento_str = data.get('data_pagamento')
+        sessao.data_pagamento = parse_date(data_pagamento_str) if data_pagamento_str else timezone.localdate()
+        forma_pagamento = data.get('forma_pagamento')
+        if forma_pagamento:
+            sessao.forma_pagamento = forma_pagamento
+    else:
+        sessao.data_pagamento = None
+
+    sessao.save(update_fields=['status_pagamento', 'data_pagamento', 'forma_pagamento'])
+
+    return JsonResponse({
+        'success': True,
+        'status_pagamento': sessao.status_pagamento,
+        'data_pagamento': sessao.data_pagamento.strftime('%d/%m/%Y') if sessao.data_pagamento else None,
+        'message': _("Status de pagamento atualizado.")
+    })

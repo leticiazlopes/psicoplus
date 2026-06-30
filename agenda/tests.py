@@ -1,8 +1,8 @@
-import datetime
+import datetime, decimal
 from pathlib import Path
 
 from django.db import IntegrityError
-from django.test import SimpleTestCase, TestCase
+from django.test import SimpleTestCase, TestCase, override_settings
 from django.urls import reverse
 
 from accounts.models import Paciente, Psicologo, SerieSessao, Sessao, Usuario
@@ -870,3 +870,305 @@ class AgendaViewsAdicionaisTests(TestCase):
         self.assertEqual(response.status_code, 400)
         data = response.json()
         self.assertFalse(data["success"])
+        
+class MarcarPagamentoSessaoTests(TestCase):
+    def setUp(self):
+        self.user = Usuario.objects.create_user(
+            username="psico_pagamento@teste.com",
+            email="psico_pagamento@teste.com",
+            password="senha123",
+            perfil=Usuario.Perfil.PSICOLOGO,
+        )
+        self.psicologo = Psicologo.objects.create(usuario=self.user, crp="99999")
+        self.paciente = Paciente.objects.create(
+            nome_completo="Paciente Pagamento",
+            psicologo=self.psicologo,
+            email="paciente_pagamento@teste.com",
+            ativo=True,
+        )
+        self.sessao = Sessao.objects.create(
+            psicologo=self.psicologo,
+            paciente=self.paciente,
+            data=datetime.date.today() + datetime.timedelta(days=1),
+            horario_inicio=datetime.time(10, 0),
+            duracao_minutos=50,
+            valor="100.00",
+        )
+        self.client.force_login(self.user)
+
+    def test_sessao_nasce_com_status_pagamento_pendente_por_default(self):
+        self.assertEqual(self.sessao.status_pagamento, Sessao.StatusPagamento.PENDENTE)
+        self.assertIsNone(self.sessao.data_pagamento)
+
+    def test_marcar_como_pago_com_data_e_forma_informadas(self):
+        url = reverse("marcar_pagamento_sessao", args=[self.sessao.id])
+        response = self.client.post(
+            url,
+            data='{"status_pagamento": "pago", "data_pagamento": "2026-06-15", "forma_pagamento": "pix"}',
+            content_type="application/json",
+        )
+
+        self.assertEqual(response.status_code, 200)
+        data = response.json()
+        self.assertTrue(data["success"])
+        self.assertEqual(data["status_pagamento"], "pago")
+
+        self.sessao.refresh_from_db()
+        self.assertEqual(self.sessao.status_pagamento, Sessao.StatusPagamento.PAGO)
+        self.assertEqual(self.sessao.data_pagamento, datetime.date(2026, 6, 15))
+        self.assertEqual(self.sessao.forma_pagamento, "pix")
+
+    def test_marcar_como_pago_sem_data_usa_hoje_como_default(self):
+        url = reverse("marcar_pagamento_sessao", args=[self.sessao.id])
+        response = self.client.post(
+            url,
+            data='{"status_pagamento": "pago"}',
+            content_type="application/json",
+        )
+
+        self.assertEqual(response.status_code, 200)
+        self.sessao.refresh_from_db()
+        self.assertEqual(self.sessao.data_pagamento, datetime.date.today())
+
+    def test_marcar_como_pendente_limpa_data_pagamento(self):
+        self.sessao.status_pagamento = Sessao.StatusPagamento.PAGO
+        self.sessao.data_pagamento = datetime.date.today()
+        self.sessao.forma_pagamento = "dinheiro"
+        self.sessao.save()
+
+        url = reverse("marcar_pagamento_sessao", args=[self.sessao.id])
+        response = self.client.post(
+            url,
+            data='{"status_pagamento": "pendente"}',
+            content_type="application/json",
+        )
+
+        self.assertEqual(response.status_code, 200)
+        self.sessao.refresh_from_db()
+        self.assertEqual(self.sessao.status_pagamento, Sessao.StatusPagamento.PENDENTE)
+        self.assertIsNone(self.sessao.data_pagamento)
+
+    def test_status_pagamento_invalido_retorna_400(self):
+        url = reverse("marcar_pagamento_sessao", args=[self.sessao.id])
+        response = self.client.post(
+            url,
+            data='{"status_pagamento": "quitado"}',
+            content_type="application/json",
+        )
+
+        self.assertEqual(response.status_code, 400)
+        data = response.json()
+        self.assertIn("error", data)
+
+    def test_sem_perfil_psicologo_retorna_403(self):
+        user_sem_perfil = Usuario.objects.create_user(
+            username="sem_pagamento@teste.com",
+            email="sem_pagamento@teste.com",
+            password="123",
+            perfil=Usuario.Perfil.PSICOLOGO,
+        )
+        self.client.force_login(user_sem_perfil)
+
+        url = reverse("marcar_pagamento_sessao", args=[self.sessao.id])
+        response = self.client.post(
+            url,
+            data='{"status_pagamento": "pago"}',
+            content_type="application/json",
+        )
+
+        self.assertEqual(response.status_code, 403)
+
+    def test_sessao_de_outro_psicologo_retorna_404(self):
+        outro_user = Usuario.objects.create_user(
+            username="outro_psico@teste.com",
+            email="outro_psico@teste.com",
+            password="123",
+            perfil=Usuario.Perfil.PSICOLOGO,
+        )
+        outro_psicologo = Psicologo.objects.create(usuario=outro_user, crp="88888")
+        self.client.force_login(outro_user)
+
+        url = reverse("marcar_pagamento_sessao", args=[self.sessao.id])
+        response = self.client.post(
+            url,
+            data='{"status_pagamento": "pago"}',
+            content_type="application/json",
+        )
+
+        self.assertEqual(response.status_code, 404)
+        
+class EditarSessaoRecorrenteSeguintesTests(TestCase):
+    def setUp(self):
+        self.user = Usuario.objects.create_user(
+            username="psico_serie@teste.com",
+            email="psico_serie@teste.com",
+            password="senha123",
+            perfil=Usuario.Perfil.PSICOLOGO,
+        )
+        self.psicologo = Psicologo.objects.create(usuario=self.user, crp="22222")
+        self.paciente = Paciente.objects.create(
+            nome_completo="Paciente Série Edição",
+            psicologo=self.psicologo,
+            email="paciente_serie@teste.com",
+            ativo=True,
+        )
+        self.client.force_login(self.user)
+
+        self.serie = SerieSessao.objects.create(psicologo=self.psicologo, paciente=self.paciente)
+        self.data_base = datetime.date.today() + datetime.timedelta(days=7)
+
+        self.atual = Sessao.objects.create(
+            psicologo=self.psicologo, paciente=self.paciente, serie=self.serie,
+            posicao_na_serie=1, data=self.data_base,
+            horario_inicio=datetime.time(10, 0), duracao_minutos=50, valor="150.00",
+        )
+        self.proxima = Sessao.objects.create(
+            psicologo=self.psicologo, paciente=self.paciente, serie=self.serie,
+            posicao_na_serie=2, data=self.data_base + datetime.timedelta(days=7),
+            horario_inicio=datetime.time(10, 0), duracao_minutos=50, valor="150.00",
+        )
+
+    def test_editar_aplicando_em_seguintes_atualiza_todas_as_ocorrencias(self):
+        response = self.client.post(
+            reverse("editar_sessao", args=[self.atual.id]),
+            data={
+                "paciente": str(self.paciente.pk),
+                "data": self.data_base.isoformat(),
+                "horario_inicio": "11:00",
+                "duracao_minutos": 60,
+                "valor": "200.00",
+                "aplicar_em": "seguintes",
+            },
+        )
+
+        self.atual.refresh_from_db()
+        self.proxima.refresh_from_db()
+        self.assertEqual(str(self.atual.horario_inicio)[:5], "11:00")
+        self.assertEqual(str(self.proxima.horario_inicio)[:5], "11:00")
+        self.assertEqual(self.atual.valor, decimal.Decimal("200.00"))
+        self.assertEqual(self.proxima.valor, decimal.Decimal("200.00"))
+
+    def test_editar_aplicando_em_seguintes_com_conflito_retorna_erro(self):
+        Sessao.objects.create(
+            psicologo=self.psicologo, paciente=self.paciente,
+            data=self.data_base + datetime.timedelta(days=7),
+            horario_inicio=datetime.time(11, 30), duracao_minutos=50, valor="150.00",
+        )
+
+        response = self.client.post(
+            reverse("editar_sessao", args=[self.atual.id]),
+            data={
+                "paciente": str(self.paciente.pk),
+                "data": self.data_base.isoformat(),
+                "horario_inicio": "11:00",
+                "duracao_minutos": 60,
+                "valor": "200.00",
+                "aplicar_em": "seguintes",
+            },
+        )
+
+        self.assertEqual(response.status_code, 200)
+        self.atual.refresh_from_db()
+        self.assertEqual(str(self.atual.horario_inicio)[:5], "10:00")
+
+
+class EnvioEmailConfirmacaoSucessoTests(TestCase):
+    def setUp(self):
+        self.user = Usuario.objects.create_user(
+            username="psico_email@teste.com",
+            email="psico_email@teste.com",
+            password="senha123",
+            perfil=Usuario.Perfil.PSICOLOGO,
+        )
+        self.psicologo = Psicologo.objects.create(usuario=self.user, crp="33333")
+        self.paciente = Paciente.objects.create(
+            nome_completo="Paciente Email",
+            psicologo=self.psicologo,
+            email="paciente_email@teste.com",
+            ativo=True,
+            aceita_lembrete_email=True,
+        )
+        self.sessao = Sessao.objects.create(
+            psicologo=self.psicologo, paciente=self.paciente,
+            data=datetime.date.today() + datetime.timedelta(days=1),
+            horario_inicio=datetime.time(10, 0), duracao_minutos=50, valor="150.00",
+        )
+        self.client.force_login(self.user)
+        
+    @override_settings(DEBUG=True)
+    def test_enviar_confirmacao_email_sucesso_modo_debug(self):
+        response = self.client.post(
+            reverse("enviar_confirmacao_email", args=[self.sessao.id])
+        )
+        self.assertEqual(response.status_code, 200)
+        data = response.json()
+        self.assertTrue(data["success"])
+        self.assertIn("html", data)
+
+    def test_enviar_confirmacao_email_paciente_nao_aceita_lembrete_retorna_400(self):
+        self.paciente.aceita_lembrete_email = False
+        self.paciente.save()
+
+        response = self.client.post(
+            reverse("enviar_confirmacao_email", args=[self.sessao.id])
+        )
+        self.assertEqual(response.status_code, 400)
+
+class DetalheConfirmacaoPublicaPostTests(TestCase):
+    def setUp(self):
+        self.user = Usuario.objects.create_user(
+            username="psico_post_pub@teste.com",
+            email="psico_post_pub@teste.com",
+            password="senha123",
+            perfil=Usuario.Perfil.PSICOLOGO,
+        )
+        self.psicologo = Psicologo.objects.create(usuario=self.user, crp="44444")
+        self.paciente = Paciente.objects.create(
+            nome_completo="Paciente Confirmação Post",
+            psicologo=self.psicologo,
+            email="paciente_post_pub@teste.com",
+            ativo=True,
+        )
+
+    def test_post_confirmacao_publica_sucesso(self):
+        sessao = Sessao.objects.create(
+            psicologo=self.psicologo, paciente=self.paciente,
+            data=datetime.date.today() + datetime.timedelta(days=2),
+            horario_inicio=datetime.time(14, 0), duracao_minutos=50, valor="150.00",
+            status=Sessao.Status.PENDENTE,
+        )
+        url = reverse("visualizar_confirmacao_publica", kwargs={"token": sessao.token_confirmacao})
+        response = self.client.post(url)
+
+        self.assertRedirects(response, url, fetch_redirect_response=False)
+        sessao.refresh_from_db()
+        self.assertEqual(sessao.status, Sessao.Status.CONFIRMADA)
+        self.assertEqual(sessao.confirmado_por, "paciente")
+
+    def test_post_confirmacao_publica_link_expirado_nao_confirma(self):
+        sessao = Sessao.objects.create(
+            psicologo=self.psicologo, paciente=self.paciente,
+            data=datetime.date.today() - datetime.timedelta(days=1),
+            horario_inicio=datetime.time(10, 0), duracao_minutos=50, valor="150.00",
+            status=Sessao.Status.PENDENTE,
+        )
+        url = reverse("visualizar_confirmacao_publica", kwargs={"token": sessao.token_confirmacao})
+        response = self.client.post(url)
+
+        self.assertRedirects(response, url, fetch_redirect_response=False)
+        sessao.refresh_from_db()
+        self.assertEqual(sessao.status, Sessao.Status.PENDENTE)
+
+    def test_post_confirmacao_publica_ja_confirmada_nao_altera(self):
+        sessao = Sessao.objects.create(
+            psicologo=self.psicologo, paciente=self.paciente,
+            data=datetime.date.today() + datetime.timedelta(days=2),
+            horario_inicio=datetime.time(10, 0), duracao_minutos=50, valor="150.00",
+            status=Sessao.Status.CONFIRMADA,
+            confirmado_por="paciente",
+            confirmado_em=datetime.datetime.now(),
+        )
+        url = reverse("visualizar_confirmacao_publica", kwargs={"token": sessao.token_confirmacao})
+        response = self.client.post(url)
+
+        self.assertRedirects(response, url, fetch_redirect_response=False)

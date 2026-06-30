@@ -209,8 +209,21 @@ class Sessao(models.Model):
 
     atendido_por_plano = models.BooleanField(default=False, verbose_name=_("atendido por plano de saúde"))
     isento_pagamento = models.BooleanField(default=False, verbose_name=_("isento de pagamento"))
+
+    class StatusPagamento(models.TextChoices):
+        PENDENTE = "pendente", _("Pendente")
+        PAGO = "pago", _("Pago")
+
+    status_pagamento = models.CharField(
+        max_length=20,
+        choices=StatusPagamento.choices,
+        default=StatusPagamento.PENDENTE,
+        verbose_name=_("status de pagamento"),
+    )
+    data_pagamento = models.DateField(blank=True, null=True, verbose_name=_("data do pagamento"))
+    forma_pagamento = models.CharField(max_length=30, blank=True, null=True, verbose_name=_("forma de pagamento"))
+
     criado_em = models.DateTimeField(auto_now_add=True, verbose_name=_("criado em"))
-    
     
     token_confirmacao = models.UUIDField(default=uuid.uuid4, editable=False, null=True, blank=True, verbose_name=_("token de confirmação"))
     confirmado_por = models.CharField(max_length=20, blank=True, null=True, verbose_name=_("confirmado por")) 
