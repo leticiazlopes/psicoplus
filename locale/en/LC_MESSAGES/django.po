@@ -942,7 +942,7 @@ msgstr "Hide password"
 
 #: templates/accounts/dashboard_paciente.html:4
 #: templates/accounts/dashboard_paciente.html:5
-msgid "Minha Área Restrita"
+msgid "Minha Área"
 msgstr "My Private Area"
 
 #: templates/accounts/dashboard_paciente.html:13
