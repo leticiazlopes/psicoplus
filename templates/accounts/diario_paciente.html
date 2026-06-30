@@ -111,11 +111,20 @@
                                 </button>
 
                                 <span class="inline-flex rounded-full px-2.5 py-0.5 text-[9px] font-bold uppercase tracking-wide 
-                                    {% if diario.intensidade <= 2 %}bg-emerald-50 text-emerald-700 border border-emerald-100
-                                    {% elif diario.intensidade <= 3 %}bg-amber-50 text-amber-700 border border-amber-100
-                                    {% else %}bg-rose-50 text-rose-700 border border-rose-100{% endif %}">
-                                    {% blocktrans %}Intensidade: {{ diario.intensidade }}{% endblocktrans %}
-                                </span>
+    {% if diario.intensidade <= 2 %}bg-emerald-50 text-emerald-700 border border-emerald-100
+    {% elif diario.intensidade == 3 %}bg-amber-50 text-amber-700 border border-amber-100
+    {% else %}bg-rose-50 text-rose-700 border border-rose-100{% endif %}">
+    
+    {% trans "Intensidade" %}: {{ diario.intensidade }}/5 • 
+    {% if diario.intensidade <= 2 %}
+        {% trans "Leve" %}
+    {% elif diario.intensidade == 3 %}
+        {% trans "Moderada" %}
+    {% else %}
+        {% trans "Alta" %}
+    {% endif %}
+    
+</span>
                             </div>
                         </div>
 
@@ -134,7 +143,7 @@
 
                             {% if diario.observacoes_livres %}
                                 <div>
-                                    <p class="text-[10px] font-bold uppercase tracking-wider text-textMuted">{% trans "Pensamentos Automáticos" %}</p>
+                                    <p class="text-[10px] font-bold uppercase tracking-wider text-textMuted">{% trans "Observações Livres" %}</p>
                                     <p class="text-xs text-slate-500 italic mt-1 bg-slate-100/50 p-3 rounded-xl">{{ diario.observacoes_livres }}</p>
                                 </div>
                             {% endif %}
