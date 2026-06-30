@@ -40,4 +40,7 @@ urlpatterns = [
     path("financeiro/", views.FinanceiroMensalView.as_view(), name="financeiro_mensal"),
     path("relatorios/atendimentos/", views.RelatorioAtendimentosPeriodoView.as_view(), name="relatorio_atendimentos"),
     path("relatorios/atendimentos/csv/", views.exportar_relatorio_atendimentos_csv, name="exportar_relatorio_atendimentos_csv"),
+    path("psicologo/diarios/", views.psicologo_diarios_view, name="psicologo_diarios"),
+    path("psicologo/diarios/<uuid:paciente_id>/", views.psicologo_diarios_view, name="psicologo_diarios_paciente"),
+    
     ]   

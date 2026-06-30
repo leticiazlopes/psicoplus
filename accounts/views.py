@@ -19,6 +19,7 @@ from django.utils.decorators import method_decorator
 from django.utils.translation import gettext_lazy as _
 from django.views.decorators.http import require_POST
 from django.views.generic import CreateView, DetailView, FormView, ListView, UpdateView
+from django.core.exceptions import PermissionDenied
 
 from atendimentos.models import Prontuario
 from atendimentos.services import serialize_prontuario
@@ -536,7 +537,6 @@ def esqueci_senha_request(request):
             
             
             
-          # Código HTML corrigido e com os estilos fechados corretamente
             html_message = f"""
             <div style="background-color: #f7f5ff; padding: 30px; font-family: sans-serif;">
                 <div style="max-width: 600px; margin: 0 auto; background-color: #ffffff; padding: 30px; border-radius: 20px; border: 1px solid #e7e9f2;">
@@ -731,3 +731,28 @@ def reenviar_definicao_senha(request, pk):
     enviar_email_definicao_senha(paciente.usuario)
     messages.success(request, _("E-mail de definição de senha reenviado com sucesso."))
     return redirect("paciente_perfil", pk=paciente.pk)
+
+@login_required
+def psicologo_diarios_view(request, paciente_id=None):
+    """Nova View isolada: Permite ao psicólogo navegar pelos diários dos pacientes"""
+    if request.user.perfil != Usuario.Perfil.PSICOLOGO:
+        raise PermissionDenied
+
+    pacientes = Paciente.objects.filter(psicologo=request.user.psicologo).order_by('nome_completo')
+
+    historico_diarios = None
+    paciente_selecionado = None
+
+    if paciente_id:
+        paciente_selecionado = get_object_or_404(pacientes, id=paciente_id)
+        historico_diarios = DiarioPensamento.objects.filter(paciente=paciente_selecionado).order_by('-criado_em')
+    elif pacientes.exists():
+        paciente_selecionado = pacientes.first()
+        historico_diarios = DiarioPensamento.objects.filter(paciente=paciente_selecionado).order_by('-criado_em')
+
+    context = {
+        'pacientes': pacientes,
+        'paciente_selecionado': paciente_selecionado,
+        'historico_diarios': historico_diarios,
+    }
+    return render(request, 'accounts/diarios_pacientes.html', context)
