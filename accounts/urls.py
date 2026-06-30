@@ -36,4 +36,5 @@ urlpatterns = [
     path("paciente/dashboard/", views.dashboard_paciente_page, name="dashboard_paciente"),
     path("api/paciente/home/", views.api_paciente_home, name="api_paciente_home"),
     path("paciente/diario/", views.diario_paciente_view, name="diario_paciente"),
+    path("pacientes/<uuid:pk>/reenviar-definicao-senha/", views.reenviar_definicao_senha, name="reenviar_definicao_senha"),
     ]   
