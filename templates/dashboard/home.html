@@ -69,7 +69,7 @@
             <div class="flex items-center justify-between">
                 <div>
                     <p class="text-[12px] font-bold uppercase tracking-wider text-slate-400">{% trans "A Receber (Pendente)" %}</p>
-                    <h3 class="mt-2 text-3xl font-black tracking-tight text-amber-600">R$ {{ valor_pendente }}</h3>
+                    <h3 class="mt-2 text-3xl font-black tracking-tight text-amber-600 sensitive-data">R$ {{ valor_pendente }}</h3>
                 </div>
                 <div class="flex h-12 w-12 items-center justify-center rounded-xl bg-amber-50 text-amber-500 shadow-sm">
                     <i class="fa-solid fa-wallet text-[16px]"></i>
@@ -106,7 +106,7 @@
                     {% for sessao in proximas_sessoes %}
                     <tr class="group hover:bg-slate-50/50 transition duration-150">
                         <td class="py-4 pr-4 font-semibold text-slate-800 transition group-hover:text-primary">
-                            {{ sessao.paciente.nome_completo }}
+                            <span class="sensitive-data">{{ sessao.paciente.nome_completo }}</span>
                         </td>
                         <td class="py-4 px-4 font-medium text-slate-500">
                             <span class="mr-2 inline-block text-slate-700">
@@ -119,7 +119,7 @@
                                 {{ sessao.horario_inicio|time:"H:i" }}
                             </span>
                         </td>
-                        <td class="py-4 pl-4 text-right font-bold text-slate-700">
+                        <td class="py-4 pl-4 text-right font-bold text-slate-700 sensitive-data">
                             R$ {{ sessao.valor }}
                         </td>
                     </tr>

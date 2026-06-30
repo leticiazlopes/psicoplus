@@ -9,7 +9,7 @@
     <div class="flex flex-wrap items-center justify-between gap-3">
         <div>
             <p class="text-xs font-bold uppercase tracking-[0.18em] text-slate-400">{% trans "Paciente" %}</p>
-            <h1 class="mt-2 text-2xl font-black tracking-tight text-slate-900">{{ paciente.nome_completo }}</h1>
+            <h1 class="mt-2 text-2xl font-black tracking-tight text-slate-900 sensitive-data">{{ paciente.nome_completo }}</h1>
             <p class="mt-2 text-sm text-slate-500">{% trans "Histórico clínico e dados principais do acompanhamento." %}</p>
         </div>
         <div class="flex flex-wrap gap-2">
@@ -48,12 +48,12 @@
                 <dl class="mt-5 space-y-3">
                     <div class="rounded-2xl border border-slate-100 bg-slate-50/70 px-4 py-3">
                         <dt class="text-[11px] font-bold uppercase tracking-[0.16em] text-slate-400">{% trans "E-mail" %}</dt>
-                        <dd class="mt-1 text-sm font-semibold text-slate-800">{{ paciente.email }}</dd>
+                        <dd class="mt-1 text-sm font-semibold text-slate-800 sensitive-data">{{ paciente.email }}</dd>
                     </div>
                     <div class="rounded-2xl border border-slate-100 bg-slate-50/70 px-4 py-3">
                         <dt class="text-[11px] font-bold uppercase tracking-[0.16em] text-slate-400">{% trans "Telefone" %}</dt>
                         <dd class="mt-1 text-sm font-semibold text-slate-800">
-                            {% if paciente.telefone %}{{ paciente.telefone }}{% else %}{% trans "Não informado" %}{% endif %}
+                            <span class="sensitive-data">{% if paciente.telefone %}{{ paciente.telefone }}{% else %}{% trans "Não informado" %}{% endif %}</span>
                         </dd>
                     </div>
                     <div class="rounded-2xl border border-slate-100 bg-slate-50/70 px-4 py-3">
@@ -104,7 +104,7 @@
                                 <p class="text-sm font-bold text-slate-900">
                                     {{ prontuario.data_sessao_formatada }} às {{ prontuario.horario_sessao }} • {{ prontuario.status_sessao|title }}
                                 </p>
-                                <p class="mt-1 text-sm text-slate-500">
+                                <p class="mt-1 text-sm text-slate-500 sensitive-data">
                                     {{ prontuario.texto|truncatechars:110 }}
                                 </p>
                                 <div class="mt-2 flex flex-wrap items-center gap-2 text-[11px] font-semibold text-slate-400">
@@ -125,15 +125,15 @@
                         <div class="mt-4 space-y-4 border-t border-slate-100 pt-4 text-sm text-slate-700">
                             <div>
                                 <p class="text-[11px] font-bold uppercase tracking-[0.16em] text-slate-400">{% trans "Queixa / Evolução" %}</p>
-                                <p class="mt-2 leading-6">{{ prontuario.texto }}</p>
+                                <p class="mt-2 leading-6 sensitive-data">{{ prontuario.texto }}</p>
                             </div>
                             <div>
                                 <p class="text-[11px] font-bold uppercase tracking-[0.16em] text-slate-400">{% trans "Observações clínicas / Riscos" %}</p>
-                                <p class="mt-2 leading-6">{% if prontuario.riscos_identificados %}{{ prontuario.riscos_identificados }}{% else %}{% trans "Nenhuma observação registrada." %}{% endif %}</p>
+                                <p class="mt-2 leading-6 sensitive-data">{% if prontuario.riscos_identificados %}{{ prontuario.riscos_identificados }}{% else %}{% trans "Nenhuma observação registrada." %}{% endif %}</p>
                             </div>
                             <div>
                                 <p class="text-[11px] font-bold uppercase tracking-[0.16em] text-slate-400">{% trans "Plano terapêutico" %}</p>
-                                <p class="mt-2 leading-6">{% if prontuario.plano_terapeutico %}{{ prontuario.plano_terapeutico }}{% else %}{% trans "Nenhum plano terapêutico registrado." %}{% endif %}</p>
+                                <p class="mt-2 leading-6 sensitive-data">{% if prontuario.plano_terapeutico %}{{ prontuario.plano_terapeutico }}{% else %}{% trans "Nenhum plano terapêutico registrado." %}{% endif %}</p>
                             </div>
                         </div>
                     </details>

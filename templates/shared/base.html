@@ -37,6 +37,34 @@
     </script>
 
     {% block extra_css %}{% endblock %}
+
+    <style>
+        /* Modo Apresentação / Anonimização */
+        html.privacy-mode .sensitive-data {
+            filter: blur(6px);
+            user-select: none;
+            -webkit-user-select: none;
+            -moz-user-select: none;
+            pointer-events: none;
+            cursor: not-allowed;
+            transition: filter 0.15s ease;
+        }
+
+        #privacy-toggle-btn.active {
+            background-color: #FEF2F2;
+            border-color: #FCA5A5;
+            color: #DC2626;
+        }
+    </style>
+
+    <script>
+        /* Aplica o estado salvo ANTES do conteúdo renderizar, evitando flash de dados sensíveis */
+        (function () {
+            if (localStorage.getItem('psicoplus_privacy_mode') === 'true') {
+                document.documentElement.classList.add('privacy-mode');
+            }
+        })();
+    </script>
 </head>
 
 <body class="bg-bgSoft min-h-screen text-textMain">
@@ -67,16 +95,24 @@
                     <!-- Bloco do Perfil + Seletor de Idioma -->
                     <div class="flex items-center gap-4">
 
-                        <!-- ✨ Formulário do Django para alternar entre os idiomas -->
+                        <!-- Botão Modo Apresentação -->
+                        <button id="privacy-toggle-btn"
+                                type="button"
+                                title="{% trans 'Modo Apresentação (ocultar dados sensíveis)' %}"
+                                class="inline-flex items-center gap-2 rounded-xl border border-slate-200 bg-white px-3 py-2 text-[12px] font-bold text-textMuted transition hover:bg-slate-50">
+                            <i class="fa-solid fa-eye-slash text-xs"></i>
+                        </button>
+
+                        <!-- Formulário do Django para alternar entre os idiomas -->
                         <form action="{% url 'set_language' %}" method="post" class="flex gap-0.5 text-[11px] font-bold bg-slate-100 p-1 rounded-xl border border-borderSoft">
                             {% csrf_token %}
                             <input name="next" type="hidden" value="{{ request.get_full_path }}">
-                            
-                            <button type="submit" name="language" value="pt-br" 
+
+                            <button type="submit" name="language" value="pt-br"
                                     class="px-2.5 py-1 rounded-lg transition-all {% if request.LANGUAGE_CODE == 'pt-br' %}bg-white shadow-sm text-primary{% else %}text-textMuted hover:text-textMain{% endif %}">
                                 PT
                             </button>
-                            <button type="submit" name="language" value="en" 
+                            <button type="submit" name="language" value="en"
                                     class="px-2.5 py-1 rounded-lg transition-all {% if request.LANGUAGE_CODE == 'en' %}bg-white shadow-sm text-primary{% else %}text-textMuted hover:text-textMain{% endif %}">
                                 EN
                             </button>
@@ -114,6 +150,28 @@
             </div>
         </main>
     </div>
+
+    <script>
+        (function () {
+            const STORAGE_KEY = 'psicoplus_privacy_mode';
+            const html = document.documentElement;
+            const btn = document.getElementById('privacy-toggle-btn');
+
+            function syncButtonState() {
+                if (btn) btn.classList.toggle('active', html.classList.contains('privacy-mode'));
+            }
+            syncButtonState();
+
+            if (btn) {
+                btn.addEventListener('click', function () {
+                    const newState = !html.classList.contains('privacy-mode');
+                    html.classList.toggle('privacy-mode', newState);
+                    localStorage.setItem(STORAGE_KEY, newState);
+                    syncButtonState();
+                });
+            }
+        })();
+    </script>
 
     {% block extra_js %}{% endblock %}
 </body>

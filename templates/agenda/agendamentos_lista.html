@@ -219,7 +219,7 @@
                  }">
                 <div>
                     <div class="flex flex-wrap items-center gap-2">
-                        <p class="text-base font-bold transition-all duration-300"
+                        <p class="text-base font-bold transition-all duration-300 sensitive-data"
                            :class="(currentStatus === 'cancelada' || currentStatus === 'falta') ? 'text-slate-400 line-through decoration-slate-300' : 'text-slate-900'">
                            {{ sessao.paciente.nome_completo }}
                         </p>
@@ -463,7 +463,7 @@
                         {% elif sessao.status == 'falta' %}border-slate-200 bg-slate-50/80 text-slate-500 opacity-60 line-through decoration-slate-400
                         {% else %}border-slate-100 bg-slate-50/80 text-slate-800{% endif %}">
                         <div class="flex items-center justify-between gap-2">
-                            <p class="text-sm font-bold truncate">{{ sessao.paciente.nome_completo }}</p>
+                            <p class="text-sm font-bold truncate sensitive-data">{{ sessao.paciente.nome_completo }}</p>
                             {% if sessao.serie_id %}
                                 <span class="rounded-full bg-violet-100/80 px-1.5 py-0.5 text-[9px] font-bold uppercase tracking-wide text-violet-700 shrink-0">
                                     {{ sessao.posicao_na_serie }}
@@ -507,7 +507,7 @@
                                 {% elif sessao.status == 'pendente' %}bg-amber-50/50 border-amber-100 text-amber-900
                                 {% elif sessao.status == 'confirmada' %}bg-sky-50/50 border-sky-100 text-sky-900
                                 {% else %}bg-slate-50 border-slate-100 text-slate-700{% endif %}">
-                                <p class="truncate text-[11px] font-semibold">
+                                <p class="truncate text-[11px] font-semibold sensitive-data">
                                     {{ sessao.horario_inicio|time:"H:i" }} {{ sessao.paciente.nome_completo }}
                                 </p>
                             </div>
