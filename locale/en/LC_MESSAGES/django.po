@@ -1508,6 +1508,14 @@ msgstr "Clear"
 msgid "Filtrar"
 msgstr "Filter"
 
+#: templates/accounts/financeiro_mensal.html:17
+msgid "Ano"
+msgstr "Year"
+
+#: templates/accounts/financeiro_mensal.html:66
+msgid "Valor"
+msgstr "Amount"
+
 #: templates/agenda/agendamentos_lista.html:191
 msgid "Visualização"
 msgstr "View"
@@ -2004,6 +2012,58 @@ msgstr "Notes"
 #: templates/shared/sidebar.html:79
 msgid "Financeiro"
 msgstr "Financial"
+
+#: accounts/models.py:215 templates/accounts/financeiro_mensal.html:80
+msgid "Pago"
+msgstr "Paid"
+
+#: templates/accounts/financeiro_mensal.html:11
+msgid "Resumo financeiro"
+msgstr "Financial summary"
+
+#: templates/accounts/financeiro_mensal.html:12
+msgid "Painel financeiro mensal"
+msgstr "Monthly financial dashboard"
+
+#: templates/accounts/financeiro_mensal.html:13
+msgid "Acompanhe receitas, pendências e sessões do mês selecionado."
+msgstr "Track revenue, pending payments, and sessions for the selected month."
+
+#: templates/accounts/financeiro_mensal.html:41
+msgid "Total recebido"
+msgstr "Total received"
+
+#: templates/accounts/financeiro_mensal.html:45
+msgid "Total pendente"
+msgstr "Total pending"
+
+#: templates/accounts/financeiro_mensal.html:49
+msgid "Sessões no mês"
+msgstr "Sessions this month"
+
+#: templates/accounts/financeiro_mensal.html:56
+msgid "Sessões do período"
+msgstr "Sessions in the period"
+
+#: templates/accounts/financeiro_mensal.html:57
+msgid "Listagem de sessões"
+msgstr "Session list"
+
+#: accounts/models.py:220 templates/accounts/financeiro_mensal.html:67
+msgid "Status de pagamento"
+msgstr "Payment status"
+
+#: accounts/models.py:222 templates/accounts/financeiro_mensal.html:68
+msgid "Data do pagamento"
+msgstr "Payment date"
+
+#: templates/accounts/financeiro_mensal.html:92
+msgid "Não registrado"
+msgstr "Not recorded"
+
+#: templates/accounts/financeiro_mensal.html:97
+msgid "Nenhuma sessão encontrada para o período selecionado."
+msgstr "No sessions found for the selected period."
 
 #: templates/shared/sidebar.html:86
 msgid "Relatórios"
