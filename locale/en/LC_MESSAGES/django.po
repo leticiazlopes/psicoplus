@@ -1034,10 +1034,38 @@ msgstr "Save Entry"
 msgid "Histórico de anotações"
 msgstr "Entry History"
 
+#: templates/accounts/diario_paciente.html:89
+msgid "Modo Privado Ativo"
+msgstr "Private Mode Active"
+
+#: templates/accounts/diario_paciente.html:106
+msgid "Mostrar/Ocultar conteúdo"
+msgstr "Show/Hide content"
+
+#: templates/accounts/diario_paciente.html:108
+msgid "Ocultar"
+msgstr "Hide"
+
+#: templates/accounts/diario_paciente.html:108
+msgid "Revelar"
+msgstr "Reveal"
+
 #: templates/accounts/diario_paciente.html:100
 #, python-format
 msgid "Intensidade: %(diario.intensidade)s"
 msgstr "Intensity: %(diario.intensidade)s"
+
+#: templates/accounts/diario_paciente.html:121
+msgid "Leve"
+msgstr "Mild"
+
+#: templates/accounts/diario_paciente.html:123
+msgid "Moderada"
+msgstr "Moderate"
+
+#: templates/accounts/diario_paciente.html:125
+msgid "Alta"
+msgstr "High"
 
 #: templates/accounts/diario_paciente.html:105
 msgid "Sentimento"
@@ -1058,6 +1086,47 @@ msgstr "Your journal is empty"
 #: templates/accounts/diario_paciente.html:125
 msgid "Os pensamentos que você registrar aqui aparecerão nesta linha do tempo."
 msgstr "The thoughts you record here will appear in this timeline."
+
+#: templates/accounts/diario_paciente.html:153
+msgid "Conteúdo ocultado por privacidade"
+msgstr "Content hidden for privacy"
+
+#: templates/accounts/diarios_pacientes.html:4
+#: templates/accounts/diarios_pacientes.html:5
+msgid "Diários dos Pacientes"
+msgstr "Patient Journals"
+
+#: templates/accounts/diarios_pacientes.html:11
+msgid "Meus Pacientes"
+msgstr "My Patients"
+
+#: templates/accounts/diarios_pacientes.html:12
+msgid "Selecione para ver o diário"
+msgstr "Select to view the journal"
+
+#: templates/accounts/diarios_pacientes.html:23
+msgid "Nenhum paciente vinculado."
+msgstr "No linked patients."
+
+#: templates/accounts/diarios_pacientes.html:35
+msgid "Acompanhamento Clínico"
+msgstr "Clinical Follow-up"
+
+#: templates/accounts/diarios_pacientes.html:114
+msgid "Nenhum registro encontrado"
+msgstr "No entries found"
+
+#: templates/accounts/diarios_pacientes.html:115
+msgid "Este paciente ainda não fez anotações no diário de pensamentos."
+msgstr "This patient has not made any entries in the thought journal yet."
+
+#: templates/accounts/diarios_pacientes.html:121
+msgid "Nenhum paciente selecionado"
+msgstr "No patient selected"
+
+#: templates/accounts/diarios_pacientes.html:122
+msgid "Escolha um paciente na barra lateral esquerda para auditar as reflexões."
+msgstr "Choose a patient from the left sidebar to review their reflections."
 
 #: templates/accounts/login.html:7
 msgid "Login"
