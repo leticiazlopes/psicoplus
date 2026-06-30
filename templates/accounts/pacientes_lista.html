@@ -111,7 +111,7 @@
                             <span class="text-[14px] font-black">{{ paciente.nome_completo|slice:":1"|upper }}</span>
                         </div>
                         <div class="min-w-0">
-                            <p class="truncate text-[14px] font-bold text-slate-900">{{ paciente.nome_completo }}</p>
+                            <p class="truncate text-[14px] font-bold text-slate-900 sensitive-data">{{ paciente.nome_completo }}</p>
                             {% if paciente.ativo %}
                                 <span class="text-[11px] font-medium text-emerald-600">{% trans "Ativo" %}</span>
                             {% else %}
@@ -121,11 +121,11 @@
                     </div>
 
                     <div class="text-[13px] text-slate-600">
-                        <p class="font-semibold">{{ paciente.email }}</p>
-                        <p class="mt-1 text-slate-500">{% trans "Emergência:" %} {{ paciente.contato_emergencia_nome|default:"-" }}</p>
+                        <p class="font-semibold sensitive-data">{{ paciente.email }}</p>
+                        <p class="mt-1 text-slate-500 sensitive-data">{% trans "Emergência:" %} {{ paciente.contato_emergencia_nome|default:"-" }}</p>
                     </div>
 
-                    <div class="text-[13px] text-slate-600">
+                    <div class="text-[13px] text-slate-600 sensitive-data">
                         <p>
                             {% if paciente.data_nascimento %}
                                 {{ paciente.data_nascimento|date:"d/m/Y" }}

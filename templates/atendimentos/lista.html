@@ -32,7 +32,7 @@
                 <div class="rounded-2xl border border-slate-100 bg-slate-50/70 p-4 transition hover:border-violet-200 hover:bg-violet-50/60">
                     <div class="flex flex-wrap items-start justify-between gap-3">
                         <div class="min-w-0">
-                            <p class="truncate text-sm font-bold text-slate-900">{{ item.sessao.paciente.nome_completo }}</p>
+                            <p class="truncate text-sm font-bold text-slate-900 sensitive-data">{{ item.sessao.paciente.nome_completo }}</p>
                             <p class="mt-1 text-xs text-slate-500">
                                 {{ item.sessao.data|date:"d/m/Y" }} às {{ item.sessao.horario_inicio|time:"H:i" }} • {{ item.sessao.duracao_minutos }} min
                             </p>
